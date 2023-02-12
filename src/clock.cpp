@@ -1,7 +1,7 @@
 #include "clock.h"
 //#include "midi/midi_outs.h"
 
-#ifndef FLASHMEM
+#ifndef CORE_TEENSY
     #define FLASHMEM
 #endif
 
