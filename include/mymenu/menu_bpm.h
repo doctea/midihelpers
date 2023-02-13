@@ -48,12 +48,12 @@ class BPMPositionIndicator : public MenuItem {
             return tft->getCursorY();
         }
 
-        virtual bool knob_left() {
+        virtual bool knob_left() override {
             if (clock_mode==CLOCK_INTERNAL)
                 set_bpm(bpm_current-1);
             return true;
         }
-        virtual bool knob_right() {
+        virtual bool knob_right() override {
             if (clock_mode==CLOCK_INTERNAL)
                 set_bpm(bpm_current+1);
             return true;

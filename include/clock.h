@@ -20,3 +20,9 @@ void pc_usb_midi_handle_clock();
 bool check_and_unset_pc_usb_midi_clock_ticked();
 
 bool update_clock_ticks();
+
+void pc_usb_midi_handle_start();
+void pc_usb_midi_handle_stop();
+void pc_usb_midi_handle_continue();
+
+void set_global_restart_callback(void(*global_restart_callback)());

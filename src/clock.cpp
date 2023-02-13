@@ -7,6 +7,12 @@
 
 int clock_mode = DEFAULT_CLOCK_MODE;
 
+void (*__global_restart_callback)();
+
+void set_global_restart_callback(void(*global_restart_callback)()) {
+    __global_restart_callback = global_restart_callback;
+}
+
 /// use cheapclock clock
 uint32_t last_ticked_at_micros = micros();
 FLASHMEM void setup_cheapclock() {
@@ -26,6 +32,33 @@ void pc_usb_midi_handle_clock() {
     last_usb_midi_clock_ticked_at = millis();
     usb_midi_clock_ticked = true;
 }
+
+void pc_usb_midi_handle_start() {
+  if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
+    //tap_tempo_tracker.reset();
+    playing = true;
+    if (__global_restart_callback!=nullptr)
+        __global_restart_callback();
+    ticks = 0;
+  }
+}
+void pc_usb_midi_handle_stop() {
+  if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
+    if (!playing) {
+      if (__global_restart_callback!=nullptr)
+        __global_restart_callback();
+      ticks = 0;
+    }
+    playing = false;
+  }
+}
+void pc_usb_midi_handle_continue() {
+  if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
+    playing = true;
+  }
+}
+
+
 bool check_and_unset_pc_usb_midi_clock_ticked() {
     bool v = usb_midi_clock_ticked;
     usb_midi_clock_ticked = false;
@@ -43,10 +76,10 @@ bool update_clock_ticks() {
     } else if (clock_mode==CLOCK_INTERNAL && playing && micros() - last_ticked >= micros_per_tick) {
         ticks++;
         last_ticked = micros();
-        if (is_bpm_on_beat(ticks)) {
+        /*if (is_bpm_on_beat(ticks)) {
             Serial.printf("beat %i!\n", ticks / PPQN);
             Serial.flush();
-        }
+        }*/
         return true;
     }
     return false;
