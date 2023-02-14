@@ -35,3 +35,22 @@ bool is_valid_note(int8_t note) {
 }
 
 // todo: version that will return GM drum name
+
+
+byte quantise_pitch(byte pitch) {
+  byte octave = pitch / 12;
+  byte chromatic_pitch  = pitch % 12;
+
+  byte valid_chromatic_pitches[] = {
+    0, 2, 4, 5, 7, 9, 11
+  };
+  
+  byte nearest_lowest = 0;
+  for (int i = 0 ; i < sizeof(valid_chromatic_pitches) ; i++) {
+    if(valid_chromatic_pitches[i]==chromatic_pitch)
+      return pitch;
+    if (chromatic_pitch < valid_chromatic_pitches[i])
+      nearest_lowest = valid_chromatic_pitches[i-1];
+  }
+  return nearest_lowest;
+}

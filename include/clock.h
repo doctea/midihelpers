@@ -10,10 +10,10 @@
   #define DEFAULT_CLOCK_MODE CLOCK_INTERNAL
 #endif
 
-extern int clock_mode;
+volatile extern int clock_mode;
 
 /// use cheapclock clock
-extern uint32_t last_ticked_at_micros;
+volatile extern uint32_t last_ticked_at_micros;
 void setup_cheapclock();
 
 void pc_usb_midi_handle_clock();

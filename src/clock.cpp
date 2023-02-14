@@ -5,7 +5,7 @@
     #define FLASHMEM
 #endif
 
-int clock_mode = DEFAULT_CLOCK_MODE;
+volatile int clock_mode = DEFAULT_CLOCK_MODE;
 
 void (*__global_restart_callback)();
 
@@ -14,14 +14,14 @@ void set_global_restart_callback(void(*global_restart_callback)()) {
 }
 
 /// use cheapclock clock
-uint32_t last_ticked_at_micros = micros();
+volatile uint32_t last_ticked_at_micros = micros();
 FLASHMEM void setup_cheapclock() {
     ticks = 0;
     set_bpm(bpm_current);
 }
 
-bool usb_midi_clock_ticked = false;
-unsigned long last_usb_midi_clock_ticked_at;
+volatile bool usb_midi_clock_ticked = false;
+volatile unsigned long last_usb_midi_clock_ticked_at;
 void pc_usb_midi_handle_clock() {
     if (clock_mode==CLOCK_EXTERNAL_USB_HOST && usb_midi_clock_ticked) {
         Serial.printf("WARNING: received a usb midi clock tick at %u, but last one from %u was not yet processed (didn't process within gap of %u)!\n", millis(), last_usb_midi_clock_ticked_at, millis()-last_usb_midi_clock_ticked_at);
@@ -29,8 +29,10 @@ void pc_usb_midi_handle_clock() {
     /*if (CLOCK_EXTERNAL_USB_HOST) {  // TODO: figure out why tempo estimation isn't working and fix
         tap_tempo_tracker.push_beat();
     }*/
-    last_usb_midi_clock_ticked_at = millis();
-    usb_midi_clock_ticked = true;
+    if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
+      last_usb_midi_clock_ticked_at = millis();
+      usb_midi_clock_ticked = true;
+    }
 }
 
 void pc_usb_midi_handle_start() {

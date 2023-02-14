@@ -16,13 +16,13 @@
 #define LOOP_LENGTH_STEP_SIZE 1         // resolution of loop TODO: problems when this is set >1; reloaded sequences (or maybe its converted-from-bitmap stage?) are missing note-offs
 #define LOOP_LENGTH_STEPS (LOOP_LENGTH_TICKS/LOOP_LENGTH_STEP_SIZE) // how many steps are recorded per loop
 
-extern bool playing;
+volatile extern bool playing;
 extern bool single_step;
 
 extern bool restart_on_next_bar;
 
 volatile extern uint32_t ticks; // = 0;
-extern long last_processed_tick;
+volatile extern long last_processed_tick;
 
 // tracking which beat we're on
 extern float bpm_current; //BPM_MINIMUM; //60.0f;
