@@ -8,6 +8,8 @@
 #endif
 #define BEATS_PER_BAR   4
 #define BARS_PER_PHRASE 4
+#define STEPS_PER_BEAT  4
+#define STEPS_PER_BAR   (BEATS_PER_BAR*STEPS_PER_BEAT)
 
 #define BPM_MINIMUM   60.0
 #define BPM_MAXIMUM   180.0
@@ -31,16 +33,17 @@ extern float bpm_current; //BPM_MINIMUM; //60.0f;
   extern double micros_per_tick; // = 1000.0f * (60.0f / (double)(bpm_current * (double)PPQN));
 #endif
 
-#define BPM_CURRENT_PHRASE          (ticks / (PPQN*4*4))
-#define BPM_CURRENT_BAR_OF_PHRASE   (ticks % (PPQN*4*4) / (PPQN*4))
-#define BPM_CURRENT_BEAT_OF_BAR     (ticks % (PPQN*4) / PPQN)
+#define BPM_CURRENT_PHRASE          (ticks / (PPQN*BEATS_PER_BAR*BARS_PER_PHRASE))
+#define BPM_CURRENT_BAR_OF_PHRASE   (ticks % (PPQN*BEATS_PER_BAR*BARS_PER_PHRASE) / (PPQN*BEATS_PER_BAR))
+#define BPM_CURRENT_BEAT_OF_BAR     (ticks % (PPQN*BEATS_PER_BAR) / PPQN)
+#define BPM_CURRENT_STEP_OF_BAR     (ticks % (PPQN*BEATS_PER_BAR) / (PPQN/STEPS_PER_BEAT))
 
-inline bool is_bpm_on_phrase(uint32_t ticks,      unsigned long offset = 0) { return ticks==offset || ticks%(PPQN*4*4) == offset; }
-inline bool is_bpm_on_bar(uint32_t    ticks,      unsigned long offset = 0) { return ticks==offset || ticks%(PPQN*4)   == offset; }
-inline bool is_bpm_on_half_bar(uint32_t  ticks,   unsigned long offset = 0) { return ticks==offset || ticks%(PPQN*2)   == offset; }
+inline bool is_bpm_on_phrase(uint32_t ticks,      unsigned long offset = 0) { return ticks==offset || ticks%(PPQN*BEATS_PER_BAR*BARS_PER_PHRASE) == offset; }
+inline bool is_bpm_on_bar(uint32_t    ticks,      unsigned long offset = 0) { return ticks==offset || ticks%(PPQN*BEATS_PER_BAR)   == offset; }
+inline bool is_bpm_on_half_bar(uint32_t  ticks,   unsigned long offset = 0) { return ticks==offset || ticks%(PPQN*(BEATS_PER_BAR/2))   == offset; }
 inline bool is_bpm_on_beat(uint32_t  ticks,       unsigned long offset = 0) { return ticks==offset || ticks%(PPQN)     == offset; }
-inline bool is_bpm_on_eighth(uint32_t  ticks,     unsigned long offset = 0) { return ticks==offset || ticks%(PPQN/2)   == offset; }
-inline bool is_bpm_on_sixteenth(uint32_t  ticks,  unsigned long offset = 0) { return ticks==offset || ticks%(PPQN/4)   == offset; }
+inline bool is_bpm_on_eighth(uint32_t  ticks,     unsigned long offset = 0) { return ticks==offset || ticks%(PPQN/(STEPS_PER_BEAT/2))   == offset; }
+inline bool is_bpm_on_sixteenth(uint32_t  ticks,  unsigned long offset = 0) { return ticks==offset || ticks%(PPQN/STEPS_PER_BEAT)   == offset; }
 
 inline bool is_bpm_on_multiplier(unsigned long ticks, float multiplier, unsigned long offset = 0) {
   unsigned long p = ((float)PPQN*multiplier);
