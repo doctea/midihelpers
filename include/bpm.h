@@ -30,7 +30,7 @@ volatile extern long last_processed_tick;
 extern float bpm_current; //BPM_MINIMUM; //60.0f;
 #ifndef USE_UCLOCK
   //extern double ms_per_tick; // = 1000.0f * (60.0f / (double)(bpm_current * (double)PPQN));
-  extern double micros_per_tick; // = 1000.0f * (60.0f / (double)(bpm_current * (double)PPQN));
+  extern float micros_per_tick; // = 1000.0f * (60.0f / (double)(bpm_current * (double)PPQN));
 #endif
 
 #define BPM_CURRENT_PHRASE          (ticks / (PPQN*BEATS_PER_BAR*BARS_PER_PHRASE))
