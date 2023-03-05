@@ -26,3 +26,8 @@ void pc_usb_midi_handle_stop();
 void pc_usb_midi_handle_continue();
 
 void set_global_restart_callback(void(*global_restart_callback)());
+
+void clock_start();
+void clock_stop();
+void clock_continue();
+void clock_set_playing(bool p);
