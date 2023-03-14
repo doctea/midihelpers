@@ -75,6 +75,7 @@ inline bool is_bpm_on_multiplier(unsigned long ticks, float multiplier, unsigned
 }
 
 void set_bpm(float new_bpm);
+float get_bpm();
 void set_restart_on_next_bar(bool v = true);
 void set_restart_on_next_bar_on();
 bool is_restart_on_next_bar();

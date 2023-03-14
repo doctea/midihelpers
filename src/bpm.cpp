@@ -31,6 +31,9 @@ void set_bpm(float new_bpm) {
     //Serial.println(bpm_current);
   }
 }
+float get_bpm() {
+  return bpm_current;
+}
 
 
 void set_restart_on_next_bar(bool v) {
