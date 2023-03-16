@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 
+#define NOTE_OFF -1
+
 #define MIDI_MAX_VELOCITY 127
 #define MIDI_MAX_NOTE     127
 
