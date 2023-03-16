@@ -23,6 +23,8 @@ bool is_valid_note(int8_t byte);
 #define SCALE_ROOT_A_SHARP 10
 #define SCALE_ROOT_B       11
 
+#define PITCHES_PER_SCALE 7
+
 int8_t quantise_pitch(int8_t pitch, int8_t root_note = SCALE_ROOT_A, int8_t scale_number = 0);
 
 #endif
