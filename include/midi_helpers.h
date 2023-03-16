@@ -10,9 +10,6 @@ String get_note_name(int pitch);
 const char *get_note_name_c(int pitch);
 bool is_valid_note(int8_t byte);
 
-byte quantise_pitch(byte pitch, byte root_note, byte scale_number);
-
-
 #define SCALE_ROOT_C       0
 #define SCALE_ROOT_C_SHARP 1
 #define SCALE_ROOT_D       2
@@ -26,6 +23,7 @@ byte quantise_pitch(byte pitch, byte root_note, byte scale_number);
 #define SCALE_ROOT_A_SHARP 10
 #define SCALE_ROOT_B       11
 
+int8_t quantise_pitch(int8_t pitch, int8_t root_note = SCALE_ROOT_A, int8_t scale_number = 0);
 
 #endif
 
