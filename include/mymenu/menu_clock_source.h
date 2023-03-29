@@ -21,15 +21,21 @@ class ClockSourceSelectorControl : public SelectorControl<int> {
     virtual const char* get_label_for_index(int index) {
         if (index==CLOCK_INTERNAL)
             return "Internal";
-        if (index==CLOCK_EXTERNAL_USB_HOST)
-            return "External";
-        if (index==CLOCK_NONE)
+        else if (index==CLOCK_EXTERNAL_USB_HOST)
+            return "External MIDI";
+        #ifdef ENABLE_CLOCK_INPUT_CV
+        else if (index==CLOCK_EXTERNAL_CV)
+            return "External CV";
+        #endif
+        else if (index==CLOCK_NONE)
             return "None";
         return "??";
     }
 
     virtual void setter (int new_value) {
-        clock_mode = new_value;
+        if (__clock_mode_changed_callback!=nullptr)
+            __clock_mode_changed_callback(clock_mode, (ClockMode)new_value);
+        clock_mode = (ClockMode) new_value;
         actual_value_index = clock_mode;
         //selected_value_index = clock_mode;
     }
