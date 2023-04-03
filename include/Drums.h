@@ -129,6 +129,7 @@
 #define MUSO_USE_PITCH_FOR  MUSO_CC_CV_5        // because my CV5 output doesn't work!
 
 #define MUSO_CV_CHANNEL     1   // channel to output CV CC's (ie envelopes to MidiMuso on this channel)
+#define MUSO_TRIGGER_CHANNEL 16
 
 #define MIDI_CC_ALL_NOTES_OFF 123
 
