@@ -58,13 +58,13 @@ class ClockSourceSelectorControl : public SelectorControl<int> {
             // not opened, so just show the current value
             //colours(opened && selected_value_index==i, col, BLACK);
 
-            tft->printf((char*)"%s", (char*)get_label_for_index(selected_value_index));
+            tft->printf((char*)"%s", (char*)get_label_for_index(getter())); //selected_value_index));
             tft->println((char*)"");
         } else {
             int current_value = actual_value_index;
             
             for (unsigned int i = 0 ; i < num_values ; i++) {
-                bool is_current_value_selected = ((int)i)==current_value;
+                bool is_current_value_selected = ((int)i)==getter();
                 int col = is_current_value_selected ? GREEN : C_WHITE;
                 colours(opened && selected_value_index==(int)i, col, BLACK);
                 tft->printf((char*)"%s\n", (char*)get_label_for_index(i));
