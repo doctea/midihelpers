@@ -1,14 +1,4 @@
-#ifdef ENABLE_SCREEN
-
-//#include "sequencer/Patterns.h"
 #include "menuitems.h"
-//#include "submenuitem_bar.h"
-//#include "menuitems_object_selector.h"
-//#define NUM_STEPS 16
-//#include "sequencer/Euclidian.h"
-
-#include <bpm.h>
-#include <clock.h>
 
 #include "midi_helpers.h"
 #include "scales.h"
@@ -16,10 +6,16 @@
 class ScaleMenuItem : public MenuItem {
     public:
 
-        int8_t scale_number = 0;
+        //SCALE *scale_number = nullptr; //SCALE::MAJOR;
+        SCALE scale_number = SCALE::MAJOR;
         int8_t root_note = SCALE_ROOT_A;
 
-        ScaleMenuItem(const char *label) : MenuItem(label) {}
+        ScaleMenuItem(const char *label, SCALE *scale_number = nullptr) : MenuItem(label) {
+            /*if (scale_number==nullptr) {
+                scale_number = new SCALE();
+                *scale_number = SCALE::MAJOR;
+            }*/
+        }
 
         virtual int display(Coord pos, bool selected, bool opened) override {
             char label[MENU_C_MAX];
@@ -71,9 +67,9 @@ class ScaleMenuItem : public MenuItem {
                 root_note--;
                 if (root_note < 0) root_note = 12;
             } else {
-                scale_number--;
-                if (scale_number<0 || scale_number>=NUMBER_SCALES)
-                    scale_number = NUMBER_SCALES-1;
+                (scale_number)--;
+                //if (scale_number<0 || scale_number>=NUMBER_SCALES)
+                //    scale_number = NUMBER_SCALES-1;
             }
             return true;
         }
@@ -82,12 +78,10 @@ class ScaleMenuItem : public MenuItem {
                 root_note++;
                 root_note %= 12;
             } else {
-                scale_number++;
-                if (scale_number >= NUMBER_SCALES)
-                    scale_number = 0;
+                (scale_number)++;
+                //if (scale_number >= NUMBER_SCALES)
+                //    scale_number = 0;
             }
             return true;
         }
 };
-
-#endif

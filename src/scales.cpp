@@ -14,7 +14,32 @@
 
 //extern const scale_t[] scales;
 
-int8_t quantise_pitch(int8_t pitch, int8_t root_note, int8_t scale_number) {
+SCALE& operator++(SCALE& orig) {
+  if (orig==static_cast<SCALE>(NUMBER_SCALES-1))
+    orig = static_cast<SCALE>(0);
+  else
+    orig = static_cast<SCALE>(orig+1);
+  return orig;
+}
+SCALE& operator++(SCALE& orig, int) {
+    SCALE rVal = orig;
+    ++orig;
+    return rVal;
+}
+SCALE& operator--(SCALE& orig) {
+  if (orig==static_cast<SCALE>(0))
+    orig = static_cast<SCALE>(NUMBER_SCALES-1);
+  else
+    orig = static_cast<SCALE>(orig-1);
+  return orig;
+}
+SCALE& operator--(SCALE& orig, int) {
+    SCALE rVal = orig;
+    --orig;
+    return rVal;
+}
+
+int8_t quantise_pitch(int8_t pitch, int8_t root_note, SCALE scale_number) {
   if (!is_valid_note(pitch))
     return -1;
 
