@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 
 SCALE_ROOT_C       = 0
 SCALE_ROOT_C_SHARP = 1
@@ -74,7 +75,7 @@ valid_chromatic_pitches = [
     [ 0, 1, 3, 4, 7, 9, 11 ]
 ]
 
-def quantise_pitch(pitch, root_note = SCALE_ROOT_A, scale_number = 0):
+"""def quantise_pitch(pitch, root_note = SCALE_ROOT_A, scale_number = 0):
     note_table = []
 
     for octave in range(0,10):
@@ -89,7 +90,7 @@ def quantise_pitch(pitch, root_note = SCALE_ROOT_A, scale_number = 0):
             return last_valid_note
         last_valid_note = valid_note
 
-    return note_table[0]
+    return note_table[0]"""
 
 
 def quantise_pitch_2(pitch, root_note = SCALE_ROOT_A, scale_number = 0):
@@ -104,16 +105,27 @@ def quantise_pitch_2(pitch, root_note = SCALE_ROOT_A, scale_number = 0):
         if (interval == relative_pitch):
             return pitch
         if (relative_pitch < interval):
-            return last_interval + (octave*12) + root_note
+            v = last_interval + (octave*12) + root_note
+            if v - pitch > 7:
+                v-=12
+            return v
         last_interval = interval
 
-for root in range(12):
-    print("-------\n\n\nRoot = %s\n---------" % get_note_name(root))
-    last_pitch = -1
-    for pitch in range(root,127):
-        result = quantise_pitch(pitch, root)
-        #print("quantise_pitch: For\t%s,\tgot result\t%s - %s" % (get_note_name(pitch), get_note_name(result), "in scale" if pitch==result else "should be %s?" %get_note_name(last_pitch) ))
-        result = quantise_pitch_2(pitch, root)
-        print("quantise_pitch_2: For\t%s,\tgot result\t%s - %s" % (get_note_name(pitch), get_note_name(result), "in scale" if pitch==result else "should be %s?" %get_note_name(last_pitch) ))
-        last_pitch = pitch
-        #print("\n")
+    print("\t\t\t!!!!!default case..!")
+    return last_interval
+
+    print("quantise_pitch_2 didn't find a pitch for %s!" % (pitch))
+
+for scale in range(3):
+    for root in range(12):
+        print("-------\n\n\nRoot = %s, scale = %s\n---------" % (get_note_name(root), scale))
+        last_pitch = -1
+        for pitch in range(root,127):
+            #result = quantise_pitch(pitch, root)
+            #print("quantise_pitch: For\t%s,\tgot result\t%s - %s" % (get_note_name(pitch), get_note_name(result), "in scale" if pitch==result else "should be %s?" %get_note_name(last_pitch) ))
+            result = quantise_pitch_2(pitch, root, scale)
+            if (result == pitch):
+                last_pitch = pitch
+            print("quantise_pitch_2: For\t%s,\tgot result\t%s - %s" % (get_note_name(pitch), get_note_name(result), "in scale" if pitch==result else "should be %s?" %get_note_name(last_pitch) ))
+            #last_pitch = pitch
+            #print("\n")
