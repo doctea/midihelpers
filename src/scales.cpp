@@ -57,7 +57,7 @@ int8_t quantise_pitch(int8_t pitch, int8_t root_note, SCALE scale_number) {
     if (interval == relative_pitch) 
       return pitch;
     if (relative_pitch < interval) {
-      int v =last_interval + (octave*12) + root_note;
+      int v = last_interval + (octave*12) + root_note;
       if (v - pitch > 7) // if we've crossed octave boundary, step down an octave
         v-=12;
       return v;
