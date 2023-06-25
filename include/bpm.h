@@ -39,6 +39,7 @@ volatile extern float bpm_current; //BPM_MINIMUM; //60.0f;
 #define BPM_CURRENT_BEAT_OF_BAR     (ticks % (PPQN*BEATS_PER_BAR) / PPQN)
 #define BPM_CURRENT_STEP_OF_BAR     (ticks % (PPQN*BEATS_PER_BAR) / (PPQN/STEPS_PER_BEAT))
 #define BPM_CURRENT_STEP_OF_PHRASE  (ticks % (PPQN*BEATS_PER_BAR*BARS_PER_PHRASE) / (PPQN/STEPS_PER_BEAT))
+#define BPM_CURRENT_BEAT_OF_PHRASE  (ticks % (PPQN*BEATS_PER_BAR*BARS_PER_PHRASE) / (PPQN))
 
 inline bool is_bpm_on_phrase(uint32_t ticks,      unsigned long offset = 0) { return ticks==offset || ticks%(PPQN*BEATS_PER_BAR*BARS_PER_PHRASE) == offset; }
 inline bool is_bpm_on_bar(uint32_t    ticks,      unsigned long offset = 0) { return ticks==offset || ticks%(PPQN*BEATS_PER_BAR)   == offset; }
