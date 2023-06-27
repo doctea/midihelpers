@@ -1,5 +1,5 @@
-#ifndef DRUMS_INCLUDED
-#define DRUMS_INCLUDED
+#ifndef MIDIHELPERS_DRUMS_INCLUDED
+#define MIDIHELPERS_DRUMS_INCLUDED
 
 //#include "Config.h"
 
