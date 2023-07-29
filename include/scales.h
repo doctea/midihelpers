@@ -32,9 +32,6 @@ const scale_t scales[] = {
     { "Lydian",           { 0, 2, 4, 6, 7, 9, 11 }},
     { "Whole-tone",       { 0, 2, 4, 6, 8, 10, (12) }}
 };
-
-#define NUMBER_SCALES (sizeof(scales)/sizeof(scale_t))
-
 enum SCALE {
     MAJOR,
     MINOR_NATURAL,
@@ -44,6 +41,28 @@ enum SCALE {
     LYDIAN,
     WHOLE_TONE
 };
+#define NUMBER_SCALES (sizeof(scales)/sizeof(scale_t))
+
+
+#define PITCHES_PER_CHORD 4
+struct chord_t {
+    const char *label;
+    int8_t degree_number[PITCHES_PER_CHORD];
+};
+
+const chord_t chords[] = {
+    { "Triad",           { 0, 2, 4, -1 } },
+    { "Sus2",            { 0, 1, 4, -1 } },
+    { "Sus4",            { 0, 3, 4, -1 } },
+    { "7",               { 0, 2, 4,  6 } },
+};
+enum CHORD {
+    TRIAD,
+    SUS2,
+    SUS4,
+    SEVENTH
+};
+#define NUMBER_CHORDS (sizeof(chords)/sizeof(chord_t))
 
 SCALE& operator++(SCALE& orig);
 SCALE& operator++(SCALE& orig, int);
@@ -51,5 +70,6 @@ SCALE& operator--(SCALE& orig);
 SCALE& operator--(SCALE& orig, int);
 
 int8_t quantise_pitch(int8_t pitch, int8_t root_note = SCALE_ROOT_A, SCALE scale_number = SCALE::MAJOR);
+int8_t quantise_pitch_chord_note(int8_t pitch, CHORD chord_number, int8_t note_of_chord, int8_t root_note, SCALE scale_number);
 
 #endif
