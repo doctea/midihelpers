@@ -60,7 +60,8 @@ enum CHORD {
     TRIAD,
     SUS2,
     SUS4,
-    SEVENTH
+    SEVENTH,
+    NONE
 };
 #define NUMBER_CHORDS (sizeof(chords)/sizeof(chord_t))
 
