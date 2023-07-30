@@ -60,7 +60,7 @@ const chord_t chords[] = {
     { "Oct+3",       { 0, 7, 14, 21 } },
 };
 
-namespace CHORD_ID {
+namespace CHORD {
     typedef int Type;
     const int 
         TRIAD = 0,
@@ -81,6 +81,6 @@ SCALE& operator--(SCALE& orig);
 SCALE& operator--(SCALE& orig, int);
 
 int8_t quantise_pitch(int8_t pitch, int8_t root_note = SCALE_ROOT_A, SCALE scale_number = SCALE::MAJOR);
-int8_t quantise_pitch_chord_note(int8_t pitch, CHORD_ID::Type chord_number, int8_t note_of_chord, int8_t root_note, SCALE scale_number);
+int8_t quantise_pitch_chord_note(int8_t pitch, CHORD::Type chord_number, int8_t note_of_chord, int8_t root_note, SCALE scale_number);
 
 #endif

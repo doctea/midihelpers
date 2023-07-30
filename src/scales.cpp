@@ -68,13 +68,8 @@ int8_t quantise_pitch(int8_t pitch, int8_t scale_root, SCALE scale_number) {
 }
 
 // find the Nth note of a given chord in a given scale
-int8_t quantise_pitch_chord_note(int8_t chord_root, CHORD_ID::Type chord_number, int8_t note_of_chord, int8_t scale_root, SCALE scale_number) {
-  // need to find the scale degree of the pitch in the chosen scale...
-  // eg if pitch is a C and scale_root is C Major, then degree number should be 0
-  //    if pitch is a D and scale_root is C Major, then degree number should be 1
-  //    if pitch is a D and scale_root is D Major, then degree number should be 2...
-  // then when we know that degree number, we can use note_of_chord as on offset on it to discover the note to use
-  bool debug = true;
+int8_t quantise_pitch_chord_note(int8_t chord_root, CHORD::Type chord_number, int8_t note_of_chord, int8_t scale_root, SCALE scale_number) {
+  bool debug = false; //true;
 
   if (note_of_chord>=4 || chords[chord_number].degree_number[note_of_chord]==-1)
     return -1;
@@ -85,7 +80,10 @@ int8_t quantise_pitch_chord_note(int8_t chord_root, CHORD_ID::Type chord_number,
   scale_t *sc = &scales[scale_number];
   chord_t *ch = &chords[chord_number];
 
-  // find what degree the chord root is in the selected scale
+  // need to find the scale degree of the pitch in the chosen scale...
+  // eg if pitch is a C and scale_root is C Major, then degree number should be 0
+  //    if pitch is a D and scale_root is C Major, then degree number should be 1
+  //    if pitch is a D and scale_root is D Major, then degree number should be 2...
   int root_pitch_degree = -1;
   int root_pitch_offset = -1;
   for (int i = 0 ; i < PITCHES_PER_SCALE ; i++) {
@@ -96,20 +94,23 @@ int8_t quantise_pitch_chord_note(int8_t chord_root, CHORD_ID::Type chord_number,
     }
   }
 
-  // if didn't find pitch in the scale, return nothing
+  // pitch isn't in the scale, return nothing
   if (root_pitch_degree==-1)
     return -1;
 
+  // find the degree number and octave offset from the chord spelling
   int8_t chord_root_pitch = chord_root - root_pitch_offset;
   int8_t chord_target_degree = (root_pitch_degree + ch->degree_number[note_of_chord]) % PITCHES_PER_SCALE;
   int8_t chord_target_octave = (root_pitch_degree + ch->degree_number[note_of_chord]) / PITCHES_PER_SCALE;
 
+  // no note at this position in the chord, return nothing
   if (chord_target_degree==-1)
     return -1;
 
   if (debug) Serial.printf("got chord_root_pitch %3s (%i), \t", get_note_name_c(chord_root_pitch), chord_root_pitch);
   if (debug) Serial.printf("got chord_target_degree (%i), \t", chord_target_degree);
 
+  // then when we know the degree number and octave offset, we can use note_of_chord as on offset on it to discover the real pitch to use
   int8_t actual_pitch = (chord_target_octave*12) + sc->valid_chromatic_pitches[chord_target_degree];
   actual_pitch += chord_root_pitch;
 
