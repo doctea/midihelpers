@@ -90,7 +90,7 @@ class chord_instance_t {
     }
     char pitch_string[40];
     const char *get_pitch_string() {
-        snprintf(pitch_string, 40, "%s %s: %s, %s, %s, %s", get_note_name_c(chord_root), chord_type!=CHORD::NONE?chords[chord_type].label:"N/A", get_note_name_c(pitches[0]), get_note_name_c(pitches[1]), get_note_name_c(pitches[2]), get_note_name_c(pitches[3]));
+        snprintf(pitch_string, 40, "%s %6s: %s, %s, %s, %s", get_note_name_c(chord_root), chord_type!=CHORD::NONE?chords[chord_type].label:"N/A", get_note_name_c(pitches[0]), get_note_name_c(pitches[1]), get_note_name_c(pitches[2]), get_note_name_c(pitches[3]));
         return pitch_string;
     }
     void set(CHORD::Type type, int8_t root) {
@@ -110,7 +110,7 @@ class chord_instance_t {
     void clear() {
         this->chord_type = CHORD::NONE;
         this->chord_root = -1;
-        memset(pitches, 0, sizeof(pitches));
+        memset(pitches, -1, sizeof(pitches));
     }
     /*void copy_from(chord_instance_t source) {
         memcpy(this, source, sizeof(chord_instance_t));
