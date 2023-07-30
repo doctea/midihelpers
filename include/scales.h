@@ -51,18 +51,28 @@ struct chord_t {
 };
 
 const chord_t chords[] = {
-    { "Triad",           { 0, 2, 4, -1 } },
-    { "Sus2",            { 0, 1, 4, -1 } },
-    { "Sus4",            { 0, 3, 4, -1 } },
-    { "7",               { 0, 2, 4,  6 } },
+    { "Triad",       { 0, 2, 4, -1 } },
+    { "Sus 2",       { 0, 1, 4, -1 } },
+    { "Sus 4",       { 0, 3, 4, -1 } },
+    { "Seven",       { 0, 2, 4,  6 } },
+    { "Oct+1",       { 0, 7, -1, -1 } },
+    { "Oct+2",       { 0, 7, 14, -1 } },
+    { "Oct+3",       { 0, 7, 14, 21 } },
 };
-enum CHORD {
-    TRIAD,
-    SUS2,
-    SUS4,
-    SEVENTH,
-    NONE
+
+namespace CHORD_ID {
+    typedef int Type;
+    const int 
+        TRIAD = 0,
+        SUS2 = 1,
+        SUS4 = 2,
+        SEVENTH = 3,
+        OCTAVE_1 = 4,
+        OCTAVE_2 = 5,
+        OCTAVE_3 = 6,
+        NONE = 7;
 };
+
 #define NUMBER_CHORDS (sizeof(chords)/sizeof(chord_t))
 
 SCALE& operator++(SCALE& orig);
@@ -71,6 +81,6 @@ SCALE& operator--(SCALE& orig);
 SCALE& operator--(SCALE& orig, int);
 
 int8_t quantise_pitch(int8_t pitch, int8_t root_note = SCALE_ROOT_A, SCALE scale_number = SCALE::MAJOR);
-int8_t quantise_pitch_chord_note(int8_t pitch, CHORD chord_number, int8_t note_of_chord, int8_t root_note, SCALE scale_number);
+int8_t quantise_pitch_chord_note(int8_t pitch, CHORD_ID::Type chord_number, int8_t note_of_chord, int8_t root_note, SCALE scale_number);
 
 #endif

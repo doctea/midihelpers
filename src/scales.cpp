@@ -67,7 +67,8 @@ int8_t quantise_pitch(int8_t pitch, int8_t scale_root, SCALE scale_number) {
   return last_interval;
 }
 
-int8_t quantise_pitch_chord_note(int8_t chord_root, CHORD chord_number, int8_t note_of_chord, int8_t scale_root, SCALE scale_number) {
+// find the Nth note of a given chord in a given scale
+int8_t quantise_pitch_chord_note(int8_t chord_root, CHORD_ID::Type chord_number, int8_t note_of_chord, int8_t scale_root, SCALE scale_number) {
   // need to find the scale degree of the pitch in the chosen scale...
   // eg if pitch is a C and scale_root is C Major, then degree number should be 0
   //    if pitch is a D and scale_root is C Major, then degree number should be 1
@@ -101,6 +102,7 @@ int8_t quantise_pitch_chord_note(int8_t chord_root, CHORD chord_number, int8_t n
 
   int8_t chord_root_pitch = chord_root - root_pitch_offset;
   int8_t chord_target_degree = (root_pitch_degree + ch->degree_number[note_of_chord]) % PITCHES_PER_SCALE;
+  int8_t chord_target_octave = (root_pitch_degree + ch->degree_number[note_of_chord]) / PITCHES_PER_SCALE;
 
   if (chord_target_degree==-1)
     return -1;
@@ -108,7 +110,7 @@ int8_t quantise_pitch_chord_note(int8_t chord_root, CHORD chord_number, int8_t n
   if (debug) Serial.printf("got chord_root_pitch %3s (%i), \t", get_note_name_c(chord_root_pitch), chord_root_pitch);
   if (debug) Serial.printf("got chord_target_degree (%i), \t", chord_target_degree);
 
-  int8_t actual_pitch = sc->valid_chromatic_pitches[chord_target_degree];
+  int8_t actual_pitch = (chord_target_octave*12) + sc->valid_chromatic_pitches[chord_target_degree];
   actual_pitch += chord_root_pitch;
 
   if (debug) Serial.printf("got note %3s (%i)", get_note_name_c(actual_pitch), actual_pitch);
