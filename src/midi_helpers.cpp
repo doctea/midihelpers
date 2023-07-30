@@ -16,6 +16,10 @@ String get_note_name(int pitch) {
   return s;
 }
 
+const char *note_names[] = {
+  "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
+};
+
 // todo: version that will return GM drum name
 const char *get_note_name_c(int pitch) {
   if (!is_valid_note(pitch)) {
@@ -23,9 +27,7 @@ const char *get_note_name_c(int pitch) {
   }
   int octave = pitch / 12;
   int chromatic_degree = pitch % 12;
-  const char *note_names[] = {
-    "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
-  };
+
   static char note_name[4];
   snprintf(note_name, 4, "%s%i", note_names[chromatic_degree], octave);
   return note_name;

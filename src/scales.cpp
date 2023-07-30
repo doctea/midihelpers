@@ -74,11 +74,11 @@ int8_t quantise_pitch_chord_note(int8_t chord_root, CHORD::Type chord_number, in
   if (note_of_chord>=4 || chords[chord_number].degree_number[note_of_chord]==-1)
     return -1;
 
-  if (debug) Serial.printf("quantise_pitch_chord_note(%3s\t, %s, %i, %i, %s):\t", get_note_name_c(chord_root), chords[chord_number].label, note_of_chord, scale_root, scales[scale_number].label);
+  if (debug) Serial.printf("quantise_pitch_chord_note(%3s\t, %s, %i, %s, %s):\t", get_note_name_c(chord_root), chords[chord_number].label, note_of_chord, get_note_name_c(scale_root), scales[scale_number].label);
 
   // get pointers to the selected scale and chord 
-  scale_t *sc = &scales[scale_number];
-  chord_t *ch = &chords[chord_number];
+  const scale_t *sc = &scales[scale_number];
+  const chord_t *ch = &chords[chord_number];
 
   // need to find the scale degree of the pitch in the chosen scale...
   // eg if pitch is a C and scale_root is C Major, then degree number should be 0

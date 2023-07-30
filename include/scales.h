@@ -30,6 +30,8 @@ const scale_t scales[] = {
     { "Minor (Harmonic)", { 0, 2, 3, 5, 7, 8, 11 }},
     { "Minor (Hungarian)",{ 0, 2, 3, 6, 7, 8, 11 }},
     { "Lydian",           { 0, 2, 4, 6, 7, 9, 11 }},
+    { "Mixolydian",       { 0, 2, 4, 5, 7, 9, 10 }},
+    { "Phrygian",         { 0, 1, 3, 5, 7, 8, 10 }},
     { "Whole-tone",       { 0, 2, 4, 6, 8, 10, (12) }}
 };
 enum SCALE {
