@@ -225,3 +225,18 @@ class ObjectScaleMenuItemBar : public SubMenuItemBar {
     }
 
 };
+
+
+class ChordMenuItem : public MenuItem {
+    public:
+    chord_instance_t *chord_data = nullptr;
+    ChordMenuItem(const char *label, chord_instance_t *chord_data) : MenuItem(label) {
+        this->chord_data = chord_data;
+        this->selectable = false;
+    }
+
+    int display(Coord pos, bool selected, bool opened) override {
+        pos.y = this->header(this->chord_data->get_pitch_string(), pos, selected, opened);
+        return pos.y;
+    }
+};

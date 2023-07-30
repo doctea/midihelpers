@@ -77,6 +77,46 @@ namespace CHORD {
 
 #define NUMBER_CHORDS (sizeof(chords)/sizeof(chord_t))
 
+
+class chord_instance_t {
+    public:
+    SCALE scale = SCALE::MAJOR;
+    CHORD::Type chord_type = CHORD::NONE;
+    int8_t chord_root = -1;
+    int8_t pitches[PITCHES_PER_CHORD] = { -1, -1, -1, -1 };
+
+    const char *get_label() {
+        return chords[chord_type].label;
+    }
+    char pitch_string[40];
+    const char *get_pitch_string() {
+        snprintf(pitch_string, 40, "%s %s: %s, %s, %s, %s", get_note_name_c(chord_root), chord_type!=CHORD::NONE?chords[chord_type].label:"N/A", get_note_name_c(pitches[0]), get_note_name_c(pitches[1]), get_note_name_c(pitches[2]), get_note_name_c(pitches[3]));
+        return pitch_string;
+    }
+    void set(CHORD::Type type, int8_t root) {
+        //this->clear();
+        this->chord_type = type;
+        this->chord_root = root;
+    }
+    void set_chord_type(CHORD::Type type) {
+        this->chord_type = type;
+    }
+    void set_chord_root(int8_t root) {
+        this->chord_root = root;
+    }
+    void set_pitch(int note_number, int8_t pitch) {
+        pitches[note_number] = pitch;
+    }
+    void clear() {
+        this->chord_type = CHORD::NONE;
+        this->chord_root = -1;
+        memset(pitches, 0, sizeof(pitches));
+    }
+    /*void copy_from(chord_instance_t source) {
+        memcpy(this, source, sizeof(chord_instance_t));
+    }*/
+};
+
 SCALE& operator++(SCALE& orig);
 SCALE& operator++(SCALE& orig, int);
 SCALE& operator--(SCALE& orig);
