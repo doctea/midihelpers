@@ -171,7 +171,7 @@ class ObjectScaleMenuItemBar : public SubMenuItemBar {
 
     void set_scale(int scale_number) {
         if (this->target_object!=nullptr && this->scale_setter_func!=nullptr)
-            (this->target_object->*scale_setter_func)(scale_number);
+            (this->target_object->*scale_setter_func)((SCALE)scale_number);
     }
     int get_scale() {
         if (this->target_object!=nullptr && this->scale_getter_func!=nullptr)

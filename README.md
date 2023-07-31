@@ -28,3 +28,4 @@ Helpers for some MIDI stuff common to my [usb_midi_clocker](https://github.com/d
 ## todo
 
 - a class to make it simple to track which notes are held by an input or output
+- chord inversions
