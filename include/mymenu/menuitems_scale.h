@@ -114,7 +114,7 @@ class ObjectScaleMenuItem : public ScaleMenuItem {
         SCALE(TargetClass::*scale_getter_func)(void),
         void(TargetClass::*scale_root_setter_func)(int),
         int(TargetClass::*scale_root_getter_func)(void),
-        bool full_display
+        bool full_display = false
     ) : ScaleMenuItem(label, full_display),
         target(target),
         scale_setter_func(scale_setter_func),

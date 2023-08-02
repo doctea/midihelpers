@@ -72,7 +72,7 @@ class ClockSourceSelectorControl : public SelectorControl<int> {
             if (tft->getCursorX()>0) // if we haven't wrapped onto next line then do it manually
                 tft->println((char*)"");
         }
-        return tft->getCursorY();
+        return tft->getCursorY() + 2;
     }
 
     virtual bool button_select() {
