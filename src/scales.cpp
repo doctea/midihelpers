@@ -1,3 +1,8 @@
+#ifdef ARDUINO
+  #include <Arduino.h>
+#else
+  #include <cinttypes>
+#endif
 
 #include "scales.h"
 
@@ -57,10 +62,10 @@ int8_t quantise_pitch(int8_t pitch, int8_t scale_root, SCALE scale_number) {
 }
 
 // find the Nth note of a given chord in a given scale
-int8_t quantise_pitch_chord_note(int8_t chord_root, CHORD::Type chord_number, int8_t note_of_chord, int8_t scale_root, SCALE scale_number, bool debug) {
+int8_t quantise_pitch_chord_note(int8_t chord_root, CHORD::Type chord_number, int8_t note_of_chord, int8_t scale_root, SCALE scale_number, int inversion, bool debug) {
   //bool debug = false; //true;
 
-  if (note_of_chord>=4 || chords[chord_number].degree_number[note_of_chord]==-1)
+  if (note_of_chord>=PITCHES_PER_CHORD || chords[chord_number].degree_number[note_of_chord]==-1)
     return -1;
 
   // get pointers to the selected scale and chord 
@@ -101,6 +106,23 @@ int8_t quantise_pitch_chord_note(int8_t chord_root, CHORD::Type chord_number, in
   int8_t chord_root_pitch = chord_root - root_pitch_offset;
   int8_t chord_target_degree = (root_pitch_degree + ch->degree_number[note_of_chord]) % PITCHES_PER_SCALE;
   int8_t chord_target_octave = (root_pitch_degree + ch->degree_number[note_of_chord]) / PITCHES_PER_SCALE;
+
+  // C E G                                                                  C E G
+  // To invert a chord, move the bottom note up an octave.  yields E G C    E G C   first+1
+  // To get a second inversion triad, move the third up an octave. G C E    G C E   first+1, second+1
+  // A triad with the 5th of the chord in the bass is called a triad in second inversion.
+
+  // For example, the notes of the C dominant 7th chord are C, E, G and Bb. 
+  // In root position, the notes of Cdom7 are C-E-G-Bb. 
+  // In its 1st inversion, it’s               E-G-Bb-C.   first+1                       so when inversion = 1, 0 should be raised
+  // In its 2nd inversion, it’s               G-Bb-C-E.   first+1, second+1             so when inversion = 2, 0 and 1 should be raised
+  // In its 3rd inversion, it’s               Bb-C-E-G.   first+1, second+1, third+1    so when inversion = 3, 0 and 1 and 2 should be raised
+
+  if (/*inversion>0 &&*/ inversion > note_of_chord) {
+    if (debug) Serial.printf("inversion is %i and note_of_chord is %i, so increasing chord_target_octave + 1 to %i\n", inversion, note_of_chord, chord_target_octave+1);
+    chord_target_octave += 1;
+  }
+  chord_target_octave = constrain(chord_target_octave, 0, MAXIMUM_OCTAVE);
 
   // no note at this position in the chord, return nothing
   if (chord_target_degree==-1) {

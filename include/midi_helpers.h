@@ -1,7 +1,12 @@
 #ifndef MIDI_HELPERS__INCLUDED
 #define MIDI_HELPERS__INCLUDED
 
-#include <Arduino.h>
+#ifdef ARDUINO
+  #include <Arduino.h>
+#else
+  #include <cinttypes>
+  #include <string.h>
+#endif
 
 #define NOTE_OFF -1
 

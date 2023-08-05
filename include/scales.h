@@ -1,6 +1,12 @@
 #ifndef SCALES_H__INCLUDED
 #define SCALES_H__INCLUDED
 
+#ifdef ARDUINO
+  #include <Arduino.h>
+#else
+  #include <cinttypes>
+#endif
+
 #include "midi_helpers.h"
 
 #define SCALE_ROOT_C       0
@@ -18,9 +24,11 @@
 
 #define PITCHES_PER_SCALE 7
 
+#define MAXIMUM_OCTAVE     9
+
 struct scale_t {
     const char *label;
-    byte valid_chromatic_pitches[PITCHES_PER_SCALE];
+    int8_t valid_chromatic_pitches[PITCHES_PER_SCALE];
 };
 
 const scale_t scales[] = {
@@ -47,16 +55,18 @@ enum SCALE {
 
 
 #define PITCHES_PER_CHORD 4
+#define MAXIMUM_INVERSIONS  PITCHES_PER_CHORD
 struct chord_t {
     const char *label;
     int8_t degree_number[PITCHES_PER_CHORD];
 };
 
 const chord_t chords[] = {
-    { "Triad",       { 0, 2, 4, -1 } },
-    { "Sus 2",       { 0, 1, 4, -1 } },
-    { "Sus 4",       { 0, 3, 4, -1 } },
-    { "Seven",       { 0, 2, 4,  6 } },
+    { "Triad",       { 0, 2, 4, -1  } },
+    { "Sus 2",       { 0, 1, 4, -1  } },
+    { "Sus 4",       { 0, 3, 4, -1  } },
+    { "Seven",       { 0, 2, 4,  6  } },
+    { "Ninth",       { 0, 2, 6,  8  } },
     { "Oct+1",       { 0, 7, -1, -1 } },
     { "Oct+2",       { 0, 7, 14, -1 } },
     { "Oct+3",       { 0, 7, 14, 21 } },
@@ -69,10 +79,11 @@ namespace CHORD {
         SUS2 = 1,
         SUS4 = 2,
         SEVENTH = 3,
-        OCTAVE_1 = 4,
-        OCTAVE_2 = 5,
-        OCTAVE_3 = 6,
-        NONE = 7;
+        NINTH = 4,
+        OCTAVE_1 = 5,
+        OCTAVE_2 = 6,
+        OCTAVE_3 = 7,
+        NONE = 8;
 };
 
 #define NUMBER_CHORDS (sizeof(chords)/sizeof(chord_t))
@@ -84,6 +95,7 @@ class chord_instance_t {
     CHORD::Type chord_type = CHORD::NONE;
     int8_t chord_root = -1;
     int8_t pitches[PITCHES_PER_CHORD] = { -1, -1, -1, -1 };
+    int8_t inversion = 0;
     bool changed = true;
 
     const char *get_label() {
@@ -92,15 +104,25 @@ class chord_instance_t {
     char pitch_string[40];
     const char *get_pitch_string() {
         if (changed) {
-            snprintf(pitch_string, 40, "%3s %6s: %3s,%3s,%3s,%3s", get_note_name_c(chord_root), chord_type!=CHORD::NONE?chords[chord_type].label:"N/A", get_note_name_c(pitches[0]), get_note_name_c(pitches[1]), get_note_name_c(pitches[2]), get_note_name_c(pitches[3]));
+            snprintf(pitch_string, 40, 
+                "%3s %6s: %3s,%3s,%3s,%3s (%i)", 
+                get_note_name_c(chord_root), 
+                chord_type!=CHORD::NONE?chords[chord_type].label : "N/A", 
+                get_note_name_c(pitches[0]), 
+                get_note_name_c(pitches[1]), 
+                get_note_name_c(pitches[2]), 
+                get_note_name_c(pitches[3]), 
+                inversion
+            );
             changed = false;
         }
         return pitch_string;
     }
-    void set(CHORD::Type type, int8_t root) {
+    void set(CHORD::Type type, int8_t root, int8_t inversion = 0) {
         //this->clear();
         this->chord_type = type;
         this->chord_root = root;
+        this->inversion = inversion;
         this->changed = true;
     }
     void set_chord_type(CHORD::Type type) {
@@ -113,6 +135,10 @@ class chord_instance_t {
     }
     void set_pitch(int note_number, int8_t pitch) {
         pitches[note_number] = pitch;
+        this->changed = true;
+    }
+    void set_inversion(int8_t inversion) {
+        this->inversion = inversion;
         this->changed = true;
     }
     void clear() {
@@ -132,6 +158,6 @@ SCALE& operator--(SCALE& orig);
 SCALE& operator--(SCALE& orig, int);
 
 int8_t quantise_pitch(int8_t pitch, int8_t root_note = SCALE_ROOT_A, SCALE scale_number = SCALE::MAJOR);
-int8_t quantise_pitch_chord_note(int8_t pitch, CHORD::Type chord_number, int8_t note_of_chord, int8_t root_note, SCALE scale_number, bool debug = false);
+int8_t quantise_pitch_chord_note(int8_t pitch, CHORD::Type chord_number, int8_t note_of_chord, int8_t root_note, SCALE scale_number, int inversion = 0, bool debug = false);
 
 #endif

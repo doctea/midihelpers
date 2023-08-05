@@ -189,10 +189,26 @@ class ObjectScaleMenuItemBar : public SubMenuItemBar {
     ) : SubMenuItemBar(label) {
         //this->debug = true;
 
+        this->target_object = target_object;
+
+        // assign these to self, so that we can proxy them via this->set_scale and this->get_scale
         this->scale_setter_func = scale_setter_func;
         this->scale_getter_func = scale_getter_func;
 
-        this->target_object = target_object;
+        ObjectSelectorControl<TargetClass,int> *scale_root = new ObjectSelectorControl<TargetClass,int>(
+            "Root key", 
+            this->target_object, 
+            scale_root_setter_func, 
+            scale_root_getter_func,
+            nullptr,
+            true
+        );
+        for (size_t i = 0 ; i < 12 ; i++) {
+            scale_root->add_available_value(i, note_names[i]);
+        }
+        scale_root->go_back_on_select = true;
+        this->add(scale_root);
+
 
         // use self as intermediary to real target object in order to wrap int/SCALE type
         ObjectSelectorControl<ObjectScaleMenuItemBar,int> *scale_selector = new ObjectSelectorControl<ObjectScaleMenuItemBar,int>(
@@ -208,20 +224,6 @@ class ObjectScaleMenuItemBar : public SubMenuItemBar {
         }   
         scale_selector->go_back_on_select = true;
         this->add(scale_selector);
-
-        ObjectSelectorControl<TargetClass,int> *scale_root = new ObjectSelectorControl<TargetClass,int>(
-            "Root key", 
-            this->target_object, 
-            scale_root_setter_func, 
-            scale_root_getter_func,
-            nullptr,
-            true
-        );
-        for (size_t i = 0 ; i < 12 ; i++) {
-            scale_root->add_available_value(i, note_names[i]);
-        }
-        scale_root->go_back_on_select = true;
-        this->add(scale_root);
     }
 
 };

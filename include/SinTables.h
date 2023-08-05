@@ -4,7 +4,11 @@
 // from https://forum.arduino.cc/index.php?topic=69723.0 with thanks
 // only skimmed before i yoinked, might be a faster/more accurate version in the thread
 
-#include <Arduino.h>
+#ifdef ARDUINO
+  #include <Arduino.h>
+#else
+  #include <cinttypes>
+#endif
 
 extern unsigned int isinTable16[];
 extern uint8_t isinTable8[];

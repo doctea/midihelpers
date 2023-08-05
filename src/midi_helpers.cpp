@@ -1,4 +1,8 @@
-#include <Arduino.h>
+#ifdef ARDUINO
+  #include <Arduino.h>
+#else
+  #include <string.h>
+#endif  
 #include "midi_helpers.h"
 
 String get_note_name(int pitch) {

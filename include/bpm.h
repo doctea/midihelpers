@@ -1,7 +1,11 @@
 #ifndef BPM__INCLUDED
 #define BPM__INCLUDED
 
-#include <Arduino.h>
+#ifdef ARDUINO
+  #include <Arduino.h>
+#else
+  #include <cinttypes>
+#endif
 
 #ifndef PPQN
   #define PPQN  24
