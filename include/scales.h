@@ -96,6 +96,7 @@ class chord_instance_t {
     int8_t chord_root = -1;
     int8_t pitches[PITCHES_PER_CHORD] = { -1, -1, -1, -1 };
     int8_t inversion = 0;
+    int8_t velocity = 127;
     bool changed = true;
 
     const char *get_label() {
@@ -105,24 +106,26 @@ class chord_instance_t {
     const char *get_pitch_string() {
         if (changed) {
             snprintf(pitch_string, 40, 
-                "%3s %6s: %3s,%3s,%3s,%3s (%i)", 
+                "%3s %6s: %3s,%3s,%3s,%3s inv%i,ve=%i", 
                 get_note_name_c(chord_root), 
                 chord_type!=CHORD::NONE?chords[chord_type].label : "N/A", 
                 get_note_name_c(pitches[0]), 
                 get_note_name_c(pitches[1]), 
                 get_note_name_c(pitches[2]), 
                 get_note_name_c(pitches[3]), 
-                inversion
+                inversion,
+                velocity
             );
             changed = false;
         }
         return pitch_string;
     }
-    void set(CHORD::Type type, int8_t root, int8_t inversion = 0) {
+    void set(CHORD::Type type, int8_t root, int8_t inversion = 0, int8_t velocity = 0) {
         //this->clear();
         this->chord_type = type;
         this->chord_root = root;
         this->inversion = inversion;
+        this->velocity = velocity;
         this->changed = true;
     }
     void set_chord_type(CHORD::Type type) {
@@ -141,9 +144,15 @@ class chord_instance_t {
         this->inversion = inversion;
         this->changed = true;
     }
+    void set_velocity(int8_t velocity) {
+        this->velocity = velocity;
+        this->changed = true;
+    }
     void clear() {
         this->chord_type = CHORD::NONE;
         this->chord_root = -1;
+        this->inversion = 0;
+        this->velocity = 0;
         memset(pitches, -1, sizeof(pitches));
         this->changed = true;
     }
