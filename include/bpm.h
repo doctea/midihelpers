@@ -52,6 +52,7 @@ inline bool is_bpm_on_half_bar(uint32_t  ticks,   unsigned long offset = 0) { re
 inline bool is_bpm_on_beat(uint32_t  ticks,       unsigned long offset = 0) { return ticks==offset || ticks%(PPQN)     == offset; }
 inline bool is_bpm_on_eighth(uint32_t  ticks,     unsigned long offset = 0) { return ticks==offset || ticks%(PPQN/(STEPS_PER_BEAT/2))   == offset; }
 inline bool is_bpm_on_sixteenth(uint32_t  ticks,  unsigned long offset = 0) { return ticks==offset || ticks%(PPQN/STEPS_PER_BEAT)   == offset; }
+inline bool is_bpm_on_thirtysecond(uint32_t  ticks,  unsigned long offset = 0) { return ticks==offset || ticks%(PPQN/STEPS_PER_BEAT*2)   == offset; }
 
 inline bool is_bpm_on_multiplier(unsigned long ticks, float multiplier, unsigned long offset = 0) {
   unsigned long p = ((float)PPQN*multiplier);
