@@ -242,3 +242,12 @@ class ChordMenuItem : public MenuItem {
         return pos.y;
     }
 };
+
+template<class TargetClass, class DataType>
+class ObjectScaleNoteMenuItem : public ObjectNumberControl<TargetClass, DataType> {
+    public:
+
+    virtual const char *getFormattedValue(DataType value) override {
+        return get_note_name_c(value);
+    }
+};
