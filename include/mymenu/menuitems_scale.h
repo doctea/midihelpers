@@ -247,7 +247,20 @@ template<class TargetClass, class DataType>
 class ObjectScaleNoteMenuItem : public ObjectNumberControl<TargetClass, DataType> {
     public:
 
-    virtual const char *getFormattedValue(DataType value) override {
+    ObjectScaleNoteMenuItem(const char* label, 
+                        TargetClass *target_object, 
+                        void(TargetClass::*setter_func)(DataType), 
+                        DataType(TargetClass::*getter_func)(), 
+                        void (*on_change_handler)(DataType last_value, DataType new_value),
+                        DataType minimum_value,
+                        DataType maximum_value,
+                        bool go_back_on_select = false,
+                        bool direct = false
+                ) 
+    : ObjectNumberControl<TargetClass,DataType>(label, target_object, setter_func, getter_func, on_change_handler, minimum_value, maximum_value, go_back_on_select, direct) {
+    }
+
+    virtual const char *getFormattedValue(int value) override {
         return get_note_name_c(value);
     }
 };
