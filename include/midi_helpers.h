@@ -11,6 +11,7 @@
 #define NOTE_OFF -1
 
 #define MIDI_MAX_VELOCITY 127
+#define MIDI_MIN_VELOCITY 0
 #define MIDI_MAX_NOTE     127
 #define MIDI_MIN_NOTE     0
 
