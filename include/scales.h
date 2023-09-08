@@ -1,4 +1,6 @@
-#pragma GCC diagnostic ignored "-Wformat-truncation"
+#if (defined __GNUC__) && (__GNUC__ >= 5) && (__GNUC_MINOR__ >= 4) && (__GNUC_PATCHLEVEL__ > 1)
+    #pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
 
 #ifndef SCALES_H__INCLUDED
 #define SCALES_H__INCLUDED
