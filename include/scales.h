@@ -1,3 +1,5 @@
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+
 #ifndef SCALES_H__INCLUDED
 #define SCALES_H__INCLUDED
 
@@ -106,7 +108,7 @@ class chord_instance_t {
     const char *get_pitch_string() {
         if (changed) {
             snprintf(pitch_string, 40, 
-                "%3s %6s: %3s,%3s,%3s,%3s inv%i,ve=%i", 
+                "%3s %6s: %3s,%3s,%3s,%3s inv%1i,ve=%3i", 
                 get_note_name_c(chord_root), 
                 chord_type!=CHORD::NONE?chords[chord_type].label : "N/A", 
                 get_note_name_c(pitches[0]), 

@@ -1,3 +1,6 @@
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
+
 #ifndef MIDI_HELPERS__INCLUDED
 #define MIDI_HELPERS__INCLUDED
 
