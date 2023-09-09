@@ -45,43 +45,19 @@ volatile extern float bpm_current; //BPM_MINIMUM; //60.0f;
 #define BPM_CURRENT_STEP_OF_PHRASE  (ticks % (PPQN*BEATS_PER_BAR*BARS_PER_PHRASE) / (PPQN/STEPS_PER_BEAT))
 #define BPM_CURRENT_BEAT_OF_PHRASE  (ticks % (PPQN*BEATS_PER_BAR*BARS_PER_PHRASE) / (PPQN))
 
-inline bool is_bpm_on_phrase(uint32_t ticks,      unsigned long offset = 0) { return ticks==offset || ticks%(PPQN*BEATS_PER_BAR*BARS_PER_PHRASE) == offset; }
-inline bool is_bpm_on_half_phrase(uint32_t ticks, unsigned long offset = 0) { return ticks==offset || ticks%(PPQN*BEATS_PER_BAR*(BARS_PER_PHRASE/2)) == offset; }
-inline bool is_bpm_on_bar(uint32_t    ticks,      unsigned long offset = 0) { return ticks==offset || ticks%(PPQN*BEATS_PER_BAR)   == offset; }
-inline bool is_bpm_on_half_bar(uint32_t  ticks,   unsigned long offset = 0) { return ticks==offset || ticks%(PPQN*(BEATS_PER_BAR/2))   == offset; }
-inline bool is_bpm_on_beat(uint32_t  ticks,       unsigned long offset = 0) { return ticks==offset || ticks%(PPQN)     == offset; }
-inline bool is_bpm_on_eighth(uint32_t  ticks,     unsigned long offset = 0) { return ticks==offset || ticks%(PPQN/(STEPS_PER_BEAT/2))   == offset; }
-inline bool is_bpm_on_sixteenth(uint32_t  ticks,  unsigned long offset = 0) { return ticks==offset || ticks%(PPQN/STEPS_PER_BEAT)   == offset; }
-inline bool is_bpm_on_thirtysecond(uint32_t  ticks,  unsigned long offset = 0) { return ticks==offset || ticks%(PPQN/STEPS_PER_BEAT*2)   == offset; }
+int beat_number_from_ticks(signed long ticks);
+int step_number_from_ticks(signed long ticks);
 
-inline bool is_bpm_on_multiplier(unsigned long ticks, float multiplier, unsigned long offset = 0) {
-  unsigned long p = ((float)PPQN*multiplier);
-#ifdef DEBUG_BPM
-  Serial.print(F("is_bpm_on_multiplier(ticks="));
-  Serial.print(ticks);
-  Serial.print(F(", multiplier="));
-  Serial.print(multiplier);
-  Serial.print(F(", offset="));
-  Serial.print(offset);
-  Serial.print(F(") checking ticks "));
-  Serial.print(ticks);
-  Serial.print(F(" with PPQN*multiplier "));
-  Serial.print(p);
-  Serial.print(F(" against offset "));
-  Serial.print(offset);
-  Serial.print(F(" == ticks%p = "));
-  Serial.print(ticks%p);
-  Serial.print(F(" ? ="));
-#endif
+bool is_bpm_on_phrase(uint32_t ticks,      unsigned long offset = 0);
+bool is_bpm_on_half_phrase(uint32_t ticks, unsigned long offset = 0);
+bool is_bpm_on_bar(uint32_t    ticks,      unsigned long offset = 0);
+bool is_bpm_on_half_bar(uint32_t  ticks,   unsigned long offset = 0);
+bool is_bpm_on_beat(uint32_t  ticks,       unsigned long offset = 0);
+bool is_bpm_on_eighth(uint32_t  ticks,     unsigned long offset = 0);
+bool is_bpm_on_sixteenth(uint32_t  ticks,  unsigned long offset = 0);
+bool is_bpm_on_thirtysecond(uint32_t  ticks,  unsigned long offset = 0);
 
-  bool v = (ticks==offset || ticks%p == offset);  
-
-#ifdef DEBUG_BPM
-  Serial.print(v ? F("true!") : F("false!"));
-  Serial.println();
-#endif
-  return v;
-}
+bool is_bpm_on_multiplier(unsigned long ticks, float multiplier, unsigned long offset = 0);
 
 void set_bpm(float new_bpm);
 float get_bpm();

@@ -12,6 +12,45 @@ volatile bool playing = true;
 bool single_step = false;
 bool restart_on_next_bar = false;
 
+
+bool is_bpm_on_phrase(uint32_t ticks,      unsigned long offset) { return ticks==offset || ticks%(PPQN*BEATS_PER_BAR*BARS_PER_PHRASE) == offset; }
+bool is_bpm_on_half_phrase(uint32_t ticks, unsigned long offset) { return ticks==offset || ticks%(PPQN*BEATS_PER_BAR*(BARS_PER_PHRASE/2)) == offset; }
+bool is_bpm_on_bar(uint32_t    ticks,      unsigned long offset) { return ticks==offset || ticks%(PPQN*BEATS_PER_BAR)   == offset; }
+bool is_bpm_on_half_bar(uint32_t  ticks,   unsigned long offset) { return ticks==offset || ticks%(PPQN*(BEATS_PER_BAR/2))   == offset; }
+bool is_bpm_on_beat(uint32_t  ticks,       unsigned long offset) { return ticks==offset || ticks%(PPQN)     == offset; }
+bool is_bpm_on_eighth(uint32_t  ticks,     unsigned long offset) { return ticks==offset || ticks%(PPQN/(STEPS_PER_BEAT/2))   == offset; }
+bool is_bpm_on_sixteenth(uint32_t  ticks,  unsigned long offset) { return ticks==offset || ticks%(PPQN/STEPS_PER_BEAT)   == offset; }
+bool is_bpm_on_thirtysecond(uint32_t  ticks,  unsigned long offset) { return ticks==offset || ticks%(PPQN/STEPS_PER_BEAT*2)   == offset; }
+
+bool is_bpm_on_multiplier(unsigned long ticks, float multiplier, unsigned long offset) {
+  unsigned long p = ((float)PPQN*multiplier);
+  #ifdef DEBUG_BPM
+    Serial.print(F("is_bpm_on_multiplier(ticks="));
+    Serial.print(ticks);
+    Serial.print(F(", multiplier="));
+    Serial.print(multiplier);
+    Serial.print(F(", offset="));
+    Serial.print(offset);
+    Serial.print(F(") checking ticks "));
+    Serial.print(ticks);
+    Serial.print(F(" with PPQN*multiplier "));
+    Serial.print(p);
+    Serial.print(F(" against offset "));
+    Serial.print(offset);
+    Serial.print(F(" == ticks%p = "));
+    Serial.print(ticks%p);
+    Serial.print(F(" ? ="));
+  #endif
+
+  bool v = (ticks==offset || ticks%p == offset);  
+
+  #ifdef DEBUG_BPM
+    Serial.print(v ? F("true!") : F("false!"));
+    Serial.println();
+  #endif
+  return v;
+}
+
 void set_bpm(float new_bpm) {
   if (bpm_current!=new_bpm) {
     bpm_current = new_bpm;
@@ -44,4 +83,11 @@ void set_restart_on_next_bar_on() {
 }
 bool is_restart_on_next_bar() {
   return restart_on_next_bar;
+}
+
+int beat_number_from_ticks(signed long ticks) {  // TODO: move this into midihelpers + make it a macro?
+  return (ticks / PPQN) % BEATS_PER_BAR;
+}
+int step_number_from_ticks(signed long ticks) {  // TODO: move this into midihelpers + make it a macro?
+  return (ticks / (PPQN)) % (STEPS_PER_BAR/2);
 }
