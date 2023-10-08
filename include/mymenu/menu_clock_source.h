@@ -22,7 +22,11 @@ class ClockSourceSelectorControl : public SelectorControl<int> {
         if (index==CLOCK_INTERNAL)
             return "Internal";
         else if (index==CLOCK_EXTERNAL_USB_HOST)
-            return "External MIDI";
+            return "External USB-MIDI";
+        #ifdef ENABLE_CLOCK_INPUT_MIDI_DIN
+        else if (index==CLOCK_EXTERNAL_MIDI_DIN)
+            return "External DIN-MIDI";
+        #endif
         #ifdef ENABLE_CLOCK_INPUT_CV
         else if (index==CLOCK_EXTERNAL_CV)
             return "External CV";

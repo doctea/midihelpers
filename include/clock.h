@@ -13,6 +13,9 @@
 enum ClockMode {
   CLOCK_INTERNAL,
   CLOCK_EXTERNAL_USB_HOST,
+  #ifdef ENABLE_CLOCK_INPUT_MIDI_DIN
+    CLOCK_EXTERNAL_MIDI_DIN,
+  #endif
   #ifdef ENABLE_CLOCK_INPUT_CV
     CLOCK_EXTERNAL_CV,
   #endif
@@ -36,6 +39,15 @@ bool check_and_unset_pc_usb_midi_clock_ticked();
 void pc_usb_midi_handle_start();
 void pc_usb_midi_handle_stop();
 void pc_usb_midi_handle_continue();
+
+#ifdef ENABLE_CLOCK_INPUT_MIDI_DIN
+  void din_midi_handle_clock();
+  bool check_and_unset_din_midi_clock_ticked();
+
+  void din_midi_handle_start();
+  void din_midi_handle_stop();
+  void din_midi_handle_continue();
+#endif
 
 #ifdef ENABLE_CLOCK_INPUT_CV
   extern uint32_t external_cv_ticks_per_pulse;
