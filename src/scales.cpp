@@ -33,9 +33,41 @@ SCALE& operator--(SCALE& orig, int) {
     return rVal;
 }
 
+int8_t *global_scale_root = nullptr;
+SCALE  *global_scale_type = nullptr;
+
+void set_global_scale_root_target(int8_t *root_note) {
+    global_scale_root = root_note;
+}
+void set_global_scale_type_target(SCALE *scale_type) {
+    global_scale_type = scale_type;
+}
+
+int8_t get_global_scale_root() {
+  if (global_scale_root!=nullptr)
+    return *global_scale_root;
+  return SCALE_GLOBAL_ROOT;
+}
+SCALE get_global_scale_type() {
+  if (global_scale_type!=nullptr)
+    return *global_scale_type;
+  return SCALE::GLOBAL;
+}
+
 int8_t quantise_pitch(int8_t pitch, int8_t scale_root, SCALE scale_number) {
   if (!is_valid_note(pitch))
     return -1;
+
+  // check whether the scale_root and scale_number should be replaced with global versions...
+  // and if no value is set for global, return unquantised note and/or default to major scale
+  if (scale_root==SCALE_GLOBAL_ROOT)
+    scale_root = get_global_scale_root();
+  if (scale_root==SCALE_GLOBAL_ROOT)
+    return pitch;
+  if (scale_number==SCALE::GLOBAL)
+    scale_number = get_global_scale_type();
+  if (scale_number==SCALE::GLOBAL)
+    scale_number = SCALE::MAJOR;
 
   int octave = pitch/12;
   int chromatic_pitch = pitch % 12;

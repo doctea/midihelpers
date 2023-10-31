@@ -55,9 +55,10 @@ enum SCALE {
     MINOR_HARMONIC,
     MINOR_HUNGARIAN,
     LYDIAN,
-    WHOLE_TONE
+    WHOLE_TONE,
+    GLOBAL
 };
-#define NUMBER_SCALES (sizeof(scales)/sizeof(scale_t))
+#define NUMBER_SCALES ((sizeof(scales)/sizeof(scale_t))-1)
 
 
 #define PITCHES_PER_CHORD 4
@@ -171,6 +172,17 @@ SCALE& operator++(SCALE& orig);
 SCALE& operator++(SCALE& orig, int);
 SCALE& operator--(SCALE& orig);
 SCALE& operator--(SCALE& orig, int);
+
+#define SCALE_GLOBAL_ROOT (-1)
+
+extern int8_t   *global_scale_root;
+extern SCALE    *global_scale_type;
+
+void set_global_scale_root_target(int8_t *root_note);
+void set_global_scale_type_target(SCALE *scale_type);
+
+int8_t get_global_scale_root();
+SCALE get_global_scale_type();
 
 int8_t quantise_pitch(int8_t pitch, int8_t root_note = SCALE_ROOT_A, SCALE scale_number = SCALE::MAJOR);
 int8_t quantise_pitch_chord_note(int8_t pitch, CHORD::Type chord_number, int8_t note_of_chord, int8_t root_note, SCALE scale_number, int inversion = 0, bool debug = false);

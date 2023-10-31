@@ -169,6 +169,8 @@ class ObjectScaleMenuItemBar : public SubMenuItemBar {
     void(TargetClass::*scale_setter_func)(SCALE) = nullptr;
     SCALE(TargetClass::*scale_getter_func)(void) = nullptr;
 
+    bool allow_global = false;
+
     void set_scale(int scale_number) {
         if (this->target_object!=nullptr && this->scale_setter_func!=nullptr)
             (this->target_object->*scale_setter_func)((SCALE)scale_number);
@@ -184,8 +186,9 @@ class ObjectScaleMenuItemBar : public SubMenuItemBar {
         TargetClass *target_object,
         void(TargetClass::*scale_setter_func)(SCALE),
         SCALE(TargetClass::*scale_getter_func)(void),
-        void(TargetClass::*scale_root_setter_func)(int),
-        int(TargetClass::*scale_root_getter_func)(void)
+        void(TargetClass::*scale_root_setter_func)(int8_t),
+        int8_t(TargetClass::*scale_root_getter_func)(void),
+        bool allow_global = false
     ) : SubMenuItemBar(label) {
         //this->debug = true;
 
@@ -195,7 +198,9 @@ class ObjectScaleMenuItemBar : public SubMenuItemBar {
         this->scale_setter_func = scale_setter_func;
         this->scale_getter_func = scale_getter_func;
 
-        ObjectSelectorControl<TargetClass,int> *scale_root = new ObjectSelectorControl<TargetClass,int>(
+        this->allow_global = allow_global;
+
+        ObjectSelectorControl<TargetClass,int8_t> *scale_root = new ObjectSelectorControl<TargetClass,int8_t>(
             "Root key", 
             this->target_object, 
             scale_root_setter_func, 
@@ -203,6 +208,8 @@ class ObjectScaleMenuItemBar : public SubMenuItemBar {
             nullptr,
             true
         );
+        if (allow_global)
+            scale_root->add_available_value(-1, "[use global]");
         for (size_t i = 0 ; i < 12 ; i++) {
             scale_root->add_available_value(i, note_names[i]);
         }
@@ -219,15 +226,16 @@ class ObjectScaleMenuItemBar : public SubMenuItemBar {
             nullptr,
             true
         );
+        if (allow_global)
+            scale_selector->add_available_value(SCALE::GLOBAL, "[use global]");
         for (size_t i = 0 ; i < NUMBER_SCALES ; i++) {
             scale_selector->add_available_value(i, scales[i].label);
-        }   
+        }
         scale_selector->go_back_on_select = true;
         this->add(scale_selector);
     }
 
 };
-
 
 class ChordMenuItem : public MenuItem {
     public:
