@@ -160,6 +160,75 @@ class ObjectScaleMenuItem : public ScaleMenuItem {
 
 #include "submenuitem_bar.h"
 
+
+template<class TargetClass>
+class ObjectScaleMenuItemBar : public SubMenuItemBar {
+    public:
+    TargetClass *target_object = nullptr;
+
+    // have difficulty using SCALE type with ObjectSelectorControls, so wrap it as int
+    void(TargetClass::*scale_setter_func)(SCALE) = nullptr;
+    SCALE(TargetClass::*scale_getter_func)(void) = nullptr;
+
+    void set_scale(int scale_number) {
+        if (this->target_object!=nullptr && this->scale_setter_func!=nullptr)
+            (this->target_object->*scale_setter_func)((SCALE)scale_number);
+    }
+    int get_scale() {
+        if (this->target_object!=nullptr && this->scale_getter_func!=nullptr)
+            return(this->target_object->*scale_getter_func)();
+        return 0;
+    }
+
+    ObjectScaleMenuItemBar(
+        const char *label, 
+        TargetClass *target_object,
+        void(TargetClass::*scale_setter_func)(SCALE),
+        SCALE(TargetClass::*scale_getter_func)(void),
+        void(TargetClass::*scale_root_setter_func)(int),
+        int(TargetClass::*scale_root_getter_func)(void)
+    ) : SubMenuItemBar(label) {
+        //this->debug = true;
+
+        this->target_object = target_object;
+
+        // assign these to self, so that we can proxy them via this->set_scale and this->get_scale
+        this->scale_setter_func = scale_setter_func;
+        this->scale_getter_func = scale_getter_func;
+
+        ObjectSelectorControl<TargetClass,int> *scale_root = new ObjectSelectorControl<TargetClass,int>(
+            "Root key", 
+            this->target_object, 
+            scale_root_setter_func, 
+            scale_root_getter_func,
+            nullptr,
+            true
+        );
+        for (size_t i = 0 ; i < 12 ; i++) {
+            scale_root->add_available_value(i, note_names[i]);
+        }
+        scale_root->go_back_on_select = true;
+        this->add(scale_root);
+
+
+        // use self as intermediary to real target object in order to wrap int/SCALE type
+        ObjectSelectorControl<ObjectScaleMenuItemBar,int> *scale_selector = new ObjectSelectorControl<ObjectScaleMenuItemBar,int>(
+            "Scale type", 
+            this, 
+            &ObjectScaleMenuItemBar::set_scale, 
+            &ObjectScaleMenuItemBar::get_scale,
+            nullptr,
+            true
+        );
+        for (size_t i = 0 ; i < NUMBER_SCALES ; i++) {
+            scale_selector->add_available_value(i, scales[i].label);
+        }   
+        scale_selector->go_back_on_select = true;
+        this->add(scale_selector);
+    }
+};
+
+
 #include "functional-vlpp.h"
 #include "menuitems_lambda_selector.h"
 
