@@ -160,49 +160,34 @@ class ObjectScaleMenuItem : public ScaleMenuItem {
 
 #include "submenuitem_bar.h"
 
-template<class TargetClass>
-class ObjectScaleMenuItemBar : public SubMenuItemBar {
-    public:
-    TargetClass *target_object = nullptr;
+#include "functional-vlpp.h"
+#include "menuitems_lambda_selector.h"
 
-    // have difficulty using SCALE type with ObjectSelectorControls, so wrap it as int
-    void(TargetClass::*scale_setter_func)(SCALE) = nullptr;
-    SCALE(TargetClass::*scale_getter_func)(void) = nullptr;
+class LambdaScaleMenuItemBar : public SubMenuItemBar {
+    public:
 
     bool allow_global = false;
 
-    void set_scale(int scale_number) {
-        if (this->target_object!=nullptr && this->scale_setter_func!=nullptr)
-            (this->target_object->*scale_setter_func)((SCALE)scale_number);
-    }
-    int get_scale() {
-        if (this->target_object!=nullptr && this->scale_getter_func!=nullptr)
-            return(this->target_object->*scale_getter_func)();
-        return 0;
-    }
+    vl::Func<void(SCALE)> scale_setter_func;
+    vl::Func<SCALE(void)> scale_getter_func;
+    vl::Func<void(int8_t)> scale_root_setter_func;
+    vl::Func<int8_t(void)> scale_root_getter_func;
 
-    ObjectScaleMenuItemBar(
-        const char *label, 
-        TargetClass *target_object,
-        void(TargetClass::*scale_setter_func)(SCALE),
-        SCALE(TargetClass::*scale_getter_func)(void),
-        void(TargetClass::*scale_root_setter_func)(int8_t),
-        int8_t(TargetClass::*scale_root_getter_func)(void),
+    LambdaScaleMenuItemBar(
+        const char *label,
+        vl::Func<void(SCALE)> scale_setter_func,
+        vl::Func<SCALE(void)> scale_getter_func,
+        vl::Func<void(int8_t)> scale_root_setter_func,
+        vl::Func<int8_t(void)> scale_root_getter_func,
         bool allow_global = false
-    ) : SubMenuItemBar(label) {
-        //this->debug = true;
-
-        this->target_object = target_object;
-
-        // assign these to self, so that we can proxy them via this->set_scale and this->get_scale
+    ) : SubMenuItemBar (label) {
         this->scale_setter_func = scale_setter_func;
         this->scale_getter_func = scale_getter_func;
+        this->scale_root_setter_func = scale_root_setter_func;
+        this->scale_root_getter_func = scale_root_getter_func;
 
-        this->allow_global = allow_global;
-
-        ObjectSelectorControl<TargetClass,int8_t> *scale_root = new ObjectSelectorControl<TargetClass,int8_t>(
+        LambdaSelectorControl<int8_t> *scale_root = new LambdaSelectorControl<int8_t>(
             "Root key", 
-            this->target_object, 
             scale_root_setter_func, 
             scale_root_getter_func,
             nullptr,
@@ -218,24 +203,33 @@ class ObjectScaleMenuItemBar : public SubMenuItemBar {
 
 
         // use self as intermediary to real target object in order to wrap int/SCALE type
-        ObjectSelectorControl<ObjectScaleMenuItemBar,int> *scale_selector = new ObjectSelectorControl<ObjectScaleMenuItemBar,int>(
+        LambdaSelectorControl<SCALE> *scale_selector = new LambdaSelectorControl<SCALE>(
             "Scale type", 
-            this, 
-            &ObjectScaleMenuItemBar::set_scale, 
-            &ObjectScaleMenuItemBar::get_scale,
+            scale_setter_func,
+            scale_getter_func,
             nullptr,
             true
         );
         if (allow_global)
             scale_selector->add_available_value(SCALE::GLOBAL, "[use global]");
         for (size_t i = 0 ; i < NUMBER_SCALES ; i++) {
-            scale_selector->add_available_value(i, scales[i].label);
+            scale_selector->add_available_value((SCALE)i, scales[i].label);
         }
         scale_selector->go_back_on_select = true;
         this->add(scale_selector);
     }
 
+    void set_scale(SCALE scale_number) {
+        scale_setter_func(scale_number);
+    }
+    SCALE get_scale() {
+        return scale_getter_func();
+    }
+
+
 };
+
+
 
 class ChordMenuItem : public MenuItem {
     public:
