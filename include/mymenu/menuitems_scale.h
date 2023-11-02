@@ -263,15 +263,13 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
             true
         );
         if (allow_global)
-            scale_root->add_available_value(-1, "[use global]");
+            scale_root->add_available_value(SCALE_GLOBAL_ROOT, "[use global]");
         for (size_t i = 0 ; i < 12 ; i++) {
             scale_root->add_available_value(i, note_names[i]);
         }
         scale_root->go_back_on_select = true;
         this->add(scale_root);
 
-
-        // use self as intermediary to real target object in order to wrap int/SCALE type
         LambdaSelectorControl<SCALE> *scale_selector = new LambdaSelectorControl<SCALE>(
             "Scale type", 
             scale_setter_func,
@@ -294,8 +292,6 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
     SCALE get_scale() {
         return scale_getter_func();
     }
-
-
 };
 
 
