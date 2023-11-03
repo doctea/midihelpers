@@ -46,7 +46,8 @@ const scale_t scales[] = {
     { "Lydian",           { 0, 2, 4, 6, 7, 9, 11 }},
     { "Mixolydian",       { 0, 2, 4, 5, 7, 9, 10 }},
     { "Phrygian",         { 0, 1, 3, 5, 7, 8, 10 }},
-    { "Whole-tone",       { 0, 2, 4, 6, 8, 10, (12) }}
+    { "Whole-tone",       { 0, 2, 4, 6, 8, 10, (12) }},
+    //{ "TEST",             { 0, 1, 2, 3, 4, 5, 6 }},
 };
 enum SCALE {
     MAJOR,
@@ -58,9 +59,10 @@ enum SCALE {
     MIXOLYDIAN,
     PHRYGIAN,
     WHOLE_TONE,
+    //test,
     GLOBAL
 };
-#define NUMBER_SCALES ((sizeof(scales)/sizeof(scale_t))-1)
+#define NUMBER_SCALES ((sizeof(scales)/sizeof(scale_t)))    // uses size of real scales[] array, ie existant scales, rather than the SCALE enum (which has an extra value to represent GLOBAL)
 
 
 #define PITCHES_PER_CHORD 4
