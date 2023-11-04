@@ -37,6 +37,13 @@ class ClockSourceSelectorControl : public SelectorControl<int> {
     }
 
     virtual void setter (int new_value) {
+        #ifdef USE_UCLOCK
+            if (clock_mode==CLOCK_INTERNAL && new_value!=clock_mode) {
+                uClock.stop();
+            } else if (new_value==CLOCK_INTERNAL && playing) {
+                uClock.start();
+            }
+        #endif
         if (__clock_mode_changed_callback!=nullptr)
             __clock_mode_changed_callback(clock_mode, (ClockMode)new_value);
         clock_mode = (ClockMode) new_value;

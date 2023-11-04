@@ -68,6 +68,7 @@ bool update_clock_ticks();
 
 void set_global_restart_callback(void(*global_restart_callback)());
 
+void clock_reset();
 void clock_start();
 void clock_stop();
 void clock_continue();

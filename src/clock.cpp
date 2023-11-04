@@ -20,15 +20,14 @@ void set_global_restart_callback(void(*global_restart_callback)()) {
 volatile uint32_t last_ticked_at_micros = micros();
 #ifdef USE_UCLOCK
   FLASHMEM void setup_uclock(void(*do_tick)(uint32_t)) {
-    ticks = 0;
     uClock.init();
     uClock.setClock96PPQNOutput(do_tick);
     uClock.setTempo(bpm_current);
-    uClock.start();
+    clock_reset();
   }
 #else
   FLASHMEM void setup_cheapclock() {
-    ticks = 0;
+    clock_reset();
     set_bpm(bpm_current);
   }
 #endif
@@ -54,18 +53,18 @@ void pc_usb_midi_handle_clock() {
 void pc_usb_midi_handle_start() {
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
     //tap_tempo_tracker.reset();
+    clock_reset();
     clock_start();
     if (__global_restart_callback!=nullptr)
         __global_restart_callback();
-    ticks = 0;
   }
 }
 void pc_usb_midi_handle_stop() {
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
     if (!playing) {
+      clock_reset();
       if (__global_restart_callback!=nullptr)
         __global_restart_callback();
-      ticks = 0;
     }
     clock_stop();
   }
@@ -107,18 +106,18 @@ bool check_and_unset_pc_usb_midi_clock_ticked() {
   void din_midi_handle_start() {
     if (clock_mode==CLOCK_EXTERNAL_MIDI_DIN) {
       //tap_tempo_tracker.reset();
+      clock_reset();
       clock_start();
       if (__global_restart_callback!=nullptr)
           __global_restart_callback();
-      ticks = 0;
     }
   }
   void din_midi_handle_stop() {
     if (clock_mode==CLOCK_EXTERNAL_MIDI_DIN) {
       if (!playing) {
+        clock_reset();
         if (__global_restart_callback!=nullptr)
           __global_restart_callback();
-        ticks = 0;
       }
       clock_stop();
     }
@@ -218,8 +217,9 @@ void clock_stop() {
     uClock.pause();
   #endif
 
-  if (!playing)
-    ticks = 0;
+  if (!playing) {
+    clock_reset();
+  }
   clock_set_playing(false);
 }
 void clock_continue() {
@@ -229,3 +229,10 @@ void clock_continue() {
 
   clock_set_playing(true);
 };
+
+void clock_reset() {
+  #ifdef USE_UCLOCK
+    uClock.resetCounters();
+  #endif
+  ticks = 0;
+}
