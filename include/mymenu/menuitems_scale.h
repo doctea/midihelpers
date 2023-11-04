@@ -331,3 +331,26 @@ class ObjectScaleNoteMenuItem : public ObjectNumberControl<TargetClass, DataType
         return get_note_name_c(value);
     }
 };
+
+template<class DataType>
+class LambdaScaleNoteMenuItem : public LambdaNumberControl<DataType> {
+    public:
+
+    using setter_func_def = vl::Func<void(DataType)>;
+    using getter_func_def = vl::Func<DataType(void)>;
+
+    LambdaScaleNoteMenuItem(const char* label, 
+        setter_func_def setter_func,
+        getter_func_def getter_func,
+        void (*on_change_handler)(DataType last_value, DataType new_value),
+        DataType minimum_value,
+        DataType maximum_value,
+        bool go_back_on_select = false,
+        bool direct = false
+    ) : LambdaNumberControl<DataType>(label, setter_func, getter_func, on_change_handler, minimum_value, maximum_value, go_back_on_select, direct) 
+        {}
+
+    virtual const char *getFormattedValue(int value) override {
+        return get_note_name_c(value);
+    }
+};
