@@ -29,9 +29,15 @@ enum ClockMode {
 
 volatile extern ClockMode clock_mode;
 
-/// use cheapclock clock
 volatile extern uint32_t last_ticked_at_micros;
-void setup_cheapclock();
+
+#ifdef USE_UCLOCK
+  #include <uClock.h>
+  void setup_uclock(void(*do_tick)(uint32_t));
+#else 
+  /// use cheapclock clock
+  void setup_cheapclock();
+#endif
 
 void pc_usb_midi_handle_clock();
 bool check_and_unset_pc_usb_midi_clock_ticked();

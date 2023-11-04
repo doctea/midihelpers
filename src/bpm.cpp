@@ -58,7 +58,8 @@ void set_bpm(float new_bpm) {
       //ATOMIC(
           //uClock.setTempo(new_bpm); //bpm_current * 24);
       //)
-      set_new_bpm(bpm_current);
+      //set_new_bpm(bpm_current);
+      uClock.setTempo(bpm_current);
     #else
       //ms_per_tick = 1000.0f * (60.0f / (double)(bpm_current * (double)PPQN));
       micros_per_tick = (float)1000000.0 * ((float)60.0 / (float)(bpm_current * (float)PPQN));

@@ -5,6 +5,7 @@
     #define FLASHMEM
 #endif
 
+
 int missed_micros; // for tracking how many microseconds late we are processing a tick
 
 volatile ClockMode clock_mode = DEFAULT_CLOCK_MODE;
@@ -17,10 +18,20 @@ void set_global_restart_callback(void(*global_restart_callback)()) {
 
 /// use cheapclock clock
 volatile uint32_t last_ticked_at_micros = micros();
-FLASHMEM void setup_cheapclock() {
+#ifdef USE_UCLOCK
+  FLASHMEM void setup_uclock(void(*do_tick)(uint32_t)) {
+    ticks = 0;
+    uClock.init();
+    uClock.setClock96PPQNOutput(do_tick);
+    uClock.setTempo(bpm_current);
+    uClock.start();
+  }
+#else
+  FLASHMEM void setup_cheapclock() {
     ticks = 0;
     set_bpm(bpm_current);
-}
+  }
+#endif
 
 volatile bool usb_midi_clock_ticked = false;
 volatile unsigned long last_usb_midi_clock_ticked_at;
@@ -34,6 +45,9 @@ void pc_usb_midi_handle_clock() {
     if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
       last_usb_midi_clock_ticked_at = millis();
       usb_midi_clock_ticked = true;
+      #ifdef USE_UCLOCK
+        uClock.clockMe();
+      #endif
     }
 }
 
@@ -191,15 +205,27 @@ bool update_clock_ticks() {
 void clock_set_playing(bool p = true) {
   playing = p;
 }
+
 void clock_start() {
-  //playing = true;
+  #ifdef USE_UCLOCK
+    uClock.start();
+  #endif
+
   clock_set_playing(true);
 }
 void clock_stop() {
+  #ifdef USE_UCLOCK
+    uClock.pause();
+  #endif
+
   if (!playing)
     ticks = 0;
   clock_set_playing(false);
 }
 void clock_continue() {
+  #ifdef USE_UCLOCK
+    uClock.pause();
+  #endif
+
   clock_set_playing(true);
 };
