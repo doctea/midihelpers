@@ -3,8 +3,14 @@
 Helpers for some MIDI stuff common to my [usb_midi_clocker](https://github.com/doctea/usb_midi_clock) and [Microlidian](https://github.com/doctea/Microlidian) projects.
 
 - Handle MIDI clock and timing, helper functions/macros to find the current MIDI time/position
-- Functions to find the name for a note
-- [mymenu](https://github.com/doctea/mymenu) widgets for displaying/adjusting BPM, showing track position, and selecting clock source between Internal/External/None.
+- Optionally (define #USE_UCLOCK) use [uClock](https://github.com/midilab/uClock) for accurate & solid timing
+- Functions to find the name for a MIDI note number
+- Keys and scales, with quantising and chord-building
+- [mymenu](https://github.com/doctea/mymenu) widgets for:
+ - displaying/adjusting BPM
+ - showing track position
+ - switching clock sources between Internal/External/None.
+ - adjusting root key, scale, chords and inversions
 - Defines for GM drum note numbers
 - For RP2040 boards, set up MIDI USB with TinyUSB
 
@@ -28,4 +34,4 @@ Helpers for some MIDI stuff common to my [usb_midi_clocker](https://github.com/d
 ## todo
 
 - a class to make it simple to track which notes are held by an input or output
-- chord inversions
+- ~~chord inversions~~
