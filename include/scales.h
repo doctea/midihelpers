@@ -30,6 +30,8 @@
 
 #define PITCHES_PER_SCALE 7
 
+#define SCALE_GLOBAL_ROOT (-1)
+
 #define MAXIMUM_OCTAVE     9
 
 struct scale_t {
@@ -177,7 +179,6 @@ SCALE& operator++(SCALE& orig, int);
 SCALE& operator--(SCALE& orig);
 SCALE& operator--(SCALE& orig, int);
 
-#define SCALE_GLOBAL_ROOT (-1)
 
 extern int8_t   *global_scale_root;
 extern SCALE    *global_scale_type;
@@ -188,7 +189,7 @@ void set_global_scale_type_target(SCALE *scale_type);
 int8_t get_global_scale_root();
 SCALE get_global_scale_type();
 
-int8_t quantise_pitch(int8_t pitch, int8_t root_note = SCALE_ROOT_A, SCALE scale_number = SCALE::MAJOR);
-int8_t quantise_pitch_chord_note(int8_t pitch, CHORD::Type chord_number, int8_t note_of_chord, int8_t root_note, SCALE scale_number, int inversion = 0, bool debug = false);
+int8_t quantise_pitch(int8_t pitch, int8_t root_note = SCALE_GLOBAL_ROOT, SCALE scale_number = SCALE::GLOBAL);
+int8_t quantise_pitch_chord_note(int8_t pitch, CHORD::Type chord_number, int8_t note_of_chord, int8_t root_note = SCALE_GLOBAL_ROOT, SCALE scale_number = SCALE::GLOBAL, int inversion = 0, bool debug = false);
 
 #endif
