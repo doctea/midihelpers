@@ -54,20 +54,32 @@ SCALE get_global_scale_type() {
   return SCALE::GLOBAL;
 }
 
+// check the passed-in root note to see if we should use global setting - return global setting if so, otherwise return passed-in root note
+int8_t get_effective_scale_root(int8_t scale_root) {
+  if (scale_root==SCALE_GLOBAL_ROOT)
+    scale_root = get_global_scale_root();
+  return scale_root;
+}
+
+// check the passed-in scale type to see if we should use global setting - return global setting if so, otherwise return passed-in scale type
+int8_t get_effective_scale_type(SCALE scale_number) {
+  if (scale_number==SCALE::GLOBAL)
+    scale_number = get_global_scale_type();
+  if (scale_number==SCALE::GLOBAL)
+    scale_number = SCALE::MAJOR;
+  return scale_number;
+}
+
 int8_t quantise_pitch(int8_t pitch, int8_t scale_root, SCALE scale_number) {
   if (!is_valid_note(pitch))
     return -1;
 
   // check whether the scale_root and scale_number should be replaced with global versions...
   // and if no value is set for global, return unquantised note and/or default to major scale
-  if (scale_root==SCALE_GLOBAL_ROOT)
-    scale_root = get_global_scale_root();
-  if (scale_root==SCALE_GLOBAL_ROOT)
+  scale_root = get_effective_scale_root(scale_root);
+  scale_number = get_effective_scale_type(scale_number);
+  if(scale_number==SCALE_GLOBAL_ROOT || scale_number==SCALE::GLOBAL)
     return pitch;
-  if (scale_number==SCALE::GLOBAL)
-    scale_number = get_global_scale_type();
-  if (scale_number==SCALE::GLOBAL)
-    scale_number = SCALE::MAJOR;
 
   int octave = pitch/12;
   int chromatic_pitch = pitch % 12;
@@ -98,6 +110,11 @@ int8_t quantise_pitch_chord_note(int8_t chord_root, CHORD::Type chord_number, in
   //bool debug = false; //true;
 
   if (note_of_chord>=PITCHES_PER_CHORD || chords[chord_number].degree_number[note_of_chord]==-1)
+    return -1;
+
+  scale_root = get_effective_scale_root(scale_root);
+  scale_number = get_effective_scale_type(scale_number);
+  if(scale_number==SCALE_GLOBAL_ROOT || scale_number==SCALE::GLOBAL)
     return -1;
 
   // get pointers to the selected scale and chord 
