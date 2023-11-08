@@ -187,7 +187,7 @@ void set_global_scale_root_target(int8_t *root_note);
 void set_global_scale_type_target(SCALE *scale_type);
 
 int8_t get_effective_scale_root(int8_t scale_root);
-int8_t get_effective_scale_type(SCALE scale_number);
+SCALE get_effective_scale_type(SCALE scale_number);
 
 int8_t get_global_scale_root();
 SCALE get_global_scale_type();

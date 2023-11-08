@@ -62,7 +62,7 @@ int8_t get_effective_scale_root(int8_t scale_root) {
 }
 
 // check the passed-in scale type to see if we should use global setting - return global setting if so, otherwise return passed-in scale type
-int8_t get_effective_scale_type(SCALE scale_number) {
+SCALE get_effective_scale_type(SCALE scale_number) {
   if (scale_number==SCALE::GLOBAL)
     scale_number = get_global_scale_type();
   if (scale_number==SCALE::GLOBAL)
