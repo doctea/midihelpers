@@ -35,3 +35,6 @@ Helpers for some MIDI stuff common to my [usb_midi_clocker](https://github.com/d
 
 - a class to make it simple to track which notes are held by an input or output
 - ~~chord inversions~~
+- fix envelopes
+ - 'hold' stage doesnt work properly when inverted
+ - envelopes seem to go awfully fast!
