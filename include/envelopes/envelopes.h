@@ -17,35 +17,6 @@
 
 class Menu;
 
-/*
-scraps to go into Output wrapper class
-//Output : public MIDIDrumOutput {
-
-//const char *label, byte note_number, byte cc_number, byte channel, MIDIOutputWrapper *output_wrapper) : 
-        //MIDIDrumOutput(label, note_number, channel, output_wrapper), midi_cc(cc_number) {
-
-    virtual void process() override {
-        bool x_should_go_off = should_go_off();
-        bool x_should_go_on  = should_go_on();
-
-        if (x_should_go_off) {
-            this->update_state(0, false);
-        }
-        if (x_should_go_on) {
-            this->update_state(127, true);
-        }
-
-        //this->process_envelope(millis());
-
-        //MIDIDrumOutput::process();    // ?
-    }
-
-    virtual void loop() override {
-        this->process_envelope();
-    }
-
-*/
-
 class EnvelopeBase { 
     public:
 
@@ -57,7 +28,7 @@ class EnvelopeBase {
         this->initialise_parameters();
     }
 
-    enum stage : byte {
+    enum stage : int8_t {
         OFF = 0,
         //DELAY,  // time
         ATTACK,
@@ -72,14 +43,14 @@ class EnvelopeBase {
     };
 
     //#ifndef TEST_LFOS
-    byte stage = OFF;
+    int8_t stage = OFF;
     /*#else
-    byte stage = LFO_SYNC_RATIO;
+    int8_t stage = LFO_SYNC_RATIO;
     #endif*/
 
-    byte velocity = 127;         // triggered velocity
-    byte actual_level = 0;          // right now, the level
-    //byte stage_start_level = 0;     // level at start of current stage
+    int8_t velocity = 127;         // triggered velocity
+    int8_t actual_level = 0;          // right now, the level
+    //int8_t stage_start_level = 0;     // level at start of current stage
 
     // TODO: int delay_length = 5;                    // D - delay before atack starts
     unsigned int  attack_length   = 0;                // A - attack  - length of stage
@@ -88,8 +59,8 @@ class EnvelopeBase {
     float         sustain_ratio   = 0.90f;            // S - sustain - level to drop to after decay phase
     unsigned int  release_length  = (PPQN / 2) - 1;   // R - release - length (time to drop to 0)
 
-    byte lfo_sync_ratio_hold_and_decay = 0;
-    byte lfo_sync_ratio_sustain_and_release = 0;
+    int8_t lfo_sync_ratio_hold_and_decay = 0;
+    int8_t lfo_sync_ratio_sustain_and_release = 0;
 
     unsigned long stage_triggered_at = 0;
     unsigned long triggered_at = 0; 
@@ -99,41 +70,41 @@ class EnvelopeBase {
     bool loop_mode = false;
     bool invert = false;
 
-    byte last_sent_lvl; // value but not inverted
-    byte last_sent_actual_lvl;  // actual midi value sent
+    int8_t last_sent_lvl; // value but not inverted
+    int8_t last_sent_actual_lvl;  // actual midi value sent
 
-    byte cc_value_sync_modifier = 1;
+    int8_t cc_value_sync_modifier = 1;
 
-    /*void send_envelope_level(byte level) {
+    /*void send_envelope_level(int8_t level) {
         output_wrapper->sendControlChange(midi_cc, level, channel);
     }*/
-    virtual void send_envelope_level(byte level) = 0;
+    virtual void send_envelope_level(int8_t level) = 0;
 
     void randomise() {
-        //this->lfo_sync_ratio_hold_and_decay = (byte)random(0,127);
-        //this->lfo_sync_ratio_sustain_and_release = (byte)random(0,127);
-        this->set_attack((byte)random(0,64));
-        this->set_hold((byte)random(0,127));
-        this->set_decay((byte)random(0,127));
+        //this->lfo_sync_ratio_hold_and_decay = (int8_t)random(0,127);
+        //this->lfo_sync_ratio_sustain_and_release = (int8_t)random(0,127);
+        this->set_attack((int8_t)random(0,64));
+        this->set_hold((int8_t)random(0,127));
+        this->set_decay((int8_t)random(0,127));
         this->set_sustain(random(64,127));
-        this->set_release((byte)random(0,127));
-        this->invert = (byte)random(0,10) < 2;
+        this->set_release((int8_t)random(0,127));
+        this->invert = (int8_t)random(0,10) < 2;
     }
 
     void initialise_parameters() {
-        //this->lfo_sync_ratio_hold_and_decay = (byte)random(0,127);
-        //this->lfo_sync_ratio_sustain_and_release = (byte)random(0,127);
+        //this->lfo_sync_ratio_hold_and_decay = (int8_t)random(0,127);
+        //this->lfo_sync_ratio_sustain_and_release = (int8_t)random(0,127);
         this->set_attack(0);
-        this->set_hold((byte)random(0,127));
-        this->set_decay((byte)random(0,127));
+        this->set_hold((int8_t)random(0,127));
+        this->set_decay((int8_t)random(0,127));
         this->set_sustain(random(64,127));
-        this->set_release((byte)random(0,127));
-        this->invert = (byte)random(0,10) < 2;
+        this->set_release((int8_t)random(0,127));
+        this->invert = (int8_t)random(0,10) < 2;
     }
 
     void kill() {
         this->stage = OFF;
-        //this->stage_start_level = (byte)0;
+        //this->stage_start_level = (int8_t)0;
         this->last_state.stage = OFF;
         this->last_state.lvl_start = 0;
         this->last_state.lvl_now = 0;
@@ -141,7 +112,7 @@ class EnvelopeBase {
     }
 
     // received a message that the state of the envelope should change (note on/note off etc)
-    void update_state (byte velocity, bool state) {
+    void update_state (int8_t velocity, bool state) {
         unsigned long now = ticks; //clock_millis(); 
         unsigned long env_time = millis();
         if (state == true) { //&& this->stage==OFF) {  // envelope told to be in 'on' state by note on
@@ -197,16 +168,16 @@ class EnvelopeBase {
 
 
     struct envelope_state_t {
-        byte stage = OFF;
-        byte lvl_start = 0;
-        byte lvl_now = 0;
+        int8_t stage = OFF;
+        int8_t lvl_start = 0;
+        int8_t lvl_now = 0;
     };
-    envelope_state_t calculate_envelope_level(byte stage, byte stage_elapsed, byte level_start, byte velocity = 127) {
+    envelope_state_t calculate_envelope_level(int8_t stage, int8_t stage_elapsed, int8_t level_start, int8_t velocity = 127) {
         float ratio = (float)PPQN / (float)cc_value_sync_modifier;  // calculate ratio of real ticks : pseudoticks
         //unsigned long elapsed = (float)stage_elapsed * ratio;   // convert real elapsed to pseudoelapsed
         unsigned long elapsed = stage_elapsed;
 
-        byte lvl;
+        int8_t lvl;
         envelope_state_t return_state = {
             stage,
             level_start,
@@ -217,7 +188,7 @@ class EnvelopeBase {
             if (attack_length==0)
                 lvl = velocity;
             else
-                lvl = (byte) ((float)velocity * ((float)elapsed / ((float)this->attack_length )));
+                lvl = (int8_t) ((float)velocity * ((float)elapsed / ((float)this->attack_length )));
 
             return_state.lvl_now = lvl;
             if (elapsed >= this->attack_length) {
@@ -269,7 +240,7 @@ class EnvelopeBase {
         
                 //NUMBER_DEBUG(8, this->stage, this->stage_start_level);
                 //Serial.printf("in RELEASE stage, release_length is %u, elapsed is %u, eR is %3.3f, lvl is %i ....", this->release_length, elapsed, eR, lvl);
-                lvl = (byte)((float)level_start * (1.0f-eR));                
+                lvl = (int8_t)((float)level_start * (1.0f-eR));                
             } else {
                 lvl = 0;
             }
@@ -282,7 +253,7 @@ class EnvelopeBase {
         }
 
         if (stage!=OFF) {
-            byte lvl = return_state.lvl_now;
+            int8_t lvl = return_state.lvl_now;
             int sync = (stage==DECAY || stage==HOLD) 
                             ?
                             this->lfo_sync_ratio_hold_and_decay
@@ -318,7 +289,7 @@ class EnvelopeBase {
     }
 
     struct graph_t {
-        byte value = 0;
+        int8_t value = 0;
         char stage = -1;
     };
     graph_t graph[240];
@@ -374,46 +345,46 @@ class EnvelopeBase {
 
     int attack_value, hold_value, decay_value, sustain_value, release_value;
 
-    virtual void set_attack(byte attack) {
+    virtual void set_attack(int8_t attack) {
         this->attack_value = attack;
         this->attack_length = (ENV_MAX_ATTACK) * ((float)attack/127.0f);
         calculate_graph();
     }
-    virtual byte get_attack() {
+    virtual int8_t get_attack() {
         return this->attack_value;
     }
-    virtual void set_hold(byte hold) {
+    virtual void set_hold(int8_t hold) {
         this->hold_value = hold;
         this->hold_length = (ENV_MAX_HOLD) * ((float)hold/127.0f);
         calculate_graph();
     }
-    virtual byte get_hold() {
+    virtual int8_t get_hold() {
         return this->hold_value;
     }
-    virtual void set_decay(byte decay) {
+    virtual void set_decay(int8_t decay) {
         this->decay_value = decay;
         decay_length   = (ENV_MAX_DECAY) * ((float)decay/127.0f);
         calculate_graph();
     }
-    virtual byte get_decay() {
+    virtual int8_t get_decay() {
         return this->decay_value;
     }
-    virtual void set_sustain(byte sustain) {
+    virtual void set_sustain(int8_t sustain) {
         this->sustain_value = sustain; //(((float)value/127.0f) * (float)(128-SUSTAIN_MINIMUM)) / 127.0f;
         //sustain_ratio = (((float)sustain/127.0f) * (float)(128-SUSTAIN_MINIMUM)) / 127.0f;
         float sustain_normal = ((float)sustain)/127.0f;
         this->sustain_ratio = sustain_normal;
         calculate_graph();
     }
-    virtual byte get_sustain() {
+    virtual int8_t get_sustain() {
         return this->sustain_value;
     }
-    virtual void set_release(byte release) {
+    virtual void set_release(int8_t release) {
         this->release_value = release;
         release_length = (ENV_MAX_RELEASE) * ((float)release/127.0f);
         calculate_graph();
     }
-    virtual byte get_release() {
+    virtual int8_t get_release() {
         return this->release_value;
     }
     virtual bool is_invert() {
@@ -430,23 +401,23 @@ class EnvelopeBase {
         this->loop_mode = i;
         calculate_graph();
     }
-    virtual byte get_stage() {
+    virtual int8_t get_stage() {
         return this->stage;
     }
-    virtual void set_mod_hd(byte hd) {
+    virtual void set_mod_hd(int8_t hd) {
         this->lfo_sync_ratio_hold_and_decay = hd;
         //this->attack_length = (ENV_MAX_ATTACK) * ((float)attack/127.0f);
         calculate_graph();
     }
-    virtual byte get_mod_hd() {
+    virtual int8_t get_mod_hd() {
         return this->lfo_sync_ratio_hold_and_decay;
     }
-    virtual void set_mod_sr(byte sr) {
+    virtual void set_mod_sr(int8_t sr) {
         this->lfo_sync_ratio_sustain_and_release = sr;
         //this->attack_length = (ENV_MAX_ATTACK) * ((float)attack/127.0f);
         calculate_graph();
     }
-    virtual byte get_mod_sr() {
+    virtual int8_t get_mod_sr() {
         return this->lfo_sync_ratio_sustain_and_release;
     }
     
