@@ -1,6 +1,8 @@
 #include "clock.h"
 //#include "midi/midi_outs.h"
 
+#include <util/atomic.h>
+
 #ifndef CORE_TEENSY
     #define FLASHMEM
 #endif
@@ -206,33 +208,41 @@ void clock_set_playing(bool p = true) {
 }
 
 void clock_start() {
-  #ifdef USE_UCLOCK
-    uClock.start();
-  #endif
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+    #ifdef USE_UCLOCK
+      uClock.start();
+    #endif
 
-  clock_set_playing(true);
+    clock_set_playing(true);
+  }
 }
 void clock_stop() {
-  #ifdef USE_UCLOCK
-    uClock.pause();
-  #endif
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+    #ifdef USE_UCLOCK
+      uClock.pause();
+    #endif
 
-  if (!playing) {
-    clock_reset();
+    if (!playing) {
+      clock_reset();
+    }
+    clock_set_playing(false);
   }
-  clock_set_playing(false);
 }
 void clock_continue() {
-  #ifdef USE_UCLOCK
-    uClock.pause();
-  #endif
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+    #ifdef USE_UCLOCK
+      uClock.pause();
+    #endif
 
-  clock_set_playing(true);
+    clock_set_playing(true);
+  }
 };
 
 void clock_reset() {
-  #ifdef USE_UCLOCK
-    uClock.resetCounters();
-  #endif
-  ticks = 0;
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+    #ifdef USE_UCLOCK
+      uClock.resetCounters();
+    #endif
+    ticks = 0;
+  }
 }
