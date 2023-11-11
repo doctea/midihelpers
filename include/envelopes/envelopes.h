@@ -78,7 +78,7 @@ class EnvelopeBase {
     /*void send_envelope_level(int8_t level) {
         output_wrapper->sendControlChange(midi_cc, level, channel);
     }*/
-    virtual void send_envelope_level(int8_t level) = 0;
+    virtual void send_envelope_level(uint8_t level) = 0;
 
     void randomise() {
         //this->lfo_sync_ratio_hold_and_decay = (int8_t)random(0,127);

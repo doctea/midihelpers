@@ -1,12 +1,14 @@
 #include "clock.h"
 //#include "midi/midi_outs.h"
 
-#include <util/atomic.h>
+#if defined(USE_UCLOCK) && defined(CORE_TEENSY)
+  #include <util/atomic.h>
+  #define USE_ATOMIC
+#endif
 
 #ifndef CORE_TEENSY
     #define FLASHMEM
 #endif
-
 
 int missed_micros; // for tracking how many microseconds late we are processing a tick
 
@@ -208,16 +210,23 @@ void clock_set_playing(bool p = true) {
 }
 
 void clock_start() {
-  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+  #ifdef USE_ATOMIC
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) 
+  #endif
+  {
     #ifdef USE_UCLOCK
       uClock.start();
     #endif
 
     clock_set_playing(true);
+
   }
 }
 void clock_stop() {
-  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+  #ifdef USE_ATOMIC
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) 
+  #endif
+  {
     #ifdef USE_UCLOCK
       uClock.pause();
     #endif
@@ -229,7 +238,10 @@ void clock_stop() {
   }
 }
 void clock_continue() {
-  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+  #ifdef USE_ATOMIC
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) 
+  #endif
+  {
     #ifdef USE_UCLOCK
       uClock.pause();
     #endif
@@ -239,10 +251,14 @@ void clock_continue() {
 };
 
 void clock_reset() {
-  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+  #ifdef USE_ATOMIC
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) 
+  #endif
+  {
     #ifdef USE_UCLOCK
       uClock.resetCounters();
     #endif
+    
     ticks = 0;
   }
 }
