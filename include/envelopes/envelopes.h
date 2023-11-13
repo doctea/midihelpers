@@ -169,15 +169,15 @@ class EnvelopeBase {
 
     struct envelope_state_t {
         int8_t stage = OFF;
-        int8_t lvl_start = 0;
-        int8_t lvl_now = 0;
+        uint8_t lvl_start = 0;
+        uint8_t lvl_now = 0;
     };
     envelope_state_t calculate_envelope_level(int8_t stage, int8_t stage_elapsed, int8_t level_start, int8_t velocity = 127) {
         float ratio = (float)PPQN / (float)cc_value_sync_modifier;  // calculate ratio of real ticks : pseudoticks
         //unsigned long elapsed = (float)stage_elapsed * ratio;   // convert real elapsed to pseudoelapsed
         unsigned long elapsed = stage_elapsed;
 
-        int8_t lvl;
+        uint8_t lvl;
         envelope_state_t return_state = {
             stage,
             level_start,
@@ -222,7 +222,7 @@ class EnvelopeBase {
             }
             return_state.lvl_now = lvl;
             if (elapsed >= this->decay_length) {
-                return_state = { .stage = SUSTAIN, .lvl_start = (unsigned char)lvl, .lvl_now = lvl };
+                return_state = { .stage = SUSTAIN, .lvl_start = lvl, .lvl_now = lvl };
             }
         } else if (stage == SUSTAIN) {
             //return_state.lvl_now = (unsigned char)sustain_value;
