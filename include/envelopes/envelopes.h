@@ -73,7 +73,7 @@ class EnvelopeBase {
     int8_t last_sent_lvl; // value but not inverted
     int8_t last_sent_actual_lvl;  // actual midi value sent
 
-    int8_t cc_value_sync_modifier = 1;
+    int8_t cc_value_sync_modifier = 12;
 
     /*void send_envelope_level(int8_t level) {
         output_wrapper->sendControlChange(midi_cc, level, channel);
@@ -175,8 +175,8 @@ class EnvelopeBase {
     };
     envelope_state_t calculate_envelope_level(uint8_t stage, uint8_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127) {
         float ratio = (float)PPQN / (float)cc_value_sync_modifier;  // calculate ratio of real ticks : pseudoticks
-        //unsigned long elapsed = (float)stage_elapsed * ratio;   // convert real elapsed to pseudoelapsed
-        unsigned long elapsed = stage_elapsed;
+        unsigned long elapsed = (float)stage_elapsed * ratio;   // convert real elapsed to pseudoelapsed
+        //unsigned long elapsed = stage_elapsed;
 
         uint8_t lvl;
         envelope_state_t return_state = {
@@ -429,6 +429,12 @@ class EnvelopeBase {
     }
     virtual int8_t get_mod_sr() {
         return this->lfo_sync_ratio_sustain_and_release;
+    }
+    virtual void set_cc_value_sync_modifier(uint8_t sync) {
+        this->cc_value_sync_modifier = sync;
+    }
+    virtual uint8_t get_cc_value_sync_modifier() {
+        return this->cc_value_sync_modifier;
     }
     
     #ifdef ENABLE_SCREEN

@@ -28,6 +28,8 @@
             typebar->add(new ObjectNumberControl<EnvelopeBase,int8_t>("Mod HD",  this, &EnvelopeBase::set_mod_hd,  &EnvelopeBase::get_mod_hd,    nullptr, 0, 127, true, true));
             typebar->add(new ObjectNumberControl<EnvelopeBase,int8_t>("Mod SR",  this, &EnvelopeBase::set_mod_sr,  &EnvelopeBase::get_mod_sr,    nullptr, 0, 127, true, true));
 
+            typebar->add(new ObjectNumberControl<EnvelopeBase,uint8_t>("Sync", this, &EnvelopeBase::set_cc_value_sync_modifier, &EnvelopeBase::get_cc_value_sync_modifier, nullptr, 1, 24, true, true));
+
             menu->add(new EnvelopeDisplay("Graph", this));
             menu->add(new EnvelopeIndicator("Indicator", this));
 

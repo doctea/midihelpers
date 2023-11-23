@@ -142,10 +142,10 @@ class EnvelopeIndicator : public MenuItem {
     virtual int display(Coord pos, bool selected, bool opened) override {
         tft->printf("Name: %s | ", (char*)envelope->label);
         //tft->printf("   CC: %i\n", envelope->midi_cc);
-        tft->printf("Stage: %7s \n", (char*)stage_labels[envelope->last_state.stage]);
-        tft->printf("Trig'd at: %-5i | ", envelope->stage_triggered_at);
-        tft->printf("Elapsed: %-5i\n", envelope->last_state.elapsed);
-        tft->printf("Level: %-3i \n", envelope->last_state.lvl_now);
+        tft->printf("Stage: %7s\n", (char*)stage_labels[envelope->last_state.stage]);
+        //tft->printf("Trig'd at: %-5i | ", envelope->stage_triggered_at);
+        //tft->printf("Elapsed: %-5i\n", envelope->last_state.elapsed);
+        //tft->printf("Level: %-3i \n", envelope->last_state.lvl_now);
         
         return tft->getCursorY();
     }
