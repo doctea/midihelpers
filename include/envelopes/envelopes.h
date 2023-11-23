@@ -112,9 +112,9 @@ class EnvelopeBase {
     }
 
     // received a message that the state of the envelope should change (note on/note off etc)
-    void update_state (int8_t velocity, bool state) {
-        unsigned long now = ticks; //clock_millis(); 
-        unsigned long env_time = millis();
+    void update_state (int8_t velocity, bool state, uint32_t now = ticks) {
+        //unsigned long now = ticks; //clock_millis(); 
+        //unsigned long env_time = millis();
         if (state == true) { //&& this->stage==OFF) {  // envelope told to be in 'on' state by note on
             this->velocity = velocity;
             this->actual_level = velocity; // TODO: start this at 0 so it can ramp / offset level feature
@@ -134,9 +134,9 @@ class EnvelopeBase {
             case RELEASE:
                 // received note off while already releasing -- cut note short
                 //this->stage_start_level = 0; 
-                this->stage = last_state.stage = OFF;
+                /*this->stage = last_state.stage = OFF;
                 last_state.lvl_start = last_state.lvl_now;
-                this->stage_triggered_at = now;
+                this->stage_triggered_at = now;*/
                 return;
             case OFF:
                 // don't do anything if we're in this stage and we receive note off, since we're already meant to be stopping by now
@@ -155,7 +155,7 @@ class EnvelopeBase {
             default:
                 //NOISY_DEBUG(500, 2);
                 //NUMBER_DEBUG(13, 13, 13);
-
+                //Serial.printf("update_state moving to RELEASE because gate ended!  lvl is %-3i, now is %-3i\n", last_state.lvl_now, now);
                 this->stage = last_state.stage = RELEASE;
                 //this->stage_start_level = this->actual_level;
                 last_state.lvl_start = last_state.lvl_now;
@@ -171,6 +171,7 @@ class EnvelopeBase {
         uint8_t stage = OFF;
         uint8_t lvl_start = 0;
         uint8_t lvl_now = 0;
+        uint32_t elapsed = 0;
     };
     envelope_state_t calculate_envelope_level(uint8_t stage, uint8_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127) {
         float ratio = (float)PPQN / (float)cc_value_sync_modifier;  // calculate ratio of real ticks : pseudoticks
@@ -192,12 +193,14 @@ class EnvelopeBase {
 
             return_state.lvl_now = lvl;
             if (elapsed >= this->attack_length) {
+                //Serial.printf("calculate_envelope_level in ATTACK, moving to HOLD because elapsed %-3i >= attack_length %3i\n", elapsed, attack_length);
                 return_state = { .stage = ++stage, .lvl_start = lvl, .lvl_now = lvl };
             }
         } else if (stage == HOLD && this->hold_length>0) {
             lvl = velocity;
             return_state.lvl_now = lvl;
             if (elapsed >= hold_length) {
+                //Serial.printf("calculate_envelope_level in HOLD, moving to SUSTAIN because elapsed %-3i >= hold_length %3i\n", elapsed, hold_length);
                 return_state = { .stage = ++stage, .lvl_start = lvl, .lvl_now = lvl };
             }
         } else if (stage == HOLD || stage == DECAY) {
@@ -222,12 +225,14 @@ class EnvelopeBase {
             }
             return_state.lvl_now = lvl;
             if (elapsed >= this->decay_length) {
+                //Serial.printf("calculate_envelope_level in DECAY, moving to SUSTAIN because elapsed %-3i >= decay_length %3i\n", elapsed, decay_length);
                 return_state = { .stage = SUSTAIN, .lvl_start = lvl, .lvl_now = lvl };
             }
         } else if (stage == SUSTAIN) {
             //return_state.lvl_now = (unsigned char)sustain_value;
             return_state.lvl_now = sustain_ratio * velocity;
             if (sustain_ratio==0.0 || this->loop_mode) {
+                //Serial.printf("calculate_envelope_level in SUSTAIN, moving to RELEASE because sustain_ratio or loop_mode!\n");
                 return_state = { .stage = RELEASE, .lvl_start = return_state.lvl_now, .lvl_now = return_state.lvl_now };
             }
         } else if (stage == RELEASE) {
@@ -246,6 +251,7 @@ class EnvelopeBase {
             }
             return_state.lvl_now = lvl;
             if (elapsed > this->release_length || this->release_length==0 || lvl==0) {
+                //Serial.printf("calculate_envelope_level in RELEASE, moving to OFF because either elapsed %-3i > release_length %-3i, or lvl==0 (lvl is actually %3i)!\n", elapsed, release_length, lvl);
                 return_state = { .stage = OFF, .lvl_start = lvl, .lvl_now = lvl };
             }
         } else if (stage == OFF) {
@@ -322,22 +328,26 @@ class EnvelopeBase {
     envelope_state_t last_state = {
         .stage = OFF,
         .lvl_start = 0,
-        .lvl_now = 0
+        .lvl_now = 0,
+        .elapsed = 0
     };
     void process_envelope(unsigned long now = millis()) {
-        now = ticks;
+        //now = ticks;
         unsigned long elapsed = now - this->stage_triggered_at;
         unsigned long real_elapsed = elapsed;    // elapsed is currently the number of REAL ticks that have passed
 
         envelope_state_t new_state = calculate_envelope_level(last_state.stage, elapsed, last_state.lvl_start, velocity);
-        if (new_state.stage!=last_state.stage)
+        if (new_state.stage!=last_state.stage) {
+            //Serial.printf("process_envelope(now=%-3i) began at stage %i, changed to stage %i (elapsed is %-3i)\n", now, last_state.stage, new_state.stage, elapsed);
             this->stage_triggered_at = now;
+        }
 
-        if (this->last_sent_actual_lvl != new_state.lvl_now){
+        if (this->last_sent_actual_lvl != new_state.lvl_now) {
             send_envelope_level(new_state.lvl_now);
             last_sent_actual_lvl = new_state.lvl_now;
         }
 
+        last_state.elapsed = elapsed;
         last_state.stage = new_state.stage;
         last_state.lvl_start = new_state.lvl_start;
         last_state.lvl_now = new_state.lvl_now;

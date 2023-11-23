@@ -87,6 +87,12 @@ class EnvelopeDisplay : public MenuItem
                 BLUE
             };
 
+            // draw a horizontal line representing the current envelope level
+            if (envelope->last_state.stage!=0) {
+                int y = PARAMETER_INPUT_GRAPH_HEIGHT - ((envelope->last_state.lvl_now/127.0) * PARAMETER_INPUT_GRAPH_HEIGHT);
+                tft->drawLine(0, base_row + y, tft->width(), base_row + y, stage_colours[envelope->last_state.stage]);
+            }
+
             int last_y = 0;
             for (int screen_x = 0 ; screen_x < tft->width() ; screen_x++) {
                 //const uint16_t tick_for_screen_X = ticks_to_memory_step((int)((float)screen_x * ticks_per_pixel)); // the tick corresponding to this screen position
@@ -136,8 +142,10 @@ class EnvelopeIndicator : public MenuItem {
     virtual int display(Coord pos, bool selected, bool opened) override {
         tft->printf("Name: %s | ", (char*)envelope->label);
         //tft->printf("   CC: %i\n", envelope->midi_cc);
-        tft->printf("Stage: %7s | ", (char*)stage_labels[envelope->last_state.stage]);
-        tft->printf("Level: %i\n", envelope->last_state.lvl_now);
+        tft->printf("Stage: %7s \n", (char*)stage_labels[envelope->last_state.stage]);
+        tft->printf("Trig'd at: %-5i | ", envelope->stage_triggered_at);
+        tft->printf("Elapsed: %-5i\n", envelope->last_state.elapsed);
+        tft->printf("Level: %-3i \n", envelope->last_state.lvl_now);
         
         return tft->getCursorY();
     }
