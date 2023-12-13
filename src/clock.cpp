@@ -177,6 +177,8 @@ void set_clock_mode_changed_callback(void(*callback)(ClockMode old_mode, ClockMo
 bool update_clock_ticks() {
   static unsigned long last_ticked = 0;
   __UINT_FAST32_TYPE__ mics = micros();
+  if (!playing) 
+    return false;
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST && /*playing && */check_and_unset_pc_usb_midi_clock_ticked()) {
     ticks++;
     return true;
@@ -226,15 +228,19 @@ void clock_stop() {
   #ifdef USE_ATOMIC
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) 
   #endif
+  //Serial.println("clock_stop()"); Serial.flush();
   {
     #ifdef USE_UCLOCK
       uClock.pause();
     #endif
 
     if (!playing) {
+      //Serial.println("not playing - calling clock_reset()"); Serial.flush();
       clock_reset();
     }
+    //Serial.println("about to call clock_set_playing()"); Serial.flush();
     clock_set_playing(false);
+    //Serial.println("called clock_set_playing()"); Serial.flush();
   }
 }
 void clock_continue() {
