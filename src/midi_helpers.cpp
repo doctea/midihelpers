@@ -24,7 +24,7 @@ const char *note_names[] = {
   "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
 };
 
-#define NOTE_NAME_LENGTH 4  // 3 characters + \0 terminator. eg "C#5", "D3"
+#define NOTE_NAME_LENGTH 4  // 3 characters + \0 terminator. eg "C#5\0", "D3\0"
 
 // todo: version that will return GM drum name
 const char *get_note_name_c(int pitch) {

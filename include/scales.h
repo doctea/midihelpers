@@ -106,10 +106,10 @@ class chord_instance_t {
     public:
     SCALE scale = SCALE::MAJOR;
     CHORD::Type chord_type = CHORD::NONE;
-    int8_t chord_root = -1;
-    int8_t pitches[PITCHES_PER_CHORD] = { -1, -1, -1, -1 };
+    int8_t chord_root = NOTE_OFF;
+    int8_t pitches[PITCHES_PER_CHORD] = { NOTE_OFF, NOTE_OFF, NOTE_OFF, NOTE_OFF };
     int8_t inversion = 0;
-    int8_t velocity = 127;
+    int8_t velocity = MIDI_MAX_VELOCITY;
     bool changed = true;
 
     const char *get_label() {
@@ -121,7 +121,7 @@ class chord_instance_t {
             snprintf(pitch_string, 40, 
                 "%3s %6s: %3s,%3s,%3s,%3s inv%1i,ve=%3i", 
                 get_note_name_c(chord_root), 
-                chord_type!=CHORD::NONE?chords[chord_type].label : "N/A", 
+                chord_type!=CHORD::NONE ? chords[chord_type].label : "N/A", 
                 get_note_name_c(pitches[0]), 
                 get_note_name_c(pitches[1]), 
                 get_note_name_c(pitches[2]), 
