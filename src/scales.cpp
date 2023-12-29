@@ -91,17 +91,24 @@ int8_t quantise_pitch(int8_t pitch, int8_t scale_root, SCALE scale_number) {
 
   int last_interval = -1;
   for (int index = 0 ; index < PITCHES_PER_SCALE ; index++) {
-    int interval = scales[scale_number].valid_chromatic_pitches[index];
+    int8_t interval = scales[scale_number].valid_chromatic_pitches[index];
+    if (!is_valid_note(interval)) 
+      continue;
     if (interval == relative_pitch) 
       return pitch;
     if (relative_pitch < interval) {
-      int v = last_interval + (octave*12) + scale_root;
+      int8_t v = last_interval + (octave*12) + scale_root;
       if (v - pitch > 7) // if we've crossed octave boundary, step down an octave
-        v-=12;
+        v -= 12;
+      //Serial.printf("branch#2: Quantised \t%s (%i)\tto\t%s (%i), scale_number=%i and scale_root=%i (%s)\n", get_note_name_c(pitch), pitch, get_note_name_c(v), v, scale_number, scale_root, get_note_name_c(scale_root));
       return v;
     }
     last_interval = interval;
   }
+  //int8_t original_pitch = pitch;
+  last_interval += (octave*12);  
+  //Serial.printf("branch#3: Quantised \t%s (%i)\tto\t%s (%i), scale_number=%i and scale_root=%i (%s)\n", get_note_name_c(pitch), pitch, get_note_name_c(last_interval), last_interval, scale_number, scale_root, get_note_name_c(scale_root));
+
   return last_interval;
 }
 
