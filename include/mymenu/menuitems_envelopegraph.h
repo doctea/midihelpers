@@ -75,7 +75,7 @@ class EnvelopeDisplay : public MenuItem
 
             const uint16_t base_row = pos.y;
             //static float ticks_per_pixel = (float)memory_size / (float)tft->width();
-            static float tickers_per_pixel = 1;
+            //static float tickers_per_pixel = 1;
 
             int stage_colours[] = {
                 0x8080,

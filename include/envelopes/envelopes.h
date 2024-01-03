@@ -334,7 +334,7 @@ class EnvelopeBase {
     void process_envelope(unsigned long now = millis()) {
         //now = ticks;
         unsigned long elapsed = now - this->stage_triggered_at;
-        unsigned long real_elapsed = elapsed;    // elapsed is currently the number of REAL ticks that have passed
+        //unsigned long real_elapsed = elapsed;    // elapsed is currently the number of REAL ticks that have passed
 
         envelope_state_t new_state = calculate_envelope_level(last_state.stage, elapsed, last_state.lvl_start, velocity);
         if (new_state.stage!=last_state.stage) {
