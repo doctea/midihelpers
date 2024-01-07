@@ -24,8 +24,14 @@ void set_global_restart_callback(void(*global_restart_callback)()) {
 volatile uint32_t last_ticked_at_micros = micros();
 #ifdef USE_UCLOCK
   FLASHMEM void setup_uclock(void(*do_tick)(uint32_t)) {
+    /*//uClock 1.5.1 version
     uClock.init();
     uClock.setClock96PPQNOutput(do_tick);
+    uClock.setTempo(bpm_current);*/
+    //uClock 2.0.0 version
+    uClock.init();
+    uClock.setPPQN(uClock.PPQN_24);
+    uClock.setOnSync24(do_tick);  // tick at PPQN // TODO: tick faster than this rate and then clock divide in do_tick so that we can implement clock multiplying!
     uClock.setTempo(bpm_current);
     clock_reset();
   }
