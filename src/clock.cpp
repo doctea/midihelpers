@@ -1,5 +1,6 @@
 #include "clock.h"
 //#include "midi/midi_outs.h"
+#include <Arduino.h>
 
 #if defined(USE_UCLOCK) && defined(CORE_TEENSY)
   #include <util/atomic.h>
@@ -20,6 +21,8 @@ void set_global_restart_callback(void(*global_restart_callback)()) {
     __global_restart_callback = global_restart_callback;
 }
 
+//extern int8_t shuffle_data;
+
 /// use cheapclock clock
 volatile uint32_t last_ticked_at_micros = micros();
 #ifdef USE_UCLOCK
@@ -33,6 +36,14 @@ volatile uint32_t last_ticked_at_micros = micros();
     uClock.setPPQN(uClock.PPQN_24);
     uClock.setOnSync24(do_tick);  // tick at PPQN // TODO: tick faster than this rate and then clock divide in do_tick so that we can implement clock multiplying!
     uClock.setTempo(bpm_current);
+    
+    /*
+    // todo: support midi clock shuffle, when possible to do so
+    uClock.setShuffleSize(16);
+    for (int i = 0 ; i < 16 ; i++) {
+      uClock.setShuffleData(i, random(-5,5));
+    }
+    uClock.setShuffle(true);*/
     clock_reset();
   }
 #else
@@ -46,7 +57,7 @@ volatile bool usb_midi_clock_ticked = false;
 volatile unsigned long last_usb_midi_clock_ticked_at;
 void pc_usb_midi_handle_clock() {
     if (clock_mode==CLOCK_EXTERNAL_USB_HOST && usb_midi_clock_ticked) {
-        Serial.printf("WARNING: received a usb midi clock tick at %u, but last one from %u was not yet processed (didn't process within gap of %u)!\n", millis(), last_usb_midi_clock_ticked_at, millis()-last_usb_midi_clock_ticked_at);
+        if (Serial) Serial.printf("WARNING: received a usb midi clock tick at %u, but last one from %u was not yet processed (didn't process within gap of %u)!\n", millis(), last_usb_midi_clock_ticked_at, millis()-last_usb_midi_clock_ticked_at);
     }
     /*if (CLOCK_EXTERNAL_USB_HOST) {  // TODO: figure out why tempo estimation isn't working and fix
         tap_tempo_tracker.push_beat();
@@ -181,35 +192,49 @@ void set_clock_mode_changed_callback(void(*callback)(ClockMode old_mode, ClockMo
 #endif
 
 bool update_clock_ticks() {
-  static unsigned long last_ticked = 0;
+  static unsigned long last_reported_tick = -1;
+  static volatile unsigned long last_ticked = 0;
   __UINT_FAST32_TYPE__ mics = micros();
   if (!playing) 
     return false;
+
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST && /*playing && */check_and_unset_pc_usb_midi_clock_ticked()) {
     ticks++;
     return true;
+  }
   #ifdef ENABLE_CLOCK_INPUT_MIDI_DIN
-  } else if (clock_mode==CLOCK_EXTERNAL_MIDI_DIN && check_and_unset_din_midi_clock_ticked()) {
-    ticks++;
-    return true;
+    else if (clock_mode==CLOCK_EXTERNAL_MIDI_DIN && check_and_unset_din_midi_clock_ticked()) {
+      ticks++;
+      return true;
+    }
   #endif
   #ifdef ENABLE_CLOCK_INPUT_CV
-  } else if (clock_mode==CLOCK_EXTERNAL_CV && check_and_unset_cv_clock_ticked()) {
-    ticks += external_cv_ticks_per_pulse;
-    return true;
+    else if (clock_mode==CLOCK_EXTERNAL_CV && check_and_unset_cv_clock_ticked()) {
+      ticks += external_cv_ticks_per_pulse;
+      return true;
+    }
   #endif
-  } else if (clock_mode==CLOCK_INTERNAL && playing && mics - last_ticked >= micros_per_tick) {
-    ticks++;
-    missed_micros = (mics - last_ticked - micros_per_tick);
-    last_ticked = mics;
-    last_ticked_at_micros = mics;
+  #ifndef USE_UCLOCK
+    else if (clock_mode==CLOCK_INTERNAL && playing && mics - last_ticked >= micros_per_tick) {
+      ticks++;
+      missed_micros = (mics - last_ticked - micros_per_tick);
+      last_ticked = mics;
+      last_ticked_at_micros = mics;
 
-    /*if (is_bpm_on_beat(ticks)) {
-        Serial.printf("beat %i!\n", ticks / PPQN);
-        Serial.flush();
-    }*/
-    return true;
-  }
+      /*if (is_bpm_on_beat(ticks)) {
+          Serial.printf("beat %i!\n", ticks / PPQN);
+          Serial.flush();
+      }*/
+      return true;
+    }
+  #else
+    else if (clock_mode==CLOCK_INTERNAL && playing && ticks != last_reported_tick) {
+      last_reported_tick = ticks;
+      last_ticked = mics;
+      last_ticked_at_micros = mics;
+    }
+  #endif
+
   return false;
 }
 
