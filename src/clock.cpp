@@ -192,7 +192,9 @@ void set_clock_mode_changed_callback(void(*callback)(ClockMode old_mode, ClockMo
 #endif
 
 bool update_clock_ticks() {
-  static unsigned long last_reported_tick = -1;
+  #ifdef USE_UCLOCK
+    static unsigned long last_reported_tick = -1;
+  #endif
   static volatile unsigned long last_ticked = 0;
   __UINT_FAST32_TYPE__ mics = micros();
   if (!playing) 
@@ -214,7 +216,15 @@ bool update_clock_ticks() {
       return true;
     }
   #endif
-  #ifndef USE_UCLOCK
+  #ifdef USE_UCLOCK
+    else if (clock_mode==CLOCK_INTERNAL && playing && ticks != last_reported_tick) {
+      last_reported_tick = ticks;
+      last_ticked = mics;
+      last_ticked_at_micros = mics;
+      missed_micros = (mics - last_ticked - micros_per_tick);
+      return true;
+    }
+  #else
     else if (clock_mode==CLOCK_INTERNAL && playing && mics - last_ticked >= micros_per_tick) {
       ticks++;
       missed_micros = (mics - last_ticked - micros_per_tick);
@@ -226,12 +236,6 @@ bool update_clock_ticks() {
           Serial.flush();
       }*/
       return true;
-    }
-  #else
-    else if (clock_mode==CLOCK_INTERNAL && playing && ticks != last_reported_tick) {
-      last_reported_tick = ticks;
-      last_ticked = mics;
-      last_ticked_at_micros = mics;
     }
   #endif
 
