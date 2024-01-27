@@ -218,10 +218,10 @@ bool update_clock_ticks() {
   #endif
   #ifdef USE_UCLOCK
     else if (clock_mode==CLOCK_INTERNAL && playing && ticks != last_reported_tick) {
+      missed_micros = (mics - last_ticked - micros_per_tick);
       last_reported_tick = ticks;
       last_ticked = mics;
       last_ticked_at_micros = mics;
-      missed_micros = (mics - last_ticked - micros_per_tick);
       return true;
     }
   #else
