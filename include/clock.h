@@ -39,6 +39,7 @@ volatile extern uint32_t last_ticked_at_micros;
   void setup_cheapclock();
 #endif
 
+void change_clock_mode(ClockMode new_mode);
 void pc_usb_midi_handle_clock();
 bool check_and_unset_pc_usb_midi_clock_ticked();
 

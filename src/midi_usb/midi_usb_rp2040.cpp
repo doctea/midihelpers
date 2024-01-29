@@ -49,11 +49,7 @@ void setup_usb() {
 void auto_handle_start() {
     if(clock_mode != CLOCK_EXTERNAL_USB_HOST) {
         // automatically switch to using external USB clock if we receive a START message from the usb host
-        // todo: probably move this into the midihelper library?
-        //set_clock_mode(CLOCK_EXTERNAL_USB_HOST);
-        if (__clock_mode_changed_callback!=nullptr)
-            __clock_mode_changed_callback(clock_mode, CLOCK_EXTERNAL_USB_HOST);
-        clock_mode = CLOCK_EXTERNAL_USB_HOST;
+        change_clock_mode(CLOCK_EXTERNAL_USB_HOST);
         //ticks = 0;
         //messages_log_add(String("Auto-switched to CLOCK_EXTERNAL_USB_HOST"));
     }
@@ -66,7 +62,7 @@ void setup_midi() {
         USBMIDI.begin(MIDI_CHANNEL_OMNI);
         USBMIDI.turnThruOff();
 
-        // callbacks for messages recieved from USB MIDI host
+        // callbacks for messages received from USB MIDI host
         USBMIDI.setHandleClock(pc_usb_midi_handle_clock);
         USBMIDI.setHandleStart(auto_handle_start); //pc_usb_midi_handle_start);
         USBMIDI.setHandleStop(pc_usb_midi_handle_stop);

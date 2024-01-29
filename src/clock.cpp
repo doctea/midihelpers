@@ -2,9 +2,15 @@
 //#include "midi/midi_outs.h"
 #include <Arduino.h>
 
-#if defined(USE_UCLOCK) && defined(CORE_TEENSY)
-  #include <util/atomic.h>
-  #define USE_ATOMIC
+#if defined(USE_UCLOCK) 
+    #if defined(CORE_TEENSY)
+        #include <util/atomic.h>
+    #elif defined(ARDUINO_ARCH_RP2040)
+        #include "uClock.h"
+        #include "SimplyAtomic.h"
+        #define ATOMIC_BLOCK(X) ATOMIC()
+    #endif
+    #define USE_ATOMIC
 #endif
 
 #ifndef CORE_TEENSY
@@ -33,17 +39,10 @@ volatile uint32_t last_ticked_at_micros = micros();
     uClock.setTempo(bpm_current);*/
     //uClock 2.0.0 version
     uClock.init();
-    uClock.setPPQN(uClock.PPQN_24);
+    //uClock.setPPQN(uClock.PPQN_96);
     uClock.setOnSync24(do_tick);  // tick at PPQN // TODO: tick faster than this rate and then clock divide in do_tick so that we can implement clock multiplying!
     uClock.setTempo(bpm_current);
     
-    /*
-    // todo: support midi clock shuffle, when possible to do so
-    uClock.setShuffleSize(16);
-    for (int i = 0 ; i < 16 ; i++) {
-      uClock.setShuffleData(i, random(-5,5));
-    }
-    uClock.setShuffle(true);*/
     clock_reset();
   }
 #else
@@ -74,10 +73,16 @@ void pc_usb_midi_handle_clock() {
 void pc_usb_midi_handle_start() {
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
     //tap_tempo_tracker.reset();
-    clock_reset();
-    clock_start();
-    if (__global_restart_callback!=nullptr)
-        __global_restart_callback();
+    #ifdef USE_ATOMIC
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+    #endif
+    {
+      clock_reset();
+      if (!playing)
+        clock_start();
+      if (__global_restart_callback!=nullptr)
+          __global_restart_callback();
+    }
   }
 }
 void pc_usb_midi_handle_stop() {
@@ -87,12 +92,14 @@ void pc_usb_midi_handle_stop() {
       if (__global_restart_callback!=nullptr)
         __global_restart_callback();
     }
-    clock_stop();
+    if (playing)
+      clock_stop();
   }
 }
 void pc_usb_midi_handle_continue() {
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
-    clock_start();
+    if (!playing)
+      clock_start();
   }
 }
 
@@ -201,7 +208,11 @@ bool update_clock_ticks() {
     return false;
 
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST && /*playing && */check_and_unset_pc_usb_midi_clock_ticked()) {
-    ticks++;
+    #ifdef USE_UCLOCK
+      // don't do anything -- ticks is set by uClock's callback
+    #else
+      ticks++;
+    #endif
     return true;
   }
   #ifdef ENABLE_CLOCK_INPUT_MIDI_DIN
@@ -252,11 +263,11 @@ void clock_start() {
   #endif
   {
     #ifdef USE_UCLOCK
-      uClock.start();
+      if (!playing)
+        uClock.start();
     #endif
 
     clock_set_playing(true);
-
   }
 }
 void clock_stop() {
@@ -284,7 +295,8 @@ void clock_continue() {
   #endif
   {
     #ifdef USE_UCLOCK
-      uClock.pause();
+      if (!playing)
+        uClock.pause();
     #endif
 
     clock_set_playing(true);
@@ -301,5 +313,33 @@ void clock_reset() {
     #endif
     
     ticks = 0;
+  }
+}
+
+void change_clock_mode(ClockMode new_mode) {
+  if(clock_mode!=new_mode) {
+    if(__clock_mode_changed_callback!=nullptr)
+      __clock_mode_changed_callback(clock_mode, new_mode);
+    
+    #ifdef USE_UCLOCK
+      #ifdef USE_ATOMIC
+      ATOMIC_BLOCK(ATOMIC_RESTORESTATE) 
+      #endif
+      {
+        bool was_playing = playing;
+        uClock.stop();
+        if (new_mode==ClockMode::CLOCK_INTERNAL) {
+          uClock.setMode(uClock.SyncMode::INTERNAL_CLOCK);
+          //if(playing) uClock.start();
+          //uClock.start();
+        } else {
+          uClock.setMode(uClock.SyncMode::EXTERNAL_CLOCK);
+          //uClock.stop();
+        }
+        if (was_playing) uClock.start();
+      }
+    #endif 
+
+    clock_mode = new_mode;
   }
 }

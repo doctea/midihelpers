@@ -8,7 +8,11 @@ volatile float micros_per_tick = (float)1000000.0 * ((float)60.0 / (float)(bpm_c
 
 volatile long last_processed_tick = -1;
 
-volatile bool playing = true;
+#ifdef USE_UCLOCK
+  volatile bool playing = false;
+#else
+  volatile bool playing = true;
+#endif
 bool single_step = false;
 bool restart_on_next_bar = false;
 
