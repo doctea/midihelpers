@@ -5,12 +5,13 @@
 #if defined(USE_UCLOCK) 
     #if defined(CORE_TEENSY)
         #include <util/atomic.h>
+        #define USE_ATOMIC
     #elif defined(ARDUINO_ARCH_RP2040)
         #include "uClock.h"
         #include "SimplyAtomic.h"
         #define ATOMIC_BLOCK(X) ATOMIC()
+      #define USE_ATOMIC
     #endif
-    #define USE_ATOMIC
 #endif
 
 #ifndef CORE_TEENSY
@@ -55,19 +56,19 @@ volatile uint32_t last_ticked_at_micros = micros();
 volatile bool usb_midi_clock_ticked = false;
 volatile unsigned long last_usb_midi_clock_ticked_at;
 void pc_usb_midi_handle_clock() {
-    if (clock_mode==CLOCK_EXTERNAL_USB_HOST && usb_midi_clock_ticked) {
-        if (Serial) Serial.printf("WARNING: received a usb midi clock tick at %u, but last one from %u was not yet processed (didn't process within gap of %u)!\n", millis(), last_usb_midi_clock_ticked_at, millis()-last_usb_midi_clock_ticked_at);
-    }
-    /*if (CLOCK_EXTERNAL_USB_HOST) {  // TODO: figure out why tempo estimation isn't working and fix
-        tap_tempo_tracker.push_beat();
-    }*/
-    if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
-      last_usb_midi_clock_ticked_at = millis();
-      usb_midi_clock_ticked = true;
-      #ifdef USE_UCLOCK
-        uClock.clockMe();
-      #endif
-    }
+  if (clock_mode==CLOCK_EXTERNAL_USB_HOST && usb_midi_clock_ticked) {
+      if (Serial) Serial.printf("WARNING: received a usb midi clock tick at %u, but last one from %u was not yet processed (didn't process within gap of %u)!\n", millis(), last_usb_midi_clock_ticked_at, millis()-last_usb_midi_clock_ticked_at);
+  }
+  /*if (CLOCK_EXTERNAL_USB_HOST) {  // TODO: figure out why tempo estimation isn't working and fix
+      tap_tempo_tracker.push_beat();
+  }*/
+  if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
+    last_usb_midi_clock_ticked_at = millis();
+    usb_midi_clock_ticked = true;
+    #ifdef USE_UCLOCK
+      uClock.clockMe();
+    #endif
+  }
 }
 
 void pc_usb_midi_handle_start() {
