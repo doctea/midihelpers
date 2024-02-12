@@ -277,16 +277,20 @@ void clock_stop() {
   #endif
   //Serial.println("clock_stop()"); Serial.flush();
   {
+    bool should_reset_clock = !playing;
+
+    clock_set_playing(false);
+
     #ifdef USE_UCLOCK
-      uClock.pause();
+      uClock.stop();
     #endif
 
-    if (!playing) {
+    if (should_reset_clock) {
       //Serial.println("not playing - calling clock_reset()"); Serial.flush();
       clock_reset();
     }
     //Serial.println("about to call clock_set_playing()"); Serial.flush();
-    clock_set_playing(false);
+    //clock_set_playing(false);
     //Serial.println("called clock_set_playing()"); Serial.flush();
   }
 }
