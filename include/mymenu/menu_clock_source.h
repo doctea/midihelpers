@@ -9,16 +9,16 @@
 #include "menuitems.h"
 
 class ClockSourceSelectorControl : public SelectorControl<int> {
-    int actual_value_index;
+    int_least16_t actual_value_index;
     //void (*setter_func)(MIDIOutputWrapper *midi_output);
     //MIDIOutputWrapper *initial_selected_output_wrapper;
 
     public:
 
-    ClockSourceSelectorControl(const char *label, int initial_value) 
+    ClockSourceSelectorControl(const char *label, int_least16_t initial_value) 
         : SelectorControl(label, initial_value), actual_value_index(initial_value) {};
 
-    virtual const char* get_label_for_index(int index) {
+    virtual const char* get_label_for_index(int_least16_t index) {
         if (index==CLOCK_INTERNAL)
             return "Internal";
         else if (index==CLOCK_EXTERNAL_USB_HOST)
@@ -36,7 +36,7 @@ class ClockSourceSelectorControl : public SelectorControl<int> {
         return "??";
     }
 
-    virtual void setter (int new_value) {
+    virtual void setter (int_least16_t new_value) {
         #ifdef USE_UCLOCK
             if (clock_mode==CLOCK_INTERNAL && new_value!=clock_mode) {
                 uClock.stop();
@@ -48,7 +48,7 @@ class ClockSourceSelectorControl : public SelectorControl<int> {
         actual_value_index = clock_mode;
         //selected_value_index = clock_mode;
     }
-    virtual int getter () {
+    virtual int_least16_t getter () {
         return clock_mode; //selected_value_index;
     }
 
