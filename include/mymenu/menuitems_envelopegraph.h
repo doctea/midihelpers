@@ -84,7 +84,7 @@ class EnvelopeIndicator : public MenuItem {
     public:
     EnvelopeBase *envelope = nullptr;
 
-    static constexpr char *stage_labels[6] = {
+    static constexpr const char *stage_labels[6] = {
         "Off",
         "Attack",
         "Hold",
