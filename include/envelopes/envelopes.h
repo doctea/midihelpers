@@ -295,7 +295,7 @@ class EnvelopeBase {
     }
 
     struct graph_t {
-        int8_t value = 0;
+        int_least8_t value = 0;
         char stage = -1;
     };
     graph_t graph[240];

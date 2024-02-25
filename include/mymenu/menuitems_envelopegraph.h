@@ -17,76 +17,35 @@
 #include "bpm.h"    // because we need to know the current ticks
 
 //template<unsigned long memory_size>
-class EnvelopeDisplay : public MenuItem
-{
+class EnvelopeDisplay : public MenuItem {
+    static constexpr int16_t stage_colours[] = {
+        (int16_t)0x8080,
+        (int16_t)GREEN,
+        (int16_t)YELLOW,
+        (int16_t)ORANGE,
+        (int16_t)RED,
+        (int16_t)PURPLE,
+        (int16_t)BLUE
+    };
+
     public:
         EnvelopeBase *envelope = nullptr;
 
-        // todo: remember an int type instead of a float, for faster drawing
-        typedef float memory_log;
-        unsigned long memory_size = 240;
-        memory_log *logged = nullptr;
-
-        //EnvelopeDisplay(char *label, unsigned long memory_size, EnvelopeOutput *envelope) : MenuItem(label) {
         EnvelopeDisplay(const char *label, EnvelopeBase *envelope) : MenuItem(label) {
             this->envelope = envelope;
-            this->memory_size = memory_size;
-
             this->selectable = false;
-
-            //if (parameter_input!=nullptr) 
-            //    this->set_default_colours(parameter_input->colour);
         }
 
         virtual void configure(EnvelopeBase *envelope) {
             this->envelope = envelope;
         }
 
-        unsigned long ticks_to_memory_step(uint32_t ticks) {
-            return ( ticks % memory_size );
-        }
-
         virtual int display(Coord pos, bool selected, bool opened) override {
-            //Serial.println("MidiOutputSelectorControl display()!");
             tft->setTextSize(0);
 
-            /*#define DISPLAY_INFO_IN_LABEL
-            #ifdef DISPLAY_INFO_IN_LABEL
-                static char custom_label[MAX_LABEL_LENGTH*2];
-
-                snprintf(custom_label, MAX_LABEL_LENGTH*2, "[%s] %-3s >%-3i %-3s>",
-                    //label,                    
-                    this->parameter_input!=nullptr ? (char*)this->parameter_input->getInputInfo()  : "",
-                    this->parameter_input!=nullptr ? (char*)this->parameter_input->getInputValue() : "",
-                    //(int)(this->logged[(ticks%LOOP_LENGTH_TICKS] * 100.0)
-                    this->parameter_input!=nullptr ? (int)(this->parameter_input->get_normal_value()*100.0) : 0, 
-                    (char*)this->parameter_input->getOutputValue()
-                );
-                colours(selected, parameter_input->colour, BLACK);
-                pos.y = header(custom_label, pos, selected, opened);         
-            #else 
-                pos.y = header(label, pos, selected, opened);                      
-                //tft->setCursor(pos.x, pos.y);
-            #endif*/
             pos.y = tft->getCursorY();
 
-            // switch back to colour-on-black for actual display
-            //colours(false, parameter_input->colour, BLACK);
-
             const uint16_t base_row = pos.y;
-            //static float ticks_per_pixel = (float)memory_size / (float)tft->width();
-            //static float tickers_per_pixel = 1;
-
-            int stage_colours[] = {
-                0x8080,
-                GREEN,
-                YELLOW,
-                ORANGE,
-                RED,
-                PURPLE,
-                BLUE
-            };
-
             // draw a horizontal line representing the current envelope level
             if (envelope->last_state.stage!=0) {
                 int y = PARAMETER_INPUT_GRAPH_HEIGHT - ((envelope->last_state.lvl_now/127.0) * PARAMETER_INPUT_GRAPH_HEIGHT);
@@ -95,7 +54,6 @@ class EnvelopeDisplay : public MenuItem
 
             int last_y = 0;
             for (int screen_x = 0 ; screen_x < tft->width() ; screen_x++) {
-                //const uint16_t tick_for_screen_X = ticks_to_memory_step((int)((float)screen_x * ticks_per_pixel)); // the tick corresponding to this screen position
                 const uint16_t tick_for_screen_X = screen_x;
                 float value = (float)envelope->graph[tick_for_screen_X].value;
                 byte stage = envelope->graph[tick_for_screen_X].stage;
@@ -126,7 +84,7 @@ class EnvelopeIndicator : public MenuItem {
     public:
     EnvelopeBase *envelope = nullptr;
 
-    const char *stage_labels[6] = {
+    static constexpr char *stage_labels[6] = {
         "Off",
         "Attack",
         "Hold",
