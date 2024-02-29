@@ -44,6 +44,7 @@ volatile extern float bpm_current; //BPM_MINIMUM; //60.0f;
 #define BPM_CURRENT_STEP_OF_BAR     (ticks % (PPQN*BEATS_PER_BAR) / (PPQN/STEPS_PER_BEAT))
 #define BPM_CURRENT_STEP_OF_PHRASE  (ticks % (PPQN*BEATS_PER_BAR*BARS_PER_PHRASE) / (PPQN/STEPS_PER_BEAT))
 #define BPM_CURRENT_BEAT_OF_PHRASE  (ticks % (PPQN*BEATS_PER_BAR*BARS_PER_PHRASE) / (PPQN))
+#define BPM_CURRENT_TICK_OF_BEAT    (ticks % PPQN)
 
 int beat_number_from_ticks(signed long ticks);
 int step_number_from_ticks(signed long ticks);
