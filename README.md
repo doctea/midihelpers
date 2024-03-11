@@ -19,7 +19,7 @@ Helpers for some MIDI stuff common to my [usb_midi_clocker](https://github.com/d
 # Requirements
 
 - [vortigont/LinkedList](https://github.com/vortigont/LinkedList) library
-- (if using USE_UCLOCK mode) [midiliab/uClock](https://github/midilab/uClock) library (version 2.0.0 or above)
+- (if using USE_UCLOCK mode) [midiliab/uClock](https://github.com/midilab/uClock) library (version 2.0.0 or above)
 
 # Setting up MIDI and USB MIDI on RP2040 boards
 
