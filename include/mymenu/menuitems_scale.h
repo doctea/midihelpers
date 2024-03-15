@@ -319,11 +319,11 @@ class ObjectScaleNoteMenuItem : public ObjectNumberControl<TargetClass, DataType
             void(TargetClass::*setter_func)(DataType), 
             DataType(TargetClass::*getter_func)(), 
             void (*on_change_handler)(DataType last_value, DataType new_value),
-            DataType minimum_value,
-            DataType maximum_value,
+            DataType minimumDataValue,
+            DataType maximumDataValue,
             bool go_back_on_select = false,
             bool direct = false
-    ) : ObjectNumberControl<TargetClass,DataType>(label, target_object, setter_func, getter_func, on_change_handler, minimum_value, maximum_value, go_back_on_select, direct) 
+    ) : ObjectNumberControl<TargetClass,DataType>(label, target_object, setter_func, getter_func, on_change_handler, minimumDataValue, maximumDataValue, go_back_on_select, direct) 
         {}
 
     virtual const char *getFormattedValue(int value) override {
@@ -342,11 +342,11 @@ class LambdaScaleNoteMenuItem : public LambdaNumberControl<DataType> {
         setter_func_def setter_func,
         getter_func_def getter_func,
         void (*on_change_handler)(DataType last_value, DataType new_value),
-        DataType minimum_value,
-        DataType maximum_value,
+        DataType minimumDataValue,
+        DataType maximumDataValue,
         bool go_back_on_select = false,
         bool direct = false
-    ) : LambdaNumberControl<DataType>(label, setter_func, getter_func, on_change_handler, minimum_value, maximum_value, go_back_on_select, direct) 
+    ) : LambdaNumberControl<DataType>(label, setter_func, getter_func, on_change_handler, minimumDataValue, maximumDataValue, go_back_on_select, direct) 
         {}
 
     virtual const char *getFormattedValue(int value) override {
