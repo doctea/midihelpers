@@ -1,3 +1,5 @@
+This work is licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+
 # midihelpers library
 
 Helpers for some MIDI stuff common to my [usb_midi_clocker](https://github.com/doctea/usb_midi_clock) and [Microlidian](https://github.com/doctea/Microlidian) projects.
