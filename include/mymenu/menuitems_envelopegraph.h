@@ -31,9 +31,8 @@ class EnvelopeDisplay : public MenuItem {
     public:
         EnvelopeBase *envelope = nullptr;
 
-        EnvelopeDisplay(const char *label, EnvelopeBase *envelope) : MenuItem(label) {
+        EnvelopeDisplay(const char *label, EnvelopeBase *envelope) : MenuItem(label, false) {
             this->envelope = envelope;
-            this->selectable = false;
         }
 
         virtual void configure(EnvelopeBase *envelope) {
@@ -93,7 +92,7 @@ class EnvelopeIndicator : public MenuItem {
         "Release"
     };
 
-    EnvelopeIndicator(const char *label, EnvelopeBase *envelope) : MenuItem(label) {
+    EnvelopeIndicator(const char *label, EnvelopeBase *envelope) : MenuItem(label, false) {
         this->envelope = envelope;
     }
 

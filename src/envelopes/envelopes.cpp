@@ -10,17 +10,19 @@
         //#ifdef ENABLE_ENVELOPE_MENUS
             char label[40];
             snprintf(label, 40, "Envelope %i: %s", index, this->label);
-            menu->add_page(label);
+            menu->add_page(label, C_WHITE, false);
 
-            SubMenuItemColumns *sub_menu_item_columns = new SubMenuItemColumns("Options", 3);
+            SubMenuItemColumns *sub_menu_item_columns = new SubMenuItemColumns("Options", 5);
+            sub_menu_item_columns->show_header = false;
 
-            sub_menu_item_columns->add(new ObjectNumberControl<EnvelopeBase,int8_t>("Attack",  this, &EnvelopeBase::set_attack,  &EnvelopeBase::get_attack,    nullptr, 0, 127, true, true));
-            sub_menu_item_columns->add(new ObjectNumberControl<EnvelopeBase,int8_t>("Hold",    this, &EnvelopeBase::set_hold,    &EnvelopeBase::get_hold,      nullptr, 0, 127, true, true));
-            sub_menu_item_columns->add(new ObjectNumberControl<EnvelopeBase,int8_t>("Decay",   this, &EnvelopeBase::set_decay,   &EnvelopeBase::get_decay,     nullptr, 0, 127, true, true));
-            sub_menu_item_columns->add(new ObjectNumberControl<EnvelopeBase,int8_t>("Sustain", this, &EnvelopeBase::set_sustain, &EnvelopeBase::get_sustain,   nullptr, 0, 127, true, true));
-            sub_menu_item_columns->add(new ObjectNumberControl<EnvelopeBase,int8_t>("Release", this, &EnvelopeBase::set_release, &EnvelopeBase::get_release,   nullptr, 0, 127, true, true));
+            sub_menu_item_columns->add(new ObjectNumberControl<EnvelopeBase,int8_t>("Att", this, &EnvelopeBase::set_attack,  &EnvelopeBase::get_attack,    nullptr, 0, 127, true, true));
+            sub_menu_item_columns->add(new ObjectNumberControl<EnvelopeBase,int8_t>("Hld", this, &EnvelopeBase::set_hold,    &EnvelopeBase::get_hold,      nullptr, 0, 127, true, true));
+            sub_menu_item_columns->add(new ObjectNumberControl<EnvelopeBase,int8_t>("Dec", this, &EnvelopeBase::set_decay,   &EnvelopeBase::get_decay,     nullptr, 0, 127, true, true));
+            sub_menu_item_columns->add(new ObjectNumberControl<EnvelopeBase,int8_t>("Sus", this, &EnvelopeBase::set_sustain, &EnvelopeBase::get_sustain,   nullptr, 0, 127, true, true));
+            sub_menu_item_columns->add(new ObjectNumberControl<EnvelopeBase,int8_t>("Rel", this, &EnvelopeBase::set_release, &EnvelopeBase::get_release,   nullptr, 0, 127, true, true));
 
             SubMenuItemBar *typebar = new SubMenuItemBar("Type");
+            typebar->show_header = false;
             typebar->add(new ObjectToggleControl<EnvelopeBase>     ("Inverted",  this, &EnvelopeBase::set_invert,  &EnvelopeBase::is_invert,     nullptr));
             typebar->add(new ObjectToggleControl<EnvelopeBase>     ("Looping",   this, &EnvelopeBase::set_loop,    &EnvelopeBase::is_loop,       nullptr));
 
