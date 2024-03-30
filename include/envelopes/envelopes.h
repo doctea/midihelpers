@@ -1,7 +1,8 @@
 #pragma once
 
 #include "bpm.h"
-//#include "output.h"
+
+#include "functional-vlpp.h"
 
 #include "SinTables.h"
 
@@ -24,10 +25,13 @@ class EnvelopeBase {
 
     const char *label = nullptr;
 
-    EnvelopeBase(const char *label) { 
+    using setter_func_def = vl::Func<void(int)>;
+    setter_func_def setter;
+
+    EnvelopeBase(const char *label, setter_func_def setter) {
         //this->randomise();
         this->label = label;
-        this->initialise_parameters();
+        this->setter = setter;
     }
 
     enum stage : int8_t {
@@ -65,13 +69,32 @@ class EnvelopeBase {
     int8_t last_sent_lvl; // value but not inverted
     int8_t last_sent_actual_lvl;  // actual midi value sent
 
+    virtual bool is_invert() {
+        return invert;
+    }
+    virtual void set_invert(bool i) {
+        this->invert = i;
+        calculate_graph();
+    }
+    virtual bool is_loop() {
+        return loop_mode;
+    }
+    virtual void set_loop(bool i) {
+        this->loop_mode = i;
+        calculate_graph();
+    }
+
     /*void send_envelope_level(int8_t level) {
         output_wrapper->sendControlChange(midi_cc, level, channel);
     }*/
-    virtual void send_envelope_level(uint8_t level) = 0;
+    virtual void send_envelope_level(uint8_t level) {
+        this->setter(level);
+    };
 
     virtual void randomise() = 0;
-    virtual void initialise_parameters() = 0;
+    /*virtual void initialise_parameters() {
+
+    }*/
 
     virtual void kill() {
         this->stage = OFF;
@@ -91,7 +114,7 @@ class EnvelopeBase {
         uint8_t lvl_now = 0;
         uint32_t elapsed = 0;
     };
-    envelope_state_t calculate_envelope_level(uint8_t stage, uint8_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127) = 0;
+    virtual envelope_state_t calculate_envelope_level(uint8_t stage, uint8_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127) = 0;
 
     struct graph_t {
         int_least8_t value = 0;
@@ -99,7 +122,7 @@ class EnvelopeBase {
     };
     graph_t graph[240];
 
-    void calculate_graph() {
+    virtual void calculate_graph() {
         envelope_state_t graph_state = {
             .stage = ATTACK,
             .lvl_start = 0,
@@ -130,7 +153,7 @@ class EnvelopeBase {
         .lvl_now = 0,
         .elapsed = 0
     };
-    void process_envelope(unsigned long now = millis()) {
+    virtual void process_envelope(unsigned long now = millis()) {
         //now = ticks;
         unsigned long elapsed = now - this->stage_triggered_at;
         //unsigned long real_elapsed = elapsed;    // elapsed is currently the number of REAL ticks that have passed
@@ -152,8 +175,6 @@ class EnvelopeBase {
         last_state.lvl_now = new_state.lvl_now;
     }
 
-
-    
     #ifdef ENABLE_SCREEN
         virtual void make_menu_items(Menu *menu, int index);
     #endif
@@ -165,7 +186,9 @@ class EnvelopeBase {
 class RegularEnvelope : public EnvelopeBase {
     public:
 
-    RegularEnvelope(const char *label) : EnvelopeBase(label) {}
+    RegularEnvelope(const char *label, setter_func_def setter) : EnvelopeBase(label, setter) {
+        this->initialise_parameters();
+    }
 
     // TODO: int delay_length = 5;                    // D - delay before atack starts
     unsigned int  attack_length   = 0;                // A - attack  - length of stage
@@ -187,7 +210,7 @@ class RegularEnvelope : public EnvelopeBase {
         this->set_decay((int8_t)random(0,127));
         this->set_sustain(random(64,127));
         this->set_release((int8_t)random(0,127));
-        this->invert = (int8_t)random(0,10) < 2;
+        this->set_invert((int8_t)random(0,10) < 2);
     }
 
     virtual void initialise_parameters() {
@@ -198,7 +221,7 @@ class RegularEnvelope : public EnvelopeBase {
         this->set_decay((int8_t)random(0,127));
         this->set_sustain(random(64,127));
         this->set_release((int8_t)random(0,127));
-        this->invert = (int8_t)random(0,10) < 2;
+        this->set_invert((int8_t)random(0,10) < 2);
     }
 
     // received a message that the state of the envelope should change (note on/note off etc)
@@ -256,7 +279,7 @@ class RegularEnvelope : public EnvelopeBase {
         }
     }
 
-    envelope_state_t calculate_envelope_level(uint8_t stage, uint8_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127) {
+    virtual envelope_state_t calculate_envelope_level(uint8_t stage, uint8_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127) {
         float ratio = (float)PPQN / (float)cc_value_sync_modifier;  // calculate ratio of real ticks : pseudoticks
         unsigned long elapsed = (float)stage_elapsed * ratio;   // convert real elapsed to pseudoelapsed
         //unsigned long elapsed = stage_elapsed;
@@ -314,7 +337,7 @@ class RegularEnvelope : public EnvelopeBase {
         } else if (stage == SUSTAIN) {
             //return_state.lvl_now = (unsigned char)sustain_value;
             return_state.lvl_now = sustain_ratio * velocity;
-            if (sustain_ratio==0.0 || this->loop_mode) {
+            if (sustain_ratio==0.0 || this->is_loop()) {
                 //Serial.printf("calculate_envelope_level in SUSTAIN, moving to RELEASE because sustain_ratio or loop_mode!\n");
                 return_state = { .stage = RELEASE, .lvl_start = return_state.lvl_now, .lvl_now = return_state.lvl_now };
             }
@@ -368,11 +391,11 @@ class RegularEnvelope : public EnvelopeBase {
                 return_state.lvl_now = lvl;
             }           
         } else {
-            if (this->loop_mode)
+            if (this->is_loop())
                 return_state.stage = ATTACK;
         }
 
-        return_state.lvl_now = this->invert ? 127-return_state.lvl_now : return_state.lvl_now;
+        return_state.lvl_now = this->is_invert() ? 127-return_state.lvl_now : return_state.lvl_now;
 
         return return_state;
     }
@@ -421,20 +444,6 @@ class RegularEnvelope : public EnvelopeBase {
     virtual int8_t get_release() {
         return this->release_value;
     }
-    virtual bool is_invert() {
-        return invert;
-    }
-    virtual void set_invert(bool i) {
-        this->invert = i;
-        calculate_graph();
-    }
-    virtual bool is_loop() {
-        return loop_mode;
-    }
-    virtual void set_loop(bool i) {
-        this->loop_mode = i;
-        calculate_graph();
-    }
     virtual int8_t get_stage() {
         return this->stage;
     }
@@ -460,5 +469,9 @@ class RegularEnvelope : public EnvelopeBase {
     virtual uint8_t get_cc_value_sync_modifier() {
         return this->cc_value_sync_modifier;
     }
+
+    #ifdef ENABLE_SCREEN
+        virtual void make_menu_items(Menu *menu, int index);
+    #endif
 
 };

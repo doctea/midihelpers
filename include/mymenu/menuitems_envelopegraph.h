@@ -61,7 +61,7 @@ class EnvelopeDisplay : public MenuItem {
                     //int last_y = GRAPH_HEIGHT - (this->logged[tick_for_screen_X] * GRAPH_HEIGHT);
                     //actual->drawLine(screen_x-1, base_row + last_y, screen_x, base_row + y, YELLOW);                    
                     tft->drawLine(screen_x-1, base_row + last_y, screen_x, base_row + y, stage_colours[stage]); //parameter_input->colour);                    
-                    if (envelope->invert)
+                    if (envelope->is_invert())
                         tft->drawLine(screen_x, base_row,     screen_x, base_row + y, stage_colours[stage]);
                     else
                         tft->drawLine(screen_x, base_row + y, screen_x, base_row + PARAMETER_INPUT_GRAPH_HEIGHT, stage_colours[stage]);
