@@ -44,6 +44,8 @@ class EnvelopeDisplay : public MenuItem {
 
             pos.y = tft->getCursorY();
 
+            envelope->recalculate_graph_if_necessary();
+
             const uint16_t base_row = pos.y;
             // draw a horizontal line representing the current envelope level
             if (envelope->last_state.stage!=0) {

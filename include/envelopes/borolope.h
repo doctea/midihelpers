@@ -30,7 +30,7 @@
 
 class Weirdolope : public EnvelopeBase {
 
-private:
+    private:
     float AttackRateTable[9] = 
     {
         1.00000f,     // instant
@@ -135,7 +135,7 @@ private:
     unsigned long stageStartedAt;
     float stageStartLevel = 0.0f;
 
-public:
+    public:
 
     Weirdolope(const char *label, setter_func_def setter) : EnvelopeBase(label, setter) {
         this->setMix(0.5);
@@ -145,12 +145,15 @@ public:
 
     void setSlewRate(float in_slew = true) {
         slewRate = in_slew;
-        calculate_graph();
+        this->set_dirty_graph();
     }
 
     void setMix(float v) {
+        bool should_recalculate = this->paramValueA != v;
         this->paramValueA = v;
-        calculate_graph();
+        if (should_recalculate) {
+            this->set_dirty_graph();
+        }
     }
     float getMix() {
         return this->paramValueA;
@@ -249,8 +252,10 @@ public:
         }
     }
 
+    virtual LinkedList<FloatParameter*> *get_parameters() override;
 
     #ifdef ENABLE_SCREEN
-        virtual void make_menu_items(Menu *menu, int index);
+        virtual void make_menu_items(Menu *menu, int index) override;
     #endif
+
 };

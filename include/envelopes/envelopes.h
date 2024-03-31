@@ -17,8 +17,7 @@
 #endif
 
 class Menu;
-
-// todo: make EnvelopeBase accept a lambda as callback, instead of the send_envelope_level override
+class FloatParameter;
 
 enum stage_t : int8_t {
     OFF = 0,
@@ -40,6 +39,8 @@ class EnvelopeBase {
 
     bool loop_mode = false;
     bool invert = false;
+
+    bool dirty_graph = true;
 
     public:
 
@@ -75,19 +76,26 @@ class EnvelopeBase {
     int8_t last_sent_lvl; // value but not inverted
     int8_t last_sent_actual_lvl;  // actual midi value sent
 
+    virtual bool is_dirty_graph() {
+        return this->dirty_graph;
+    }
+    virtual void set_dirty_graph(bool v = true) {
+        this->dirty_graph = true;
+    }
+
     virtual bool is_invert() {
         return invert;
     }
     virtual void set_invert(bool i) {
         this->invert = i;
-        calculate_graph();
+        this->set_dirty_graph();
     }
     virtual bool is_loop() {
         return loop_mode;
     }
     virtual void set_loop(bool i) {
         this->loop_mode = i;
-        calculate_graph();
+        this->set_dirty_graph();
     }
 
     /*void send_envelope_level(int8_t level) {
@@ -133,8 +141,13 @@ class EnvelopeBase {
     static const int GRAPH_SIZE = 240;
     graph_t graph[GRAPH_SIZE];
 
+    virtual void recalculate_graph_if_necessary() {
+        if (this->is_dirty_graph())
+            this->calculate_graph();
+    }
+
     virtual void calculate_graph() {
-        while (!Serial) delay(1);
+        //while (!Serial) delay(1);
         if (debug) Serial.printf("%s:calculate_graph starting..", this->label);
         envelope_state_t graph_state = {
             .stage = ATTACK,
@@ -161,6 +174,7 @@ class EnvelopeBase {
             }
         }
         if (debug) Serial.printf("%s:calculate_graph finished.", this->label);
+        this->set_dirty_graph(false);
     }
 
     envelope_state_t last_state = {
@@ -193,6 +207,11 @@ class EnvelopeBase {
     #ifdef ENABLE_SCREEN
         virtual void make_menu_items(Menu *menu, int index);
     #endif
+
+    LinkedList<FloatParameter*> *parameters = nullptr;
+    virtual LinkedList<FloatParameter*> *get_parameters() {
+        return nullptr;
+    }
 
 };
 
@@ -420,7 +439,7 @@ class RegularEnvelope : public EnvelopeBase {
     virtual void set_attack(int8_t attack) {
         this->attack_value = attack;
         this->attack_length = (ENV_MAX_ATTACK) * ((float)attack/127.0f);
-        calculate_graph();
+        this->set_dirty_graph();
     }
     virtual int8_t get_attack() {
         return this->attack_value;
@@ -428,7 +447,7 @@ class RegularEnvelope : public EnvelopeBase {
     virtual void set_hold(int8_t hold) {
         this->hold_value = hold;
         this->hold_length = (ENV_MAX_HOLD) * ((float)hold/127.0f);
-        calculate_graph();
+        this->set_dirty_graph();
     }
     virtual int8_t get_hold() {
         return this->hold_value;
@@ -436,7 +455,7 @@ class RegularEnvelope : public EnvelopeBase {
     virtual void set_decay(int8_t decay) {
         this->decay_value = decay;
         decay_length   = (ENV_MAX_DECAY) * ((float)decay/127.0f);
-        calculate_graph();
+        this->set_dirty_graph();
     }
     virtual int8_t get_decay() {
         return this->decay_value;
@@ -446,7 +465,7 @@ class RegularEnvelope : public EnvelopeBase {
         //sustain_ratio = (((float)sustain/127.0f) * (float)(128-SUSTAIN_MINIMUM)) / 127.0f;
         float sustain_normal = ((float)sustain)/127.0f;
         this->sustain_ratio = sustain_normal;
-        calculate_graph();
+        this->set_dirty_graph();
     }
     virtual int8_t get_sustain() {
         return this->sustain_value;
@@ -454,7 +473,7 @@ class RegularEnvelope : public EnvelopeBase {
     virtual void set_release(int8_t release) {
         this->release_value = release;
         release_length = (ENV_MAX_RELEASE) * ((float)release/127.0f);
-        calculate_graph();
+        this->set_dirty_graph();
     }
     virtual int8_t get_release() {
         return this->release_value;
@@ -465,7 +484,7 @@ class RegularEnvelope : public EnvelopeBase {
     virtual void set_mod_hd(int8_t hd) {
         this->lfo_sync_ratio_hold_and_decay = hd;
         //this->attack_length = (ENV_MAX_ATTACK) * ((float)attack/127.0f);
-        calculate_graph();
+        this->set_dirty_graph();
     }
     virtual int8_t get_mod_hd() {
         return this->lfo_sync_ratio_hold_and_decay;
@@ -473,7 +492,7 @@ class RegularEnvelope : public EnvelopeBase {
     virtual void set_mod_sr(int8_t sr) {
         this->lfo_sync_ratio_sustain_and_release = sr;
         //this->attack_length = (ENV_MAX_ATTACK) * ((float)attack/127.0f);
-        calculate_graph();
+        this->set_dirty_graph();
     }
     virtual int8_t get_mod_sr() {
         return this->lfo_sync_ratio_sustain_and_release;
@@ -485,8 +504,10 @@ class RegularEnvelope : public EnvelopeBase {
         return this->cc_value_sync_modifier;
     }
 
+    virtual LinkedList<FloatParameter*> *get_parameters() override;
+
     #ifdef ENABLE_SCREEN
-        virtual void make_menu_items(Menu *menu, int index);
+        virtual void make_menu_items(Menu *menu, int index) override;
     #endif
 
 };
