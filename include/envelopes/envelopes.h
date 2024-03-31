@@ -36,6 +36,11 @@ enum stage_t : int8_t {
 stage_t operator++ (stage_t& d);
 
 class EnvelopeBase { 
+    private:
+
+    bool loop_mode = false;
+    bool invert = false;
+
     public:
 
     bool debug = false;
@@ -66,8 +71,6 @@ class EnvelopeBase {
     unsigned long last_sent_at = 0;
 
     int trigger_on = 0; // 0->19 = trigger #, 20 = off, 32->51 = trigger #+loop, 64->84 = trigger #+invert, 96->116 = trigger #+loop+invert
-    bool loop_mode = false;
-    bool invert = false;
 
     int8_t last_sent_lvl; // value but not inverted
     int8_t last_sent_actual_lvl;  // actual midi value sent
@@ -91,7 +94,11 @@ class EnvelopeBase {
         output_wrapper->sendControlChange(midi_cc, level, channel);
     }*/
     virtual void send_envelope_level(uint8_t level) {
-        this->setter(level);
+        if (is_invert())
+            level = 127 - level;
+        if (last_sent_actual_lvl!=level)
+            this->setter(level);
+        last_sent_actual_lvl = level;
     };
 
     virtual void randomise() = 0;
@@ -144,7 +151,7 @@ class EnvelopeBase {
             } else {
                 stage_elapsed++;
             }
-            graph[i].value = result.lvl_now;
+            graph[i].value = is_invert() ? 127-result.lvl_now : result.lvl_now;
             graph[i].stage = result.stage;
             graph_state.stage = result.stage;
             if (result.stage==SUSTAIN && stage_elapsed >= PPQN) {
@@ -175,7 +182,6 @@ class EnvelopeBase {
 
         if (this->last_sent_actual_lvl != new_state.lvl_now) {
             send_envelope_level(new_state.lvl_now);
-            last_sent_actual_lvl = new_state.lvl_now;
         }
 
         last_state.elapsed = elapsed;
@@ -404,7 +410,7 @@ class RegularEnvelope : public EnvelopeBase {
                 return_state.stage = ATTACK;
         }
 
-        return_state.lvl_now = this->is_invert() ? 127-return_state.lvl_now : return_state.lvl_now;
+        //return_state.lvl_now = this->is_invert() ? 127-return_state.lvl_now : return_state.lvl_now;
 
         return return_state;
     }

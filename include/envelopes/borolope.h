@@ -171,7 +171,7 @@ public:
             .elapsed = stage_elapsed
         };
 
-        //stage_elapsed /= PPQN;
+        //stage_elapsed /= 6;
 
         if (debug) Serial.printf("%s:\tcalculate_envelope_level(stage=%i,\tstage_elapsed=%i,\tlevel_start=%i,\tvelocity=%i)", this->label, stage, stage_elapsed, level_start, velocity);
 
@@ -221,9 +221,6 @@ public:
                 return_state.stage = OFF;
             }
         }
-
-        if (is_invert())
-            envelopeLevel = 1.0f - envelopeLevel;
 
         return_state.lvl_now = envelopeLevel * 127.0f;
         return_state.lvl_start = envelopeLevel * 127.0f;

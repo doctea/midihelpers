@@ -59,7 +59,8 @@ stage_t operator++ (stage_t& d) {
     void Weirdolope::make_menu_items(Menu *menu, int index) {
         EnvelopeBase::make_menu_items(menu, index);
 
-        SubMenuItemColumns *sub_menu_item_columns = new SubMenuItemColumns("Options", 2);
+        //SubMenuItemColumns *sub_menu_item_columns = new SubMenuItemColumns("Options", 2);
+        SubMenuItemBar *sub_menu_item_columns = new SubMenuItemBar("Options");
         sub_menu_item_columns->show_header = false;
 
         sub_menu_item_columns->add(new ObjectNumberControl<Weirdolope,float>(
