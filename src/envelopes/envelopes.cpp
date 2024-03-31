@@ -1,4 +1,10 @@
 #include "envelopes/envelopes.h"
+#include "envelopes/borolope.h"
+
+stage_t operator++ (stage_t& d) {
+    d = static_cast<stage_t>((static_cast<int>(d) + 1) % 6);
+    return d;
+}
 
 #ifdef ENABLE_SCREEN
     #include "mymenu.h"
@@ -47,5 +53,26 @@
             menu->add(typebar);
             //menu->add(mod);
         //#endif
+    }
+
+
+    void Weirdolope::make_menu_items(Menu *menu, int index) {
+        EnvelopeBase::make_menu_items(menu, index);
+
+        SubMenuItemColumns *sub_menu_item_columns = new SubMenuItemColumns("Options", 2);
+        sub_menu_item_columns->show_header = false;
+
+        sub_menu_item_columns->add(new ObjectNumberControl<Weirdolope,float>(
+            "Mix", this, &Weirdolope::setMix, &Weirdolope::getMix, nullptr, 0.0f, 1.0f, true, true
+        ));
+
+        menu->add(sub_menu_item_columns);
+
+        SubMenuItemBar *typebar = new SubMenuItemBar("Type");
+        typebar->show_header = false;
+        typebar->add(new ObjectToggleControl<EnvelopeBase>     ("Inverted",  this, &EnvelopeBase::set_invert,  &EnvelopeBase::is_invert,     nullptr));
+        typebar->add(new ObjectToggleControl<EnvelopeBase>     ("Looping",   this, &EnvelopeBase::set_loop,    &EnvelopeBase::is_loop,       nullptr));
+
+        menu->add(typebar);
     }
 #endif

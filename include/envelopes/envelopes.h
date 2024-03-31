@@ -20,8 +20,25 @@ class Menu;
 
 // todo: make EnvelopeBase accept a lambda as callback, instead of the send_envelope_level override
 
+enum stage_t : int8_t {
+    OFF = 0,
+    //DELAY,  // time
+    ATTACK,
+    HOLD, // time
+    DECAY,
+    SUSTAIN,
+    RELEASE,
+    //END = 0
+    /*LFO_SYNC_RATIO_HOLD_AND_DECAY,
+    LFO_SYNC_RATIO_SUSTAIN_AND_RELEASE,
+    ASSIGN_HARMONY_OUTPUT*/
+};
+stage_t operator++ (stage_t& d);
+
 class EnvelopeBase { 
     public:
+
+    bool debug = false;
 
     const char *label = nullptr;
 
@@ -34,22 +51,8 @@ class EnvelopeBase {
         this->setter = setter;
     }
 
-    enum stage : int8_t {
-        OFF = 0,
-        //DELAY,  // time
-        ATTACK,
-        HOLD, // time
-        DECAY,
-        SUSTAIN,
-        RELEASE,
-        //END = 0
-        /*LFO_SYNC_RATIO_HOLD_AND_DECAY,
-        LFO_SYNC_RATIO_SUSTAIN_AND_RELEASE,
-        ASSIGN_HARMONY_OUTPUT*/
-    };
-
     //#ifndef TEST_LFOS
-    int8_t stage = OFF;
+    stage_t stage = OFF;
     /*#else
     int8_t stage = LFO_SYNC_RATIO;
     #endif*/
@@ -109,27 +112,31 @@ class EnvelopeBase {
     virtual void update_state (int8_t velocity, bool state, uint32_t now = ticks) = 0;
 
     struct envelope_state_t {
-        uint8_t stage = OFF;
+        stage_t stage = OFF;
         uint8_t lvl_start = 0;
         uint8_t lvl_now = 0;
         uint32_t elapsed = 0;
     };
-    virtual envelope_state_t calculate_envelope_level(uint8_t stage, uint8_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127) = 0;
+    virtual envelope_state_t calculate_envelope_level(stage_t stage, uint8_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127) = 0;
 
     struct graph_t {
         int_least8_t value = 0;
         char stage = -1;
     };
-    graph_t graph[240];
+    static const int GRAPH_SIZE = 240;
+    graph_t graph[GRAPH_SIZE];
 
     virtual void calculate_graph() {
+        while (!Serial) delay(1);
+        if (debug) Serial.printf("%s:calculate_graph starting..", this->label);
         envelope_state_t graph_state = {
             .stage = ATTACK,
             .lvl_start = 0,
             .lvl_now = 0
         };
         int stage_elapsed = 0;
-        for (int i = 0 ; i < 240 ; i++) {
+        for (int i = 0 ; i < GRAPH_SIZE ; i++) {
+            //graph_state.lvl_start = graph_state.lvl_now;
             envelope_state_t result = calculate_envelope_level(graph_state.stage, stage_elapsed, graph_state.lvl_start, velocity);
             if (result.stage != graph_state.stage) {
                 graph_state.lvl_start = result.lvl_now;
@@ -143,8 +150,10 @@ class EnvelopeBase {
             if (result.stage==SUSTAIN && stage_elapsed >= PPQN) {
                 stage_elapsed = 0;
                 graph_state.stage = RELEASE;    // move to release after 1 beat, if we are calculating the graph
+                graph_state.lvl_start = result.lvl_now;
             }
         }
+        if (debug) Serial.printf("%s:calculate_graph finished.", this->label);
     }
 
     envelope_state_t last_state = {
@@ -279,7 +288,7 @@ class RegularEnvelope : public EnvelopeBase {
         }
     }
 
-    virtual envelope_state_t calculate_envelope_level(uint8_t stage, uint8_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127) {
+    virtual envelope_state_t calculate_envelope_level(stage_t stage, uint8_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127) override {
         float ratio = (float)PPQN / (float)cc_value_sync_modifier;  // calculate ratio of real ticks : pseudoticks
         unsigned long elapsed = (float)stage_elapsed * ratio;   // convert real elapsed to pseudoelapsed
         //unsigned long elapsed = stage_elapsed;

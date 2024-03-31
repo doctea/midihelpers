@@ -1,5 +1,4 @@
-#ifndef WEIRDOLOPE__INCLUDED
-#define WEIRDOLOPE__INCLUDED
+#pragma once
 
 // Weirdolope - a minimal one-control envelope generator
 // (c) 2022 Russell Borogove
@@ -25,380 +24,236 @@
 // and pianos that I could measure some 
 // representative envelope time curves from. 
 
-// Now modified quite a bit by Tristan Rowley with full thanks and royalties ;-) to Russell Borogove for the basis!
-//  Seems to work OK on an Arduino Nano
+// Now modified quite a bit by doctea/Tristan Rowley with full thanks and royalties ;-) to Russell Borogove!
 
-#include "parameters/Parameter.h"
+#include "envelopes.h"
 
-#include "Clock.h"
-
-extern unsigned long effective_TIME_BETWEEN_UPDATES;
-
-//char NEXT_ENVELOPE_NAME = 'A';
 class Weirdolope : public EnvelopeBase {
 
 private:
-  float AttackRateTable[9] = 
-  {
-      1.00000f,     // instant
-      0.08333f,     // guitar
-      0.04000f,     // bass
-      0.01667f,     // piano bass
-      0.10000f,     // piano treble
-      0.20000f,     // chiff organ
-      0.10000f,     // synth lead
-      0.00250f,     // synth pad
-      0.00050f,     // long ambient pad
-  };
-  
-  float DecayRateTable[9] = 
-  {  
-      0.96555f,     // instant
-      0.99929f,     // guitar
-      0.98851f,     // bass
-      0.99934f,     // piano bass
-      0.98746f,     // piano treble
-      0.98000f,     // chiff organ
-      0.99644f,     // synth lead
-      0.99978f,     // synth pad
-      0.99988f,     // long ambient pad   
-  };
-  
-  // End-of-decay level
-  float SustainLevelTable[9] = 
-  {
-      0.70f,     // instant
-      0.72f,     // guitar
-      0.75f,     // bass
-      0.70f,     // piano bass
-      0.70f,     // piano treble
-      0.70f,     // chiff organ
-      0.70f,     // synth lead
-      0.80f,     // synth pad
-      0.90f,     // long ambient pad   
-  };
-  
-  // Unlike a typical synth ADSR envelope, we use an 
-  // exponentially decaying sustain. 
-  float SustainRateTable[9] = 
-  {
-      0.99880f,     // instant
-      0.99928f,     // guitar
-      0.99957f,     // bass
-      0.99913f,     // piano bass
-      0.99015f,     // piano treble
-      0.99977f,     // chiff organ
-      0.99991f,     // synth lead
-      1.0f,     // synth pad
-      1.0f,     // long ambient pad   
-  };
-  
-  // Unlike a typical synth ADSR envelope, we use an 
-  // exponentially decaying sustain
-  float ReleaseRateTable[9] = 
-  {
-      0.99312f,     // instant
-      0.99421f,     // guitar
-      0.99484f,     // bass
-      0.99092f,     // piano bass
-      0.97727f,     // piano treble
-      0.99500f,     // chiff organ
-      0.99500f,     // synth lead
-      0.99650f,     // synth pad
-      0.99800f,     // long ambient pad   
-  };
- 
-  int EnvA = 0;
-  int EnvB = 1;
-  float EnvAlpha = 0.0f;
+    float AttackRateTable[9] = 
+    {
+        1.00000f,     // instant
+        0.08333f,     // guitar
+        0.04000f,     // bass
+        0.01667f,     // piano bass
+        0.10000f,     // piano treble
+        0.20000f,     // chiff organ
+        0.10000f,     // synth lead
+        0.00250f,     // synth pad
+        0.00050f,     // long ambient pad
+    };
 
-  long long lastUpdatedClock = 0l;
-    
-  float envelopeLevel = 0.0f;
-  // silence the envelope when it reaches this level, well below 12 bit dac resolution.
-  float envelopeStopLevel = 0.0001f;
-  unsigned long nextEnvelopeUpdate = 0;
+    float DecayRateTable[9] = 
+    {  
+        0.96555f,     // instant
+        0.99929f,     // guitar
+        0.98851f,     // bass
+        0.99934f,     // piano bass
+        0.98746f,     // piano treble
+        0.98000f,     // chiff organ
+        0.99644f,     // synth lead
+        0.99978f,     // synth pad
+        0.99988f,     // long ambient pad   
+    };
 
-  float base_level;
+    // End-of-decay level
+    float SustainLevelTable[9] = 
+    {
+        0.70f,     // instant
+        0.72f,     // guitar
+        0.75f,     // bass
+        0.70f,     // piano bass
+        0.70f,     // piano treble
+        0.70f,     // chiff organ
+        0.70f,     // synth lead
+        0.80f,     // synth pad
+        0.90f,     // long ambient pad   
+    };
 
-  float paramValueA = 0.0f;
-  
-  float lerp( float y0, float y1, float alpha )
-  {
-      return (y1-y0)*alpha + y0;
-  }
+    // Unlike a typical synth ADSR envelope, we use an 
+    // exponentially decaying sustain. 
+    float SustainRateTable[9] = 
+    {
+        0.99880f,     // instant
+        0.99928f,     // guitar
+        0.99957f,     // bass
+        0.99913f,     // piano bass
+        0.99015f,     // piano treble
+        0.99977f,     // chiff organ
+        0.99991f,     // synth lead
+        1.0f,     // synth pad
+        1.0f,     // long ambient pad   
+    };
 
-  // callback handlers
-  SetterCallback setterCallback;
-  StateChangeCallback stateChangeCallback;
+    // Unlike a typical synth ADSR envelope, we use an 
+    // exponentially decaying sustain
+    float ReleaseRateTable[9] = 
+    {
+        0.99312f,     // instant
+        0.99421f,     // guitar
+        0.99484f,     // bass
+        0.99092f,     // piano bass
+        0.97727f,     // piano treble
+        0.99500f,     // chiff organ
+        0.99500f,     // synth lead
+        0.99650f,     // synth pad
+        0.99800f,     // long ambient pad   
+    };
 
-  bool inverted = false;
-  //float idleSlew = false;
-  float slewRate = 0.0f;
+    int EnvA = 0;
+    int EnvB = 1;
+    float EnvAlpha = 0.0f;
 
-  unsigned long stageStartedAt;
-  float stageStartLevel = 0.0f;
+    long long lastUpdatedClock = 0l;
+
+    float envelopeLevel = 0.0f;
+    // silence the envelope when it reaches this level, well below 12 bit dac resolution.
+    float envelopeStopLevel = 0.0001f;
+    unsigned long nextEnvelopeUpdate = 0;
+
+    float base_level;
+
+    float paramValueA = 0.0f;
+
+    float lerp( float y0, float y1, float alpha )
+    {
+        return (y1-y0)*alpha + y0;
+    }
+
+    using SetterCallback = void (*)(float,bool);
+    using StateChangeCallback = void (*)(int, int);
+
+    // callback handlers
+    SetterCallback setterCallback;
+    StateChangeCallback stateChangeCallback;
+
+    //bool inverted = false;
+    //float idleSlew = false;
+    float slewRate = 0.0f;
+
+    unsigned long stageStartedAt;
+    float stageStartLevel = 0.0f;
 
 public:
 
-  Envelope(char *label) : BaseParameter(label) {
-    Serial.print("Instantiated envelope "); Serial.flush();
-    Serial.println(label); Serial.flush();
-  }
-
-  virtual bool matches_label(char *label) {
-    return (strcmp(this->label, label)==0);
-  }
-  virtual bool matches_label(char label) {
-    return this->label[0]==label && this->label[1] == '\0';
-  }
-
-  static const int ENVELOPE_STATE_IDLE = 0;
-  //static const int ENVELOPE_STATE_SLEW_TO_STOP = 1;
-  static const int ENVELOPE_STATE_ATTACK =  1;
-  static const int ENVELOPE_STATE_DECAY =   2;
-  static const int ENVELOPE_STATE_SUSTAIN = 3;
-  static const int ENVELOPE_STATE_RELEASE = 4;
-  static const int ENVELOPE_STATE_INVERTED_RELEASE = 5;
-
-  int envelopeState = ENVELOPE_STATE_IDLE;
-
-  void begin() {
-    envelopeLevel = 0.0f;
-    envelopeState = ENVELOPE_STATE_IDLE;
-    lastUpdatedClock = 0;
-    //Serial.print(name);
-    //Serial.println(": Envelope.begin()");
-    setEnvelope(0.0f);
-    //Serial.println("Finished Envelope.begin()");
-  }
-
-  bool debug = false;
-  void setDebug() {
-    debug = !debug;
-  }
-
-  void gate_on() {
-    changeState(ENVELOPE_STATE_ATTACK);
-  }
-  void gate_off() {
-    changeState(ENVELOPE_STATE_RELEASE);
-  }
-  void stop() {
-    changeState(ENVELOPE_STATE_IDLE);
-  }
-  void invert_release() {
-    changeState(ENVELOPE_STATE_INVERTED_RELEASE);
-  }
-  /*void slew_to_stop() {
-    changeState(ENVELOPE_STATE_SLEW_TO_STOP);
-  }*/
-  void registerSetterCallback(SetterCallback c) {
-    setterCallback = c;
-  }
-  void registerStateChangeCallback(StateChangeCallback c) {
-    stateChangeCallback = c;
-  }
-  
-  void setInverted(bool in_inverted = true) {
-    inverted = in_inverted;
-  }
-  /*void setIdleSlew(float in_slew = true) {
-    Serial.print("Setting idleSlew to ");
-    Serial.println(in_slew);
-    idleSlew = in_slew;
-  }*/
-  void setSlewRate(float in_slew = true) {
-    slewRate = in_slew;
-  }
-
-  void setParamValue(double paramValue) {
-    this->setParamValue(paramValue, 1.0);
-  }
-  void setParamValue(double paramValue, double range = 1.0) {
-    static double last_value = 0.0;
-    if (paramValue==last_value) return;
-    if (paramValue>=1.0) 
-      this->changeState(true);
-    else
-      this->changeState(false);
-  }
-
-  void changeState(int new_state) {
-    if (envelopeState != new_state) {
-      stageStartedAt = bpm_clock();
-      stageStartLevel = envelopeLevel;
-      if (stateChangeCallback)
-        stateChangeCallback(envelopeState, new_state);
+    Weirdolope(const char *label, setter_func_def setter) : EnvelopeBase(label, setter) {
+        this->setMix(0.5);
     }
-    envelopeState = new_state;
-  }
 
-  void setBaseLevel(float norm_value) {
-    base_level = norm_value;
-  }
-  
-  void setEnvelope(float envelopeLevel, bool force = false)
-  {
-    // unipolar
-    //cvValues[ CV_CHANNEL_ENVELOPE ] = envelopeLevel;
-    //Serial.print("setEnvelope passed ");
-    //Serial.println(envelopeLevel);
+    int envelopeState = stage_t::OFF;
 
-    envelopeLevel += base_level;
-    
-    if (envelopeLevel>envelopeStopLevel && inverted)
-      envelopeLevel = 1.0-envelopeLevel;
-      
-    //if (envelopeState==ENVELOPE_STATE_IDLE)
-    //  envelopeLevel = 0.0;
-
-    if (setterCallback!=NULL) {
-      /*if (debug) {
-        Serial.print(name);
-        Serial.print(F(": calling setterCallback for value "));
-        Serial.println(envelopeLevel);
-      }*/
-      setterCallback(envelopeLevel, force);
-    } else if (debug) {
-      Serial.print(label);
-      Serial.println(F(": setterCallback is NULL?!"));
+    void setSlewRate(float in_slew = true) {
+        slewRate = in_slew;
+        calculate_graph();
     }
-  }
-  
-  void updateEnvelope() //int envelopeControl)
-  {
-      //int envelopeControl = analogRead( PIN_ENVELOPE );
-  
-      //float x = constrain( 8.0f * (float)(envelopeControl-10) / 1003.1f, 0.0f, 7.999f );
-      float x = constrain( 8.0f * paramValueA, 0.0f, 7.999f );
-      EnvA = int(x);
-      EnvB = EnvA+1;
-      EnvAlpha = constrain( x - EnvA, 0.0f, 1.0f );
-  
-      unsigned long long ttg = bpm_clock() - lastUpdatedClock; //micros();
 
-      float delta = 0.0f;
-      float damp = 1.0f;
-      float sustainLevel = 0.7f;
-      if (ttg > effective_TIME_BETWEEN_UPDATES) {
-          //nextEnvelopeUpdate += 1000;
-          nextEnvelopeUpdate += 1000; //1000;
+    void setMix(float v) {
+        this->paramValueA = v;
+        calculate_graph();
+    }
+    float getMix() {
+        return this->paramValueA;
+    }
 
-          //switch (envelopeState)
-          if (envelopeState==ENVELOPE_STATE_IDLE) {
-              if (envelopeLevel>envelopeStopLevel && slewRate>0.01) {
-                if (debug) {
-                  Serial.print(label);
-                  Serial.print(F(": stageStartLevel is "));
-                  Serial.print(stageStartLevel);
-                  Serial.print(F(", with slewRate at "));
-                  Serial.print(slewRate);
-                  Serial.print(F(" @ time elapsed "));
-                  Serial.print((unsigned long)(bpm_clock()-stageStartedAt));
-                  Serial.print(F(" after some maths = "));
-                  Serial.print(constrain((bpm_clock()-stageStartedAt)/slewRate, 0.0f, 1.0f));
-                }
-                
-                envelopeLevel = lerp(
-                  //inverted ? 1.0f-stageStartLevel : stageStartLevel, 
-                  stageStartLevel,
-                  0.0f, 
-                  constrain((bpm_clock()-stageStartedAt)/slewRate, 0.0f, 1.0f)
-                );
-                if (inverted) envelopeLevel = 1.0 - envelopeLevel;
-                if (debug) {
-                  Serial.print(F(" gives level "));
-                  Serial.println(envelopeLevel);
-                }
-              } else {
-                /*if(debug) {
-                  Serial.print(name);
-                  Serial.println(F(": ENVELOPE_STATE_IDLE"));
-                }*/
-                envelopeLevel = 0.0f;
-              }
-          } else if (envelopeState==ENVELOPE_STATE_ATTACK) {
-              if(debug) {
-                Serial.print(label);
-                Serial.println(F(": ENVELOPE_STATE_ATTACK"));
-              }
-              delta = lerp( AttackRateTable[EnvA], AttackRateTable[EnvB], EnvAlpha );
-              envelopeLevel += delta;
-              if (envelopeLevel >= 1.0f)
-              {
-                  envelopeLevel = 1.0f;
-                  changeState(ENVELOPE_STATE_DECAY);
-              }
-          } else if (envelopeState==ENVELOPE_STATE_DECAY) {
-              if(debug) {
-                Serial.print(label);
-                Serial.println(F(": ENVELOPE_STATE_DECAY"));
-              }
-              damp = lerp( DecayRateTable[EnvA], DecayRateTable[EnvB], EnvAlpha );
-              envelopeLevel *= damp;
-              sustainLevel = lerp(SustainLevelTable[EnvA],SustainLevelTable[EnvB],EnvAlpha);
-              if (envelopeLevel <= sustainLevel)
-              {
-                  changeState(ENVELOPE_STATE_SUSTAIN);
-              }
-          } else if (envelopeState==ENVELOPE_STATE_SUSTAIN) {
-              if(debug) {
-                Serial.print(label);
-                Serial.println(F(": ENVELOPE_STATE_SUSTAIN"));
-              }
-              damp = lerp( SustainRateTable[EnvA], SustainRateTable[EnvB], EnvAlpha );
-              envelopeLevel *= damp;
-              if (envelopeLevel <= envelopeStopLevel)
-              {
-                  changeState(ENVELOPE_STATE_IDLE);
-              }
-          }  else if (envelopeState==ENVELOPE_STATE_RELEASE) {
-              if(debug) {
-                Serial.print(label);
-                Serial.println(F(": ENVELOPE_STATE_RELEASE"));
-              }
-              damp = lerp( ReleaseRateTable[EnvA], ReleaseRateTable[EnvB], EnvAlpha );
-              envelopeLevel *= damp;
-              if (envelopeLevel <= envelopeStopLevel)
-              {
-                  changeState(ENVELOPE_STATE_IDLE);
-              }
-          } else if (envelopeState==ENVELOPE_STATE_INVERTED_RELEASE) { 
-              // TODO: this doesn't really do what we actually want it to
-              if(debug) Serial.println("ENVELOPE_STATE_INVERTED_RELEASE");
-              //damp = lerp( ReleaseRateTable[EnvA], ReleaseRateTable[EnvB], EnvAlpha );
-              //envelopeLevel *= damp;
-              envelopeLevel = constrain(envelopeLevel*slewRate, 0.0f, 1.0f);
-              if (envelopeLevel <= envelopeStopLevel || envelopeLevel>=0.9999f)
-              {
-                  changeState(ENVELOPE_STATE_IDLE);
-              }
-              //if (inverted) envelopeLevel = 1.0f - envelopeLevel;
-          } else  {
-              if(debug) {
-                Serial.print(label);
-                Serial.println(F(": UNKNOWN ENVELOPE STATE?"));
-              }
-          }
-          //Serial.print("envelopeLevel = ");
-          //Serial.println(envelopeLevel);
+    virtual envelope_state_t calculate_envelope_level(stage_t stage, uint8_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127) {
+        float x = constrain( 8.0f * paramValueA, 0.0f, 7.999f );
+        EnvA = int(x);
+        EnvB = EnvA+1;
+        EnvAlpha = constrain( x - EnvA, 0.0f, 1.0f );
+
+        float envelopeLevel = (float)level_start / 127.0;
+        float delta, damp;
+
+        envelope_state_t return_state = {
+            .stage = stage,
+            .lvl_start = level_start,
+            .elapsed = stage_elapsed
+        };
+
+        //stage_elapsed /= PPQN;
+
+        if (debug) Serial.printf("%s:\tcalculate_envelope_level(stage=%i,\tstage_elapsed=%i,\tlevel_start=%i,\tvelocity=%i)", this->label, stage, stage_elapsed, level_start, velocity);
+
+        if (stage==OFF) {
+            envelopeLevel = 0.0;
+            /*envelopeLevel = lerp(
+                //inverted ? 1.0f-stageStartLevel : stageStartLevel, 
+                stageStartLevel,
+                0.0f, 
+                //constrain((bpm_clock()-stageStartedAt)/slewRate, 0.0f, 1.0f)
+                constrain((float)stage_elapsed/slewRate, 0.0f, 1.0f)
+            );*/
+        } else if (stage==ATTACK) {
+            delta = lerp( AttackRateTable[EnvA], AttackRateTable[EnvB], EnvAlpha );
+            envelopeLevel += delta * (float)stage_elapsed;
+            if (envelopeLevel >= 1.0f) {
+                envelopeLevel = 1.0f;
+                return_state.stage = DECAY;
+            }
+        } else if (stage==DECAY) {
+            damp = lerp( DecayRateTable[EnvA], DecayRateTable[EnvB], EnvAlpha );
+            //envelopeLevel *= damp;
+            //envelopeLevel *= pow(damp,(float)stage_elapsed);
+            for (int i = 0 ; i < stage_elapsed ; i++) {
+                envelopeLevel *= damp;
+            }
+            float sustainLevel = lerp(SustainLevelTable[EnvA],SustainLevelTable[EnvB],EnvAlpha);
+            if (envelopeLevel <= sustainLevel) {
+                return_state.stage = SUSTAIN;
+            }
+        } else if (stage==SUSTAIN) {
+            damp = lerp( SustainRateTable[EnvA], SustainRateTable[EnvB], EnvAlpha );
+            //envelopeLevel *= pow(damp,(float)stage_elapsed);
+            for (int i = 0 ; i < stage_elapsed ; i++) {
+                envelopeLevel *= damp;
+            }
+            if (envelopeLevel <= envelopeStopLevel) {
+                return_state.stage = RELEASE;
+            }
+        } else if (stage==RELEASE) {
+            damp = lerp( ReleaseRateTable[EnvA], ReleaseRateTable[EnvB], EnvAlpha );
+            //envelopeLevel *= pow(damp,(float)stage_elapsed);
+            for (int i = 0 ; i < stage_elapsed ; i++) {
+                envelopeLevel *= damp;
+            }
+            if (envelopeLevel <= envelopeStopLevel) {
+                return_state.stage = OFF;
+            }
+        }
+
+        if (is_invert())
+            envelopeLevel = 1.0f - envelopeLevel;
+
+        return_state.lvl_now = envelopeLevel * 127.0f;
+        return_state.lvl_start = envelopeLevel * 127.0f;
+
+        if (debug) Serial.printf(" => %i & %i from envelopeLevel=%3.3f\n", return_state.lvl_now, return_state.lvl_start, envelopeLevel);
+
+        return return_state;
+    }
 
 
-          lastUpdatedClock = bpm_clock();
-  
-          setEnvelope(envelopeLevel);
-          //return;
-      } else if (debug) {
-        Serial.print(label);
-        Serial.print(F(": ttg >0 (is "));
-        Serial.print((unsigned long)ttg);
-        Serial.print(F(") and bpm_clock is "));
-        Serial.println((unsigned long)bpm_clock());
-        //Serial.print(F(" and nextEnvelopeUpdate is"));
-        //Serial.println(nextEnvelopeUpdate);
-      }
-  }
+    virtual void randomise() override {
+        //
+    }
+    virtual void update_state(int8_t velocity, bool state, uint32_t now) override {
+        if (!state) {
+            if (stage!=OFF && stage!=RELEASE) {
+                last_state.stage = stage = RELEASE;
+                last_state.lvl_start = last_state.lvl_now;
+                triggered_at = stage_triggered_at = now;
+                last_sent_at = 0;
+            }
+        } else {
+            last_state.stage = stage = ATTACK;
+            triggered_at = stage_triggered_at = now;
+            last_sent_at = 0;
+        }
+    }
+
+
+    #ifdef ENABLE_SCREEN
+        virtual void make_menu_items(Menu *menu, int index);
+    #endif
 };
-
-#endif
