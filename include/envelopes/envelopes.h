@@ -82,6 +82,9 @@ class EnvelopeBase {
     virtual void set_dirty_graph(bool v = true) {
         this->dirty_graph = true;
     }
+    virtual void clear_dirty_graph() {
+        EnvelopeBase::set_dirty_graph(false);
+    }
 
     virtual bool is_invert() {
         return invert;
@@ -132,7 +135,7 @@ class EnvelopeBase {
         uint8_t lvl_now = 0;
         uint32_t elapsed = 0;
     };
-    virtual envelope_state_t calculate_envelope_level(stage_t stage, uint8_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127) = 0;
+    virtual envelope_state_t calculate_envelope_level(stage_t stage, uint16_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127) = 0;
 
     struct graph_t {
         int_least8_t value = 0;
@@ -174,7 +177,7 @@ class EnvelopeBase {
             }
         }
         if (debug) Serial.printf("%s:calculate_graph finished.", this->label);
-        this->set_dirty_graph(false);
+        this->clear_dirty_graph();
     }
 
     envelope_state_t last_state = {
@@ -191,12 +194,13 @@ class EnvelopeBase {
         envelope_state_t new_state = calculate_envelope_level(last_state.stage, elapsed, last_state.lvl_start, velocity);
         if (new_state.stage!=last_state.stage) {
             //Serial.printf("process_envelope(now=%-3i) began at stage %i, changed to stage %i (elapsed is %-3i)\n", now, last_state.stage, new_state.stage, elapsed);
+            new_state.lvl_start = new_state.lvl_now;
             this->stage_triggered_at = now;
         }
 
-        if (this->last_sent_actual_lvl != new_state.lvl_now) {
+        //if (this->last_sent_actual_lvl != new_state.lvl_now) {
             send_envelope_level(new_state.lvl_now);
-        }
+        //}
 
         last_state.elapsed = elapsed;
         last_state.stage = new_state.stage;
@@ -259,12 +263,12 @@ class RegularEnvelope : public EnvelopeBase {
     }
 
     // received a message that the state of the envelope should change (note on/note off etc)
-    virtual void update_state (int8_t velocity, bool state, uint32_t now = ticks) {
+    virtual void update_state (int8_t velocity, bool state, uint32_t now = ticks) override {
         //unsigned long now = ticks; //clock_millis(); 
         //unsigned long env_time = millis();
         if (state == true) { //&& this->stage==OFF) {  // envelope told to be in 'on' state by note on
             this->velocity = velocity;
-            this->actual_level = velocity; // TODO: start this at 0 so it can ramp / offset level feature
+            this->actual_level = velocity; // TODO: start this at 0 so it can ramp / offset level feature   // TODO: probably need to remove this so that attack phase works?
             //this->stage_start_level = velocity; // TODO: start this at 0 so it can ramp / offset level feature
             this->stage = ATTACK;
             last_state.stage = ATTACK;
@@ -313,7 +317,7 @@ class RegularEnvelope : public EnvelopeBase {
         }
     }
 
-    virtual envelope_state_t calculate_envelope_level(stage_t stage, uint8_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127) override {
+    virtual envelope_state_t calculate_envelope_level(stage_t stage, uint16_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127) override {
         float ratio = (float)PPQN / (float)cc_value_sync_modifier;  // calculate ratio of real ticks : pseudoticks
         unsigned long elapsed = (float)stage_elapsed * ratio;   // convert real elapsed to pseudoelapsed
         //unsigned long elapsed = stage_elapsed;
