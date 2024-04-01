@@ -101,6 +101,8 @@ class Weirdolope : public EnvelopeBase {
         0.99800f,     // long ambient pad   
     };
 
+    static const int RELEASE_MULTIPLIER = 3;    // multiplier for release values, because otherwise they're a bit sillylong
+
     int EnvA = 0;
     int EnvB = 1;
     float EnvAlpha = 0.0f;
@@ -171,18 +173,19 @@ class Weirdolope : public EnvelopeBase {
         return this->paramValueA;
     }
 
-    uint16_t last_processed_stage = -1;
-    virtual envelope_state_t calculate_envelope_level(stage_t stage, uint16_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127) {
-        //if (last_state.stage!=stage || last_processed_stage==stage_elapsed || !this->is_dirty_calc())
-        //    return last_state;    // todo: need to check dirty flag!
+    uint16_t last_processed_elapsed = -1;
+    envelope_state_t cached_state;
+    virtual envelope_state_t calculate_envelope_level(stage_t stage, uint16_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127, bool use_caching = true) {
+        if (use_caching && last_state.stage==stage && last_processed_elapsed==stage_elapsed && !this->is_dirty_calc())
+            return cached_state;    // todo: need to check dirty flag!
 
-        float x = constrain( 8.0f * paramValueA, 0.0f, 7.999f );
+        float x = constrain( 8.0f * (paramValueA/10.0f), 0.0f, 7.999f );
         EnvA = int(x);
         EnvB = EnvA+1;
         EnvAlpha = constrain( x - EnvA, 0.0f, 1.0f );
 
         float envelopeLevel = ((float)level_start) / 127.0;
-        float delta, damp;
+        //float delta, damp;
 
         envelope_state_t return_state = {
             .stage = stage,
@@ -194,6 +197,8 @@ class Weirdolope : public EnvelopeBase {
 
         if (stage==OFF) {
             envelopeLevel = 0.0;
+            if (this->is_loop())
+                return_state.stage = ATTACK;
             /*envelopeLevel = lerp(
                 //inverted ? 1.0f-stageStartLevel : stageStartLevel, 
                 stageStartLevel,
@@ -202,16 +207,17 @@ class Weirdolope : public EnvelopeBase {
                 constrain((float)stage_elapsed/slewRate, 0.0f, 1.0f)
             );*/
         } else if (stage==ATTACK) {
-            delta = lerp( AttackRateTable[EnvA], AttackRateTable[EnvB], EnvAlpha );
-            if (Serial) Serial.printf("%s: ATTACK phase, stage_elapsed=%i, envelopeLevel=%3.3f, delta=%3.3f =>", this->label, stage_elapsed, envelopeLevel, delta);
+            float delta = lerp( AttackRateTable[EnvA], AttackRateTable[EnvB], EnvAlpha );
+            if (debug && Serial) Serial.printf("%s: ATTACK phase, stage_elapsed=%i, envelopeLevel=%3.3f, delta=%3.3f =>", this->label, stage_elapsed, envelopeLevel, delta);
             envelopeLevel += (delta * (float)(stage_elapsed+1));
-            if (Serial) Serial.printf("%3.3f\n", envelopeLevel);
+            if (debug && Serial) Serial.printf("%3.3f\n", envelopeLevel);
             if (envelopeLevel >= 1.0f) {
                 envelopeLevel = 1.0f;
+                return_state.lvl_start = envelopeLevel * 127.0;
                 return_state.stage = DECAY;
             }
         } else if (stage==DECAY) {
-            damp = lerp( DecayRateTable[EnvA], DecayRateTable[EnvB], EnvAlpha );
+            float damp = lerp( DecayRateTable[EnvA], DecayRateTable[EnvB], EnvAlpha );
             //envelopeLevel *= damp;
             //envelopeLevel *= pow(damp,(float)stage_elapsed);
             for (int i = 0 ; i < stage_elapsed ; i++) {
@@ -222,7 +228,7 @@ class Weirdolope : public EnvelopeBase {
                 return_state.stage = SUSTAIN;
             }
         } else if (stage==SUSTAIN) {
-            damp = lerp( SustainRateTable[EnvA], SustainRateTable[EnvB], EnvAlpha );
+            float damp = lerp( SustainRateTable[EnvA], SustainRateTable[EnvB], EnvAlpha );
             //envelopeLevel *= pow(damp,(float)stage_elapsed);
             for (int i = 0 ; i < stage_elapsed ; i++) {
                 envelopeLevel *= damp;
@@ -231,13 +237,13 @@ class Weirdolope : public EnvelopeBase {
                 return_state.stage = RELEASE;
             }
         } else if (stage==RELEASE) {
-            damp = lerp( ReleaseRateTable[EnvA], ReleaseRateTable[EnvB], EnvAlpha );
+            float damp = lerp( ReleaseRateTable[EnvA], ReleaseRateTable[EnvB], EnvAlpha );
             //envelopeLevel *= pow(damp,(float)stage_elapsed);
-            for (int i = 0 ; i < (stage_elapsed) ; i++) {
+            for (int i = 0 ; i < (stage_elapsed * RELEASE_MULTIPLIER) ; i++) {   // modify release time in order to shorten the release time, as its a bit ridiculous otherwise
                 envelopeLevel *= damp;
             }
             if (envelopeLevel <= envelopeStopLevel) {
-                if (Serial) Serial.printf("%s:\t!!!! Release staged reached level %3.3f (passing threshold %3.3f) after %i stages\n", this->label, envelopeLevel, envelopeStopLevel, stage_elapsed);
+                if (debug && Serial) Serial.printf("%s:\t!!!! Release staged reached level %3.3f (passing threshold %3.3f) after %i stages\n", this->label, envelopeLevel, envelopeStopLevel, stage_elapsed);
                 return_state.stage = OFF;
                 envelopeLevel = 0.0f;
             } else {
@@ -250,7 +256,14 @@ class Weirdolope : public EnvelopeBase {
 
         if (debug) Serial.printf(" => %i & %i from envelopeLevel=%3.3f\n", return_state.lvl_now, return_state.lvl_start, envelopeLevel);
 
-        this->clear_dirty_calc();
+        if (use_caching) {
+            this->clear_dirty_calc();
+            cached_state.elapsed    = return_state.elapsed;
+            cached_state.lvl_now    = return_state.lvl_now;
+            cached_state.lvl_start  = return_state.lvl_start;
+            cached_state.stage      = return_state.stage;
+            last_processed_elapsed  = stage_elapsed;
+        }
 
         return return_state;
     }

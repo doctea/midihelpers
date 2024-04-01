@@ -135,11 +135,11 @@ class EnvelopeBase {
         uint8_t lvl_now = 0;
         uint32_t elapsed = 0;
     };
-    virtual envelope_state_t calculate_envelope_level(stage_t stage, uint16_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127) = 0;
+    virtual envelope_state_t calculate_envelope_level(stage_t stage, uint16_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127, bool use_caching = true) = 0;
 
     struct graph_t {
         int_least8_t value = 0;
-        char stage = -1;
+        stage_t stage = stage_t::OFF;
     };
     static const int GRAPH_SIZE = 240;
     graph_t graph[GRAPH_SIZE];
@@ -160,7 +160,7 @@ class EnvelopeBase {
         int stage_elapsed = 0;
         for (int i = 0 ; i < GRAPH_SIZE ; i++) {
             //graph_state.lvl_start = graph_state.lvl_now;
-            envelope_state_t result = calculate_envelope_level(graph_state.stage, stage_elapsed, graph_state.lvl_start, velocity);
+            envelope_state_t result = calculate_envelope_level(graph_state.stage, stage_elapsed, graph_state.lvl_start, velocity, false);
             if (result.stage != graph_state.stage) {
                 graph_state.lvl_start = result.lvl_now;
                 stage_elapsed = 0;
@@ -191,7 +191,7 @@ class EnvelopeBase {
         unsigned long elapsed = now - this->stage_triggered_at;
         //unsigned long real_elapsed = elapsed;    // elapsed is currently the number of REAL ticks that have passed
 
-        envelope_state_t new_state = calculate_envelope_level(last_state.stage, elapsed, last_state.lvl_start, velocity);
+        envelope_state_t new_state = calculate_envelope_level(last_state.stage, elapsed, last_state.lvl_start, velocity, true);
         if (new_state.stage!=last_state.stage) {
             //Serial.printf("process_envelope(now=%-3i) began at stage %i, changed to stage %i (elapsed is %-3i)\n", now, last_state.stage, new_state.stage, elapsed);
             new_state.lvl_start = new_state.lvl_now;
@@ -317,7 +317,7 @@ class RegularEnvelope : public EnvelopeBase {
         }
     }
 
-    virtual envelope_state_t calculate_envelope_level(stage_t stage, uint16_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127) override {
+    virtual envelope_state_t calculate_envelope_level(stage_t stage, uint16_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127, bool use_caching = true) override {
         float ratio = (float)PPQN / (float)cc_value_sync_modifier;  // calculate ratio of real ticks : pseudoticks
         unsigned long elapsed = (float)stage_elapsed * ratio;   // convert real elapsed to pseudoelapsed
         //unsigned long elapsed = stage_elapsed;
