@@ -47,17 +47,13 @@ class EnvelopeDisplay : public MenuItem {
             envelope->recalculate_graph_if_necessary();
 
             const uint16_t base_row = pos.y;
-            // draw a horizontal line representing the current envelope level
-            if (envelope->last_state.stage!=0) {
-                int y = PARAMETER_INPUT_GRAPH_HEIGHT - ((envelope->last_state.lvl_now/127.0) * PARAMETER_INPUT_GRAPH_HEIGHT);
-                tft->drawLine(0, base_row + y, tft->width(), base_row + y, stage_colours[envelope->last_state.stage]);
-            }
+
 
             int last_y = 0;
             for (int screen_x = 0 ; screen_x < tft->width() ; screen_x++) {
                 const uint16_t tick_for_screen_X = screen_x;
-                float value = (float)envelope->graph[tick_for_screen_X].value;
-                byte stage = envelope->graph[tick_for_screen_X].stage;
+                const float value = (float)envelope->graph[tick_for_screen_X].value;
+                const stage_t stage = envelope->graph[tick_for_screen_X].stage;
                 const int y = PARAMETER_INPUT_GRAPH_HEIGHT - ((value/127.0) * PARAMETER_INPUT_GRAPH_HEIGHT);
                 if (screen_x != 0) {
                     //int last_y = GRAPH_HEIGHT - (this->logged[tick_for_screen_X] * GRAPH_HEIGHT);
@@ -70,6 +66,15 @@ class EnvelopeDisplay : public MenuItem {
                 }
                 //actual->drawFastHLine(screen_x, base_row + y, 1, GREEN);
                 last_y = y;
+            }
+
+            // draw a horizontal line representing the current envelope level
+            if (envelope->last_state.stage!=0) {
+                const int y = envelope->is_invert() ? 
+                    ((envelope->last_state.lvl_now/127.0) * PARAMETER_INPUT_GRAPH_HEIGHT)
+                    :
+                    PARAMETER_INPUT_GRAPH_HEIGHT - ((envelope->last_state.lvl_now/127.0) * PARAMETER_INPUT_GRAPH_HEIGHT);
+                tft->drawLine(0, base_row + y, tft->width(), base_row + y, stage_colours[envelope->last_state.stage]);
             }
 
             tft->setCursor(pos.x, pos.y + PARAMETER_INPUT_GRAPH_HEIGHT + 5);    // set cursor to below the graph's output
