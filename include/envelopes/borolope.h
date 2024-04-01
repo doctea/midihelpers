@@ -270,7 +270,8 @@ class Weirdolope : public EnvelopeBase {
 
 
     virtual void randomise() override {
-        //
+        this->setMix(random(0.0f, 10.0f));
+        this->set_invert((int8_t)random(0,10) < 2);
     }
     virtual void update_state(int8_t velocity, bool state, uint32_t now = ticks) override {
         if (!state) {
