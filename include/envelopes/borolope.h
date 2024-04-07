@@ -254,7 +254,7 @@ class Weirdolope : public EnvelopeBase {
         return_state.lvl_now = envelopeLevel * 127.0f;
         //return_state.lvl_start = envelopeLevel * 127.0f;
 
-        if (debug) Serial.printf(" => %i & %i from envelopeLevel=%3.3f\n", return_state.lvl_now, return_state.lvl_start, envelopeLevel);
+        if (debug && Serial) Serial.printf(" => %i & %i from envelopeLevel=%3.3f\n", return_state.lvl_now, return_state.lvl_start, envelopeLevel);
 
         if (use_caching) {
             this->clear_dirty_calc();
