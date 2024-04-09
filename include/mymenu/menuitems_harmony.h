@@ -81,3 +81,98 @@ class HarmonyStatus : public MenuItem {
             return tft->getCursorY();
         }
 };
+
+
+class HarmonyDisplay : public MenuItem {
+    public:
+
+    SCALE *scale_number;
+    int_fast8_t *scale_root;
+    int_fast8_t *current_note;
+
+    HarmonyDisplay(const char *label, SCALE *scale_number, int_fast8_t *scale_root, int_fast8_t *current_note) : MenuItem(label) {
+        this->scale_number = scale_number;
+        this->scale_root = scale_root;
+        this->current_note = current_note;
+    }
+
+    virtual int display(Coord pos, bool selected, bool opened) override {
+        tft->setCursor(pos.x, pos.y);
+        pos.y = header(label, pos, selected, opened);
+        //tft->setTextColor(rgb(0xFFFFFF),0);
+        tft->setCursor(0, pos.y);
+        //colours(opened);
+        
+        // draw a keyboard !
+        int8_t key_width = tft->width() / 7;
+        int8_t key_height = 32;
+        int8_t key_height_black = 20;
+        int8_t gap = 4;
+
+        int16_t x_pos = 0;
+
+        int c = 0;
+
+        // draw all white notes first
+        for (int_fast8_t r = 0 ; r < 12 ; r++) {
+            x_pos = c * key_width;
+
+            const bool playing = r == (*current_note % 12);
+            const bool white_key = (r==0 || r==2 || r==4 || r==5 || r==7 || r==9 || r==11);
+            uint16_t colour = playing ? YELLOW : (white_key?C_WHITE:tft->halfbright_565(C_WHITE));
+            const bool valid = (quantise_pitch(r, *scale_root, *scale_number)==r);
+            if (!valid) colour = tft->halfbright_565(colour);
+
+            if (white_key) { // white key
+                if (valid)
+                    tft->fillRect(x_pos, pos.y, key_width-gap, key_height, colour);
+                else
+                    tft->drawRect(x_pos, pos.y, key_width-gap, key_height, colour);
+                c++;
+            } else {    // black key
+                /*x_pos -= (key_width/2);
+                if (valid)
+                    tft->fillRect(x_pos, pos.y, key_width-gap, key_height_black, colour);
+                else
+                    tft->drawRect(x_pos, pos.y, key_width-gap, key_height_black, colour);
+                    */
+                //c++;
+            }
+        }
+
+        // draw black notes after white notes, because they need to go 'on top'
+        c = 0;
+        for (int_fast8_t r = 0 ; r < 12 ; r++) {
+            x_pos = c * key_width;
+
+            const bool playing = r == (*current_note % 12);
+            const bool white_key = (r==0 || r==2 || r==4 || r==5 || r==7 || r==9 || r==11);
+            uint16_t colour = playing ? YELLOW : (white_key?C_WHITE:tft->halfbright_565(C_WHITE));
+            const bool valid = (quantise_pitch(r, *scale_root, *scale_number)==r);
+            if (!valid) colour = tft->halfbright_565(colour);
+
+            if (white_key) { // white key
+                /*if (valid)
+                    tft->fillRect(x_pos, pos.y, key_width-gap, key_height, colour);
+                else
+                    tft->drawRect(x_pos, pos.y, key_width-gap, key_height, colour);
+                    */
+                c++;
+            } else {    // black key
+                x_pos -= (key_width/2);
+                if (valid)
+                    tft->fillRect(x_pos, pos.y, key_width-gap, key_height_black, colour);
+                else
+                    tft->drawRect(x_pos, pos.y, key_width-gap, key_height_black, colour);
+                //c++;
+            }
+        }
+
+
+        tft->setCursor(0, pos.y + key_height + gap);
+        //tft->printf("drew %i white notes?\n", c);
+
+        return tft->getCursorY();
+    }
+
+};
