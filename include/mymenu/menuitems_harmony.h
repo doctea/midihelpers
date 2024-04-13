@@ -90,7 +90,7 @@ class HarmonyDisplay : public MenuItem {
     int_fast8_t *scale_root;
     int_fast8_t *current_note;
 
-    HarmonyDisplay(const char *label, SCALE *scale_number, int_fast8_t *scale_root, int_fast8_t *current_note) : MenuItem(label) {
+    HarmonyDisplay(const char *label, SCALE *scale_number, int_fast8_t *scale_root, int_fast8_t *current_note) : MenuItem(label, false) {
         this->scale_number = scale_number;
         this->scale_root = scale_root;
         this->current_note = current_note;

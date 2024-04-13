@@ -260,6 +260,7 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
             scale_root_setter_func, 
             scale_root_getter_func,
             nullptr,
+            true,
             true
         );
         if (allow_global)
@@ -275,6 +276,7 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
             scale_setter_func,
             scale_getter_func,
             nullptr,
+            true,
             true
         );
         if (allow_global)
