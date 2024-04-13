@@ -82,6 +82,8 @@ class HarmonyStatus : public MenuItem {
         }
 };
 
+#define NUM_CHROMATIC_NOTES 12
+#define NUM_WHITE_NOTES 7
 
 class HarmonyDisplay : public MenuItem {
     public:
@@ -89,11 +91,13 @@ class HarmonyDisplay : public MenuItem {
     SCALE *scale_number;
     int_fast8_t *scale_root;
     int_fast8_t *current_note;
+    bool *quantise_enabled;
 
-    HarmonyDisplay(const char *label, SCALE *scale_number, int_fast8_t *scale_root, int_fast8_t *current_note) : MenuItem(label, false) {
+    HarmonyDisplay(const char *label, SCALE *scale_number, int_fast8_t *scale_root, int_fast8_t *current_note, bool *quantise_enabled) : MenuItem(label, false) {
         this->scale_number = scale_number;
         this->scale_root = scale_root;
         this->current_note = current_note;
+        this->quantise_enabled = quantise_enabled;
     }
 
     virtual int display(Coord pos, bool selected, bool opened) override {
@@ -104,7 +108,7 @@ class HarmonyDisplay : public MenuItem {
         //colours(opened);
         
         // draw a keyboard !
-        int8_t key_width = tft->width() / 7;
+        int8_t key_width = tft->width() / NUM_WHITE_NOTES;
         int8_t key_height = 32;
         int8_t key_height_black = 20;
         int8_t gap = 4;
@@ -114,51 +118,40 @@ class HarmonyDisplay : public MenuItem {
         int c = 0;
 
         // draw all white notes first
-        for (int_fast8_t r = 0 ; r < 12 ; r++) {
+        for (int_fast8_t r = 0 ; r < NUM_CHROMATIC_NOTES ; r++) {
             x_pos = c * key_width;
 
-            const bool playing = r == (*current_note % 12);
+            const bool playing = r == (*current_note % NUM_CHROMATIC_NOTES);
             const bool white_key = (r==0 || r==2 || r==4 || r==5 || r==7 || r==9 || r==11);
-            uint16_t colour = playing ? YELLOW : (white_key?C_WHITE:tft->halfbright_565(C_WHITE));
-            const bool valid = (quantise_pitch(r, *scale_root, *scale_number)==r);
-            if (!valid) colour = tft->halfbright_565(colour);
 
             if (white_key) { // white key
+                uint16_t colour = playing ? YELLOW : (white_key?C_WHITE:tft->halfbright_565(C_WHITE));
+                const bool valid = !*quantise_enabled || (*quantise_enabled && quantise_pitch(r, *scale_root, *scale_number)==r);
+                if (!valid) colour = tft->halfbright_565(colour);
+
                 if (valid)
                     tft->fillRect(x_pos, pos.y, key_width-gap, key_height, colour);
                 else
                     tft->drawRect(x_pos, pos.y, key_width-gap, key_height, colour);
                 c++;
-            } else {    // black key
-                /*x_pos -= (key_width/2);
-                if (valid)
-                    tft->fillRect(x_pos, pos.y, key_width-gap, key_height_black, colour);
-                else
-                    tft->drawRect(x_pos, pos.y, key_width-gap, key_height_black, colour);
-                    */
-                //c++;
             }
         }
 
         // draw black notes after white notes, because they need to go 'on top'
         c = 0;
-        for (int_fast8_t r = 0 ; r < 12 ; r++) {
+        for (int_fast8_t r = 0 ; r < NUM_CHROMATIC_NOTES ; r++) {
             x_pos = c * key_width;
 
-            const bool playing = r == (*current_note % 12);
+            const bool playing = r == (*current_note % NUM_CHROMATIC_NOTES);
             const bool white_key = (r==0 || r==2 || r==4 || r==5 || r==7 || r==9 || r==11);
-            uint16_t colour = playing ? YELLOW : (white_key?C_WHITE:tft->halfbright_565(C_WHITE));
-            const bool valid = (quantise_pitch(r, *scale_root, *scale_number)==r);
-            if (!valid) colour = tft->halfbright_565(colour);
 
-            if (white_key) { // white key
-                /*if (valid)
-                    tft->fillRect(x_pos, pos.y, key_width-gap, key_height, colour);
-                else
-                    tft->drawRect(x_pos, pos.y, key_width-gap, key_height, colour);
-                    */
+            if (white_key) {
                 c++;
             } else {    // black key
+                uint16_t colour = playing ? YELLOW : (white_key?C_WHITE:tft->halfbright_565(C_WHITE));
+                const bool valid = !*quantise_enabled || (*quantise_enabled && quantise_pitch(r, *scale_root, *scale_number)==r);
+                if (!valid) colour = tft->halfbright_565(colour);
+
                 x_pos -= (key_width/2);
                 if (valid)
                     tft->fillRect(x_pos, pos.y, key_width-gap, key_height_black, colour);
