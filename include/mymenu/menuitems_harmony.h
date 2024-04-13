@@ -21,19 +21,20 @@ class HarmonyStatus : public MenuItem {
             "Other"
         };
 
-        HarmonyStatus(const char *label) : MenuItem(label) {
+        HarmonyStatus(const char *label, bool show_header = true) : MenuItem(label) {
             this->selectable = false;
+            this->show_header = show_header;
         };
-        HarmonyStatus(const char *label, int *last_note, int *current_note) : HarmonyStatus(label) {
+        HarmonyStatus(const char *label, int *last_note, int *current_note, bool show_header = true) : HarmonyStatus(label, show_header) {
             //MenuItem(label);
             this->last_note = last_note;
             this->current_note = current_note;
         }
-        HarmonyStatus(const char *label, int *last_note, int *current_note, int *other_value) : HarmonyStatus(label, last_note, current_note) {
+        HarmonyStatus(const char *label, int *last_note, int *current_note, int *other_value, bool show_header = true) : HarmonyStatus(label, last_note, current_note, show_header) {
             this->other_value = other_value;
         }
-        HarmonyStatus(const char *label, int *last_note, int *current_note, int *other_value, const char *third_label) 
-            : HarmonyStatus(label, last_note, current_note, other_value) {
+        HarmonyStatus(const char *label, int *last_note, int *current_note, int *other_value, const char *third_label, bool show_header = true) 
+            : HarmonyStatus(label, last_note, current_note, other_value, show_header) {
                 this->set_header(2, third_label);
             }
         /*virtual void configure(int *last_note, int *current_note) {   // for if we need to late-bind the harmony note sources

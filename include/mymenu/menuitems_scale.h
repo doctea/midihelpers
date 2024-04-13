@@ -248,8 +248,10 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
         vl::Func<SCALE(void)> scale_getter_func,
         vl::Func<void(int8_t)> scale_root_setter_func,
         vl::Func<int8_t(void)> scale_root_getter_func,
-        bool allow_global = false
-    ) : SubMenuItemBar (label) {
+        bool allow_global = false,
+        bool show_sub_headers = true,
+        bool show_header = true
+    ) : SubMenuItemBar (label, show_sub_headers, show_header) {
         this->scale_setter_func = scale_setter_func;
         this->scale_getter_func = scale_getter_func;
         this->scale_root_setter_func = scale_root_setter_func;
