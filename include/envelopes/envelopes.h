@@ -101,9 +101,6 @@ class EnvelopeBase {
         this->set_dirty_graph();
     }
 
-    /*void send_envelope_level(int8_t level) {
-        output_wrapper->sendControlChange(midi_cc, level, channel);
-    }*/
     virtual void send_envelope_level(uint8_t level) {
         if (is_invert())
             level = 127 - level;

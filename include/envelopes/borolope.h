@@ -187,11 +187,10 @@ class Weirdolope : public EnvelopeBase {
         float envelopeLevel = ((float)level_start) / 127.0;
         //float delta, damp;
 
-        envelope_state_t return_state = {
-            .stage = stage,
-            .lvl_start = level_start,
-            .elapsed = stage_elapsed
-        };
+        envelope_state_t return_state;
+        return_state.stage = stage;
+        return_state.lvl_start = level_start;
+        return_state.elapsed = stage_elapsed;
 
         if (debug) Serial.printf("%s:\tcalculate_envelope_level(stage=%i,\tstage_elapsed=%i,\tlevel_start=%i,\tvelocity=%i)", this->label, stage, stage_elapsed, level_start, velocity);
 
