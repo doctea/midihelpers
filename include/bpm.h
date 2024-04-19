@@ -13,16 +13,16 @@
 #define BEATS_PER_BAR   4
 #define BARS_PER_PHRASE 4
 #define STEPS_PER_BEAT  4
-#define STEPS_PER_BAR     (BEATS_PER_BAR*STEPS_PER_BEAT)
+#define STEPS_PER_BAR     (BEATS_PER_BAR * STEPS_PER_BEAT)
 #define STEPS_PER_PHRASE  (STEPS_PER_BAR * BARS_PER_PHRASE)
-#define TICKS_PER_STEP    (PPQN/STEPS_PER_BEAT)
+#define TICKS_PER_STEP    (PPQN / STEPS_PER_BEAT)
 #define TICKS_PER_BAR     (PPQN * BEATS_PER_BAR)
 #define TICKS_PER_PHRASE  (TICKS_PER_BAR * BARS_PER_PHRASE)
 
 #define BPM_MINIMUM   60.0
 #define BPM_MAXIMUM   180.0
 
-#define LOOP_LENGTH_TICKS (PPQN*4*4)    // how many ticks does the loop last?
+#define LOOP_LENGTH_TICKS (PPQN * BEATS_PER_BAR * BARS_PER_PHRASE)    // how many ticks does the loop last?
 #define LOOP_LENGTH_STEP_SIZE 1         // resolution of loop TODO: problems when this is set >1; reloaded sequences (or maybe its converted-from-bitmap stage?) are missing note-offs
 #define LOOP_LENGTH_STEPS (LOOP_LENGTH_TICKS/LOOP_LENGTH_STEP_SIZE) // how many steps are recorded per loop
 
@@ -41,7 +41,7 @@ volatile extern float bpm_current; //BPM_MINIMUM; //60.0f;
   volatile extern float micros_per_tick; // = 1000.0f * (60.0f / (double)(bpm_current * (double)PPQN));
 //#endif
 
-#define BPM_CURRENT_PHRASE          (ticks / (PPQN*BEATS_PER_BAR*BARS_PER_PHRASE))
+#define BPM_CURRENT_PHRASE          (ticks / (TICKS_PER_PHRASE))
 #define BPM_CURRENT_BAR_OF_PHRASE   (ticks % (PPQN*BEATS_PER_BAR*BARS_PER_PHRASE) / (PPQN*BEATS_PER_BAR))
 #define BPM_CURRENT_BEAT_OF_BAR     (ticks % (PPQN*BEATS_PER_BAR) / PPQN)
 #define BPM_CURRENT_STEP_OF_BAR     (ticks % (PPQN*BEATS_PER_BAR) / (PPQN/STEPS_PER_BEAT))

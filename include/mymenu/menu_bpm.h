@@ -10,12 +10,12 @@
 
 class LoopMarkerPanel : public PinnedPanelMenuItem {
     unsigned long loop_length;
-    int beats_per_bar = 4;
-    int bars_per_phrase = 4;
+    int beats_per_bar = BEATS_PER_BAR;
+    int bars_per_phrase = BEATS_PER_BAR * BARS_PER_PHRASE;
     int ppqn;
 
     public:
-        LoopMarkerPanel(int loop_length, int ppqn, int beats_per_bar = 4, int bars_per_phrase = 4) : PinnedPanelMenuItem("Loop Position Header") {
+        LoopMarkerPanel(int loop_length, int ppqn, int beats_per_bar = BEATS_PER_BAR, int bars_per_phrase = BARS_PER_PHRASE) : PinnedPanelMenuItem("Loop Position Header") {
             this->loop_length = loop_length;
             this->beats_per_bar = beats_per_bar;
             this->bars_per_phrase = bars_per_phrase;
