@@ -28,6 +28,7 @@ class ChordPlayer<int PPQN = 24> {
 
 #ifdef ENABLE_SCREEN
     #include "mymenu/menuitems_scale.h"
+    #include "mymenu/menuitems_harmony.h"
 #endif
 class ChordPlayer {
     public:
@@ -192,6 +193,7 @@ class ChordPlayer {
 
             is_playing = false;
             this->last_note = pitch;
+            this->current_note = 255;
         }
         virtual void trigger_off_for_pitch_because_changed(int8_t pitch, uint8_t velocity = MIDI_MIN_VELOCITY) {
             if (is_playing_chord) //is_quantise())
@@ -223,9 +225,14 @@ class ChordPlayer {
         // if we send this during tick then the notes never get received, for some reason.  sending during on_pre_clock seems to work ok for now.
         // TODO: see if this is solved now and we can revert back to using on_tick, now that we have updated to newer version of USBHost_t36 library?
         void on_pre_clock(unsigned long ticks, int8_t new_note, int8_t velocity) {
+
+            //if (!(get_trigger_on_ticks()==0 || (ticks-trigger_delay_ticks) % get_trigger_on_ticks()==0))
+            //    return;
+            
+            if (this->debug) Serial.printf("---- on_pre_clock(%i, %i, %i)\n", ticks, new_note, velocity);
             // check if playing note duration has passed regardless of whether pitch_input is set, so that notes will still finish even if disconncted
             if (is_playing && this->get_note_length()>0 && abs((long)this->note_started_at_tick-(long)ticks) >= this->get_note_length()) {
-                if (this->debug) Serial.printf(F("CVInput: Stopping note\t%i because playing and elapsed is (%u-%u=%u)\n"), current_note, note_started_at_tick, ticks, abs((long)this->note_started_at_tick-(long)ticks));
+                if (this->debug) Serial.printf("CVInput: Stopping note\t%i because playing and elapsed is (%u-%u=%u)\n", current_note, note_started_at_tick, ticks, abs((long)this->note_started_at_tick-(long)ticks));
                 trigger_off_for_pitch_because_length(current_note);
                 //this->current_note = -1; // dont clear current_note, so that we don't retrigger it again
             }
@@ -236,23 +243,30 @@ class ChordPlayer {
 
             // has pitch become invalid?  is so and if note playing, stop note
             if (is_playing && !is_valid_note(new_note) && is_valid_note(this->current_note)) {
-                if (this->debug) Serial.printf(F("CVInput: Stopping note\t%i because playing and new_note isn't valid\n"), new_note);
+                if (this->debug) Serial.printf("CVInput: Stopping note\t%i because playing and new_note isn't valid\n", new_note);
                 trigger_off_for_pitch_because_changed(this->current_note);
             } else if (is_valid_note(new_note) && (new_note!=this->current_note || this->get_trigger_on_ticks()>0)) {
                 // note has changed from valid to a different valid
-                if (is_playing) {
-                    if (this->debug) Serial.printf(F("CVInput: Stopping note\t%i because of new_note\t%i\n"), this->current_note, new_note);
+                if (is_playing && this->get_trigger_on_ticks()==0) {
+                    if (this->debug) Serial.printf("CVInput: Stopping note\t%i because of new_note\t%i\n", this->current_note, new_note);
                     trigger_off_for_pitch_because_changed(this->current_note);
                 }
-                if (this->get_note_length()>0) {
-                    if (this->debug) Serial.printf(F("CVInput: Starting note %i\tat\t%u\n"), new_note, ticks);
+                if (this->get_note_length()>0) { // && (get_trigger_on_ticks()==0 || (ticks-trigger_delay_ticks) % get_trigger_on_ticks()==0)) {
+                    if (this->debug) Serial.printf("CVInput: Starting note %i\tat\t%u\n", new_note, ticks);
+                    if (!(get_trigger_on_ticks()==0 || (ticks-trigger_delay_ticks) % get_trigger_on_ticks()==0))
+                        return;
+
                     trigger_on_for_pitch(new_note, velocity, selected_chord_number, this->inversion);
                 }
             }
+            if (this->debug) Serial.println("----");
         }
 
     #ifdef ENABLE_SCREEN
-        LinkedList<MenuItem *> *make_menu_items(LinkedList<MenuItem *> *menuitems) {
+        LinkedList<MenuItem *> *make_menu_items(LinkedList<MenuItem *> *menuitems = nullptr) {
+            if (menuitems==nullptr)
+                menuitems = new LinkedList<MenuItem *>();
+
             // todo: move the below to ChordPlayer, and call it in here
             #ifdef DEBUG_VELOCITY
                 DirectNumberControl<int8_t> *velocity_control = new DirectNumberControl<int8_t>("Velocity", &this->velocity, 127, 0, 127);
@@ -389,6 +403,8 @@ class ChordPlayer {
             menuitems->add(new ChordMenuItem("Last chord",      &this->last_chord_data));
 
             menuitems->add(new ToggleControl<bool>("Debug", &this->debug));
+
+            return menuitems;
         }
 
     #endif
