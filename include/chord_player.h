@@ -228,11 +228,14 @@ class ChordPlayer {
 
             //if (!(get_trigger_on_ticks()==0 || (ticks-trigger_delay_ticks) % get_trigger_on_ticks()==0))
             //    return;
+
+            int8_t just_stopped_note = NOTE_OFF;
             
             if (this->debug) Serial.printf("---- on_pre_clock(%i, %i, %i)\n", ticks, new_note, velocity);
             // check if playing note duration has passed regardless of whether pitch_input is set, so that notes will still finish even if disconncted
             if (is_playing && this->get_note_length()>0 && abs((long)this->note_started_at_tick-(long)ticks) >= this->get_note_length()) {
                 if (this->debug) Serial.printf("CVInput: Stopping note\t%i because playing and elapsed is (%u-%u=%u)\n", current_note, note_started_at_tick, ticks, abs((long)this->note_started_at_tick-(long)ticks));
+                just_stopped_note = current_note;
                 trigger_off_for_pitch_because_length(current_note);
                 //this->current_note = -1; // dont clear current_note, so that we don't retrigger it again
             }
@@ -252,9 +255,13 @@ class ChordPlayer {
                     trigger_off_for_pitch_because_changed(this->current_note);
                 }
                 if (this->get_note_length()>0) { // && (get_trigger_on_ticks()==0 || (ticks-trigger_delay_ticks) % get_trigger_on_ticks()==0)) {
-                    if (this->debug) Serial.printf("CVInput: Starting note %i\tat\t%u\n", new_note, ticks);
-                    if (!(get_trigger_on_ticks()==0 || (ticks-trigger_delay_ticks) % get_trigger_on_ticks()==0))
+                    if (!(get_trigger_on_ticks()==0 || (ticks-trigger_delay_ticks) % get_trigger_on_ticks()==0)
+                            //|| (get_trigger_on_ticks()==0 && (just_stopped_note!=NOTE_OFF && (new_note==just_stopped_note || new_note!=last_note)))
+                                // ^^ don't retrigger note if voltage hasn't changed.... doesn't work like wanted though?  alternates on/off if value isn't changing and note length is set to something
+                        )
                         return;
+
+                    if (this->debug) Serial.printf("CVInput: Starting note %i\tat\t%u\n", new_note, ticks);
 
                     trigger_on_for_pitch(new_note, velocity, selected_chord_number, this->inversion);
                 }
