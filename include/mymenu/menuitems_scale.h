@@ -163,6 +163,9 @@ class ObjectScaleMenuItem : public ScaleMenuItem {
 
 template<class TargetClass>
 class ObjectScaleMenuItemBar : public SubMenuItemBar {
+    static LinkedList<ObjectSelectorControl<TargetClass,int>> *scale_root_options = nullptr;
+    static LinkedList<ObjectSelectorControl<TargetClass,int>> *scale_selector_options = nullptr;
+
     public:
     TargetClass *target_object = nullptr;
 
@@ -204,8 +207,13 @@ class ObjectScaleMenuItemBar : public SubMenuItemBar {
             nullptr,
             true
         );
-        for (size_t i = 0 ; i < 12 ; i++) {
-            scale_root->add_available_value(i, note_names[i]);
+        if (scale_root_options==nullptr) {
+            for (size_t i = 0 ; i < 12 ; i++) {
+                scale_root->add_available_value(i, note_names[i]);
+            }
+            scale_root_options = scale_root->get_available_values();
+        } else {
+            scale_root->set_available_values(scale_root_options);
         }
         scale_root->go_back_on_select = true;
         this->add(scale_root);
@@ -220,9 +228,14 @@ class ObjectScaleMenuItemBar : public SubMenuItemBar {
             nullptr,
             true
         );
-        for (size_t i = 0 ; i < NUMBER_SCALES ; i++) {
-            scale_selector->add_available_value(i, scales[i].label);
-        }   
+        if(scale_selector_options==nullptr) {
+            for (size_t i = 0 ; i < NUMBER_SCALES ; i++) {
+                scale_selector->add_available_value(i, scales[i].label);
+            }   
+            scale_selector_options = scale_selector->get_available_values();
+        } else {
+            scale_selector->set_available_values(scale_selector_options);
+        }
         scale_selector->go_back_on_select = true;
         this->add(scale_selector);
     }

@@ -270,6 +270,11 @@ class ChordPlayer {
         }
 
     #ifdef ENABLE_SCREEN
+        // for caching available_values to save a bit of RAM
+        inline static LinkedList<LambdaSelectorControl<int32_t>::option> *length_ticks_control_options;
+        inline static LinkedList<LambdaSelectorControl<int32_t>::option> *trigger_ticks_control_options;
+        inline static LinkedList<LambdaSelectorControl<int32_t>::option> *trigger_delay_ticks_control_options;
+
         LinkedList<MenuItem *> *make_menu_items(LinkedList<MenuItem *> *menuitems = nullptr) {
             if (menuitems==nullptr)
                 menuitems = new LinkedList<MenuItem *>();
@@ -300,15 +305,20 @@ class ChordPlayer {
                     true
             );
             //Serial.println(F("about to add values..")); Serial_flush();
-            length_ticks_control->add_available_value(0,                 "None");
-            length_ticks_control->add_available_value(PPQN/PPQN,         "-");
-            length_ticks_control->add_available_value(PPQN/8,            "32nd");
-            length_ticks_control->add_available_value(PPQN/4,            "16th");
-            length_ticks_control->add_available_value(PPQN/3,            "12th");
-            length_ticks_control->add_available_value(PPQN/2,            "8th");
-            length_ticks_control->add_available_value(PPQN,              "Beat");
-            length_ticks_control->add_available_value(PPQN*2,            "2xBeat");
-            length_ticks_control->add_available_value(PPQN*4,            "Bar");
+            if (length_ticks_control_options==nullptr) {
+                length_ticks_control->add_available_value(0,                 "None");
+                length_ticks_control->add_available_value(PPQN/PPQN,         "-");
+                length_ticks_control->add_available_value(PPQN/8,            "32nd");
+                length_ticks_control->add_available_value(PPQN/4,            "16th");
+                length_ticks_control->add_available_value(PPQN/3,            "12th");
+                length_ticks_control->add_available_value(PPQN/2,            "8th");
+                length_ticks_control->add_available_value(PPQN,              "Beat");
+                length_ticks_control->add_available_value(PPQN*2,            "2xBeat");
+                length_ticks_control->add_available_value(PPQN*4,            "Bar");
+                length_ticks_control_options = length_ticks_control->get_available_values();
+            } else {
+                length_ticks_control->set_available_values(length_ticks_control_options);
+            }
             //Serial.println(F("about to add to menuitems list..")); Serial_flush();
             bar->add(length_ticks_control);
 
@@ -320,15 +330,20 @@ class ChordPlayer {
                     nullptr,
                     true
             );
-            trigger_ticks_control->add_available_value(0,                 "Change");
-            //trigger_ticks_control->add_available_value(PPQN/PPQN,         "-");
-            trigger_ticks_control->add_available_value(PPQN/8,            "32nd");
-            trigger_ticks_control->add_available_value(PPQN/4,            "16th");
-            trigger_ticks_control->add_available_value(PPQN/3,            "12th");
-            trigger_ticks_control->add_available_value(PPQN/2,            "8th");
-            trigger_ticks_control->add_available_value(PPQN,              "Beat");
-            trigger_ticks_control->add_available_value(PPQN*2,            "2xBeat");
-            trigger_ticks_control->add_available_value(PPQN*4,            "Bar");
+            if (trigger_ticks_control_options==nullptr) {
+                trigger_ticks_control->add_available_value(0,                 "Change");
+                //trigger_ticks_control->add_available_value(PPQN/PPQN,         "-");
+                trigger_ticks_control->add_available_value(PPQN/8,            "32nd");
+                trigger_ticks_control->add_available_value(PPQN/4,            "16th");
+                trigger_ticks_control->add_available_value(PPQN/3,            "12th");
+                trigger_ticks_control->add_available_value(PPQN/2,            "8th");
+                trigger_ticks_control->add_available_value(PPQN,              "Beat");
+                trigger_ticks_control->add_available_value(PPQN*2,            "2xBeat");
+                trigger_ticks_control->add_available_value(PPQN*4,            "Bar");
+                trigger_ticks_control_options = trigger_ticks_control->get_available_values();
+            } else {
+                trigger_ticks_control->set_available_values(trigger_ticks_control_options);
+            }
             //Serial.println(F("about to add to menuitems list..")); Serial_flush();
             bar->add(trigger_ticks_control);
 
@@ -340,16 +355,21 @@ class ChordPlayer {
                     nullptr,
                     true
             );
-            //trigger_ticks_control->add_available_value(0,                 "Change");
-            //trigger_ticks_control->add_available_value(PPQN/PPQN,         "-");
-            trigger_delay_ticks_control->add_available_value(0,                 "None");
-            trigger_delay_ticks_control->add_available_value(PPQN/8,            "32nd");
-            trigger_delay_ticks_control->add_available_value(PPQN/4,            "16th");
-            trigger_delay_ticks_control->add_available_value(PPQN/3,            "12th");
-            trigger_delay_ticks_control->add_available_value(PPQN/2,            "8th");
-            trigger_delay_ticks_control->add_available_value(PPQN,              "Beat");
-            trigger_delay_ticks_control->add_available_value(PPQN*2,            "2xBeat");
-            //trigger_ticks_control->add_available_value(PPQN*4,            "Bar");
+            if (trigger_delay_ticks_control_options==nullptr) {
+                //trigger_ticks_control->add_available_value(0,                 "Change");
+                //trigger_ticks_control->add_available_value(PPQN/PPQN,         "-");
+                trigger_delay_ticks_control->add_available_value(0,                 "None");
+                trigger_delay_ticks_control->add_available_value(PPQN/8,            "32nd");
+                trigger_delay_ticks_control->add_available_value(PPQN/4,            "16th");
+                trigger_delay_ticks_control->add_available_value(PPQN/3,            "12th");
+                trigger_delay_ticks_control->add_available_value(PPQN/2,            "8th");
+                trigger_delay_ticks_control->add_available_value(PPQN,              "Beat");
+                trigger_delay_ticks_control->add_available_value(PPQN*2,            "2xBeat");
+                //trigger_ticks_control->add_available_value(PPQN*4,            "Bar");
+                trigger_delay_ticks_control_options = trigger_delay_ticks_control->get_available_values();
+            } else {
+                trigger_delay_ticks_control->set_available_values(trigger_delay_ticks_control_options);
+            }
             bar->add(trigger_delay_ticks_control);
 
             menuitems->add(bar);
