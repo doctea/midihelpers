@@ -234,7 +234,7 @@ class ChordPlayer {
             if (this->debug) Serial.printf("---- on_pre_clock(%i, %i, %i)\n", ticks, new_note, velocity);
             // check if playing note duration has passed regardless of whether pitch_input is set, so that notes will still finish even if disconncted
             if (is_playing && this->get_note_length()>0 && abs((long)this->note_started_at_tick-(long)ticks) >= this->get_note_length()) {
-                if (this->debug) Serial.printf("CVInput: Stopping note\t%i because playing and elapsed is (%u-%u=%u)\n", current_note, note_started_at_tick, ticks, abs((long)this->note_started_at_tick-(long)ticks));
+                if (this->debug) Serial.printf("ChordPlayer: Stopping note\t%i because playing and elapsed is (%u-%u=%u)\n", current_note, note_started_at_tick, ticks, abs((long)this->note_started_at_tick-(long)ticks));
                 just_stopped_note = current_note;
                 trigger_off_for_pitch_because_length(current_note);
                 //this->current_note = -1; // dont clear current_note, so that we don't retrigger it again
@@ -246,12 +246,12 @@ class ChordPlayer {
 
             // has pitch become invalid?  is so and if note playing, stop note
             if (is_playing && !is_valid_note(new_note) && is_valid_note(this->current_note)) {
-                if (this->debug) Serial.printf("CVInput: Stopping note\t%i because playing and new_note isn't valid\n", new_note);
+                if (this->debug) Serial.printf("ChordPlayer: Stopping note\t%i because playing and new_note isn't valid\n", new_note);
                 trigger_off_for_pitch_because_changed(this->current_note);
             } else if (is_valid_note(new_note) && (new_note!=this->current_note || this->get_trigger_on_ticks()>0)) {
                 // note has changed from valid to a different valid
                 if (is_playing && this->get_trigger_on_ticks()==0) {
-                    if (this->debug) Serial.printf("CVInput: Stopping note\t%i because of new_note\t%i\n", this->current_note, new_note);
+                    if (this->debug) Serial.printf("ChordPlayer: Stopping note\t%i because of new_note\t%i\n", this->current_note, new_note);
                     trigger_off_for_pitch_because_changed(this->current_note);
                 }
                 if (this->get_note_length()>0) { // && (get_trigger_on_ticks()==0 || (ticks-trigger_delay_ticks) % get_trigger_on_ticks()==0)) {
@@ -261,7 +261,7 @@ class ChordPlayer {
                         )
                         return;
 
-                    if (this->debug) Serial.printf("CVInput: Starting note %i\tat\t%u\n", new_note, ticks);
+                    if (this->debug) Serial.printf("ChordPlayer: Starting note %i\tat\t%u\n", new_note, ticks);
 
                     trigger_on_for_pitch(new_note, velocity, selected_chord_number, this->inversion);
                 }
@@ -271,9 +271,15 @@ class ChordPlayer {
 
     #ifdef ENABLE_SCREEN
         // for caching available_values to save a bit of RAM
-        inline static LinkedList<LambdaSelectorControl<int32_t>::option> *length_ticks_control_options;
-        inline static LinkedList<LambdaSelectorControl<int32_t>::option> *trigger_ticks_control_options;
-        inline static LinkedList<LambdaSelectorControl<int32_t>::option> *trigger_delay_ticks_control_options;
+        #if __cplusplus >= 201703L
+            inline static LinkedList<LambdaSelectorControl<int32_t>::option> *length_ticks_control_options;
+            inline static LinkedList<LambdaSelectorControl<int32_t>::option> *trigger_ticks_control_options;
+            inline static LinkedList<LambdaSelectorControl<int32_t>::option> *trigger_delay_ticks_control_options;
+        #else
+            static LinkedList<LambdaSelectorControl<int32_t>::option> *length_ticks_control_options;
+            static LinkedList<LambdaSelectorControl<int32_t>::option> *trigger_ticks_control_options;
+            static LinkedList<LambdaSelectorControl<int32_t>::option> *trigger_delay_ticks_control_options;
+        #endif
 
         LinkedList<MenuItem *> *make_menu_items(LinkedList<MenuItem *> *menuitems = nullptr) {
             if (menuitems==nullptr)
