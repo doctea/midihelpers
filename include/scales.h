@@ -1,11 +1,13 @@
+#pragma once
+
+#ifdef ENABLE_SCALES
+
 #if (defined __GNUC__) && (__GNUC__ >= 5) && (__GNUC_MINOR__ >= 3) && (__GNUC_PATCHLEVEL__ >= 1)
     #pragma GCC diagnostic ignored "-Wpragmas"
     #pragma GCC diagnostic ignored "-Wformat-truncation"
     #pragma GCC diagnostic ignored "-Wstringop-truncation"
 #endif
 
-#ifndef SCALES_H__INCLUDED
-#define SCALES_H__INCLUDED
 
 #ifdef ARDUINO
   #include <Arduino.h>

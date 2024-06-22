@@ -12,9 +12,9 @@
 #define ENV_MAX_DECAY     (PPQN*2) //48 // maximum decay stage length
 #define ENV_MAX_RELEASE   (PPQN*4) //96 // maximum release stage length
 
-#ifdef ENABLE_SCREEN
+//#if defined(ENABLE_SCREEN) // also need this for parameters support, so need a way to tell if that should be activated here
 #include <LinkedList.h>
-#endif
+//#endif
 
 class Menu;
 class FloatParameter;
