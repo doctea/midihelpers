@@ -56,7 +56,7 @@ class LoopMarkerPanel : public PinnedPanelMenuItem {
                 }*/
                 last_position_width = new_position_width;
             }
-            tft->fillRect(0, y, last_position_width, bar_height, RED);
+            tft->fillRect(0, y, last_position_width, bar_height, playing ? DARK_BLUE : RED);
 
             //float percent = float(ticks % loop_length) / (float)loop_length;
             //tft->fillRect(0, y, (percent*(float)tft->width()), 6, RED);
