@@ -1,3 +1,5 @@
+#ifdef ENABLE_SCALES
+
 #ifdef ARDUINO
   #include <Arduino.h>
 #else
@@ -207,3 +209,5 @@ int8_t quantise_pitch_chord_note(int8_t chord_root, CHORD::Type chord_number, in
 
   return actual_pitch;
 }
+
+#endif
