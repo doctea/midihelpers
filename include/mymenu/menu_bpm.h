@@ -7,7 +7,6 @@
 
 #include "../clock.h"
 
-
 class LoopMarkerPanel : public PinnedPanelMenuItem {
     unsigned long loop_length;
     int beats_per_bar = BEATS_PER_BAR;
@@ -38,46 +37,41 @@ class LoopMarkerPanel : public PinnedPanelMenuItem {
             //tft.setCursor(pos.x,pos.y);
             //int LOOP_LENGTH = PPQN * BEATS_PER_BAR * BARS_PER_PHRASE;
             unsigned int y = pos.y; //0;
-            //y+=2;
             static uint_fast32_t last_serviced_tick;
             static uint_fast16_t last_position_width;
 
+            static uint16_t tick_of_loop = 0;
+            static uint_fast16_t new_position_width = 0;
+
+            static uint_fast8_t bar_height_third = bar_height/3;
+
+            static uint_fast16_t tft_width = tft->width();
+
             // save some float maths by only recalculating if tick is different from last time
             if (last_serviced_tick != ticks) {
-                float percent = float(ticks % loop_length) / (float)loop_length;
-                uint_fast16_t new_position_width = (percent*(float)tft->width());
+                tick_of_loop = ticks % loop_length;
+                float percent = float(tick_of_loop) / (float)loop_length;
+                new_position_width = (percent*(float)tft_width);
                 //Serial.printf("ticks %i: ticks%loop_length = %i: ", ticks, ticks%loop_length);
                 //if (ticks%loop_length==0)   // if we're at the start of loop then blank out the display 
                 if (new_position_width < last_position_width){
                     //Serial.println("so drawing black?");
-                    tft->fillRect(0, y, tft->width(), bar_height, this->default_bg);
-                } /*else {
-                    Serial.println();
-                }*/
+                    tft->fillRect(0, y, tft_width, bar_height, this->default_bg);
+                } 
                 last_position_width = new_position_width;
             }
             tft->fillRect(0, y, last_position_width, bar_height, playing ? DARK_BLUE : RED);
 
-            //float percent = float(ticks % loop_length) / (float)loop_length;
-            //tft->fillRect(0, y, (percent*(float)tft->width()), 6, RED);
-
-            /*static float px_per_pos = tft->width() / loop_length;
-            int loop_position = ticks % loop_length;
-            tft->fillRect(0, y, px_per_pos * loop_position, 6, RED);*/
-
-            static uint_fast16_t tft_width = tft->width();
-
             static uint_fast16_t step_size_beats = tft_width / (beats_per_bar*bars_per_phrase);  // safe to make static so long as beats_per_bar/bars_per_phrase is not configurable!
             for (uint_fast16_t i = 0 ; i < tft_width ; i += step_size_beats) {
-                tft->drawLine(i, y, i, y+(bar_height/3), C_WHITE);
-                //if (i%BEATS_PER_BAR==0)
-                    //tft.drawLine(i, y, i, y+4, ST7735_CYAN);
+                //tft->drawLine(i, y, i, y+(bar_height_third), i > new_position_width ? C_WHITE : BLACK);
+                tft->drawLine(i, y, i, y+(bar_height_third), C_WHITE);
             }
 
             static uint_fast16_t step_size_bars = tft_width / bars_per_phrase;
             for (uint_fast16_t i = 0 ; i < tft_width ; i += step_size_bars) {
-                //tft.drawLine(i, y, i, y+4, ST7735_WHITE);
-                tft->fillRect(i, y+1, bar_height/3, bar_height-1, C_WHITE);
+                //tft->fillRect(i, y+1, bar_height_third, bar_height-1, i > new_position_width ? C_WHITE : BLACK);
+                tft->fillRect(i, y+1, bar_height_third, bar_height-1, C_WHITE);
             }
 
             //Serial.printf("percent %f, width %i\n", percent, tft->width());
