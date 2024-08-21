@@ -21,7 +21,7 @@
 #define MIDI_MIN_NOTE     0
 
 String get_note_name(int pitch);
-const char *get_note_name_c(int pitch);
+const char *get_note_name_c(int pitch, int channel = 1);
 bool is_valid_note(int8_t byte);
 
 extern const char *note_names[];

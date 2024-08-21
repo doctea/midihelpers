@@ -5,6 +5,8 @@
 #endif  
 #include "midi_helpers.h"
 
+#include "Drums.h"
+
 String get_note_name(int pitch) {
   if (!is_valid_note(pitch)) {
     String s = "_"; 
@@ -27,10 +29,15 @@ const char *note_names[] = {
 #define NOTE_NAME_LENGTH 4  // 3 characters + \0 terminator. eg "C#5\0", "D3\0"
 
 // todo: version that will return GM drum name
-const char *get_note_name_c(int pitch) {
+const char *get_note_name_c(int pitch, int channel = 1) {
   if (!is_valid_note(pitch)) {
     return "_";
   }
+  
+  if (channel==GM_CHANNEL_DRUMS && pitch>=GM_NOTE_MINIMUM && pitch<=GM_NOTE_MAXIMUM) {
+    return gm_drum_names[pitch-GM_NOTE_MINIMUM];
+  }
+
   int octave = pitch / 12;
   int chromatic_degree = pitch % 12;
 

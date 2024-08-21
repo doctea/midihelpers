@@ -59,6 +59,8 @@
 #define GM_NOTE_OPEN_TRIANGLE 81
 #define GM_NOTE_MAXIMUM 81
 
+extern char *gm_drum_names[(81-35)+1];
+
 // the midimuso-cv12 gate and cv output mappings - taken from http://midimuso.co.uk/wp-content/uploads/2017/08/CV_12_ORAC_Manual.pdf
 // for mode 0B (11 gates, 5 CVs + pitch bend)
 //#define DEFAULT_MUSO_GATE_CHANNEL   16   // channel to output triggers (ie gate triggers to notes on this channel)
