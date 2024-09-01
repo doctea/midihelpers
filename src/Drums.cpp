@@ -1,6 +1,6 @@
 #include "Drums.h"
 
-char *gm_drum_names[(81-35)+1] = {
+const char *gm_drum_names[(GM_NOTE_MAXIMUM-GM_NOTE_MINIMUM)+1] = {
     "BDa", // GM_NOTE_ACOUSTIC_BASS_DRUM 35
     "BDe", // GM_NOTE_ELECTRIC_BASS_DRUM 36
     "SS ", // GM_NOTE_SIDE_STICK 37
@@ -47,5 +47,5 @@ char *gm_drum_names[(81-35)+1] = {
     "MCu", // GM_NOTE_MUTE_CUICA 78
     "OCu", // GM_NOTE_OPEN_CUICA 79
     "MTr", // GM_NOTE_MUTE_TRIANGLE 80
-    "OTr" // GM_NOTE_OPEN_TRIANGLE 81
+    "OTr"  // GM_NOTE_OPEN_TRIANGLE 81
 };

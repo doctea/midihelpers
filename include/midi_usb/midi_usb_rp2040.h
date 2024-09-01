@@ -1,5 +1,4 @@
-#ifndef MIDI_USB_RP2040__INCLUDED
-#define MIDI_USB_RP2040__INCLUDED
+#pragma once
 
 //#include "Config.h"
 
@@ -32,4 +31,3 @@
 void setup_midi();
 void setup_usb();
 
-#endif
