@@ -3,8 +3,7 @@
   #pragma GCC diagnostic ignored "-Wstringop-truncation"
 #endif
 
-#ifndef MIDI_HELPERS__INCLUDED
-#define MIDI_HELPERS__INCLUDED
+#pragma once
 
 #ifdef ARDUINO
   #include <Arduino.h>
@@ -26,4 +25,25 @@ bool is_valid_note(int8_t byte);
 
 extern const char *note_names[];
 
-#endif
+// interface for classes that can receive MIDI note data
+class IMIDINoteTarget {
+  public: 
+    virtual void sendNoteOn(uint8_t pitch, uint8_t velocity, uint8_t channel) = 0;
+    virtual void sendNoteOff(uint8_t pitch, uint8_t velocity, uint8_t channel) = 0;
+};
+
+// interface for classes that can receive MIDI CC data
+// todo: probably wanna move this to midihelpers lib
+class IMIDICCTarget {
+    public:
+        virtual void sendControlChange(uint8_t cc_number, uint8_t value, uint8_t channel) {};
+};
+
+class IMIDIProxiedCCTarget : virtual public IMIDICCTarget {
+    public:
+        virtual void sendProxiedControlChange(uint8_t cc_number, uint8_t value, uint8_t channel) {};
+};
+
+class IMIDINoteAndCCTarget : virtual public IMIDICCTarget, virtual public IMIDINoteTarget {
+
+};

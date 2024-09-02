@@ -18,7 +18,8 @@
 
 //template<unsigned long memory_size>
 class EnvelopeDisplay : public MenuItem {
-    static constexpr int16_t stage_colours[] = {
+    //static constexpr
+    int16_t stage_colours[7] = {
         (int16_t)0x8080,
         (int16_t)GREEN,
         (int16_t)YELLOW,
@@ -90,7 +91,8 @@ class EnvelopeIndicator : public MenuItem {
     public:
     EnvelopeBase *envelope = nullptr;
 
-    static constexpr const char *stage_labels[6] = {
+    //static constexpr 
+    const char *stage_labels[6] = {
         "Off",
         "Attack",
         "Hold",
