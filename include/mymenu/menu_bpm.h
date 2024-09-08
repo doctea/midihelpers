@@ -62,13 +62,15 @@ class LoopMarkerPanel : public PinnedPanelMenuItem {
             }
             tft->fillRect(0, y, last_position_width, bar_height, playing ? DARK_BLUE : RED);
 
-            static uint_fast16_t step_size_beats = tft_width / (beats_per_bar*bars_per_phrase);  // safe to make static so long as beats_per_bar/bars_per_phrase is not configurable!
+            // draw 'step' markers
+            static const uint_fast16_t step_size_beats = tft_width / (beats_per_bar*bars_per_phrase);  // safe to make static so long as beats_per_bar/bars_per_phrase is not configurable!
             for (uint_fast16_t i = 0 ; i < tft_width ; i += step_size_beats) {
                 //tft->drawLine(i, y, i, y+(bar_height_third), i > new_position_width ? C_WHITE : BLACK);
                 tft->drawLine(i, y, i, y+(bar_height_third), C_WHITE);
             }
 
-            static uint_fast16_t step_size_bars = tft_width / bars_per_phrase;
+            // draw 'bar' markers
+            static const uint_fast16_t step_size_bars = tft_width / bars_per_phrase;
             for (uint_fast16_t i = 0 ; i < tft_width ; i += step_size_bars) {
                 //tft->fillRect(i, y+1, bar_height_third, bar_height-1, i > new_position_width ? C_WHITE : BLACK);
                 tft->fillRect(i, y+1, bar_height_third, bar_height-1, C_WHITE);
@@ -76,6 +78,9 @@ class LoopMarkerPanel : public PinnedPanelMenuItem {
 
             //Serial.printf("percent %f, width %i\n", percent, tft->width());
             y += bar_height;
+            tft->setCursor(0,y);
+            tft->printf("Rendered for tick %i @ %u (global %i)\n", ticks, millis(), ::ticks);
+            return tft->getCursorY();
             return y;
         }
         //#endif
