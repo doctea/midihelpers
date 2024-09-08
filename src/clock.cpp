@@ -91,10 +91,10 @@ void pc_usb_midi_handle_stop() {
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
     if (!playing) {
       clock_reset();
-      if (__global_restart_callback!=nullptr)
-        __global_restart_callback();
+      //if (__global_restart_callback!=nullptr)
+      //  __global_restart_callback();
     }
-    if (playing)
+    //if (playing)
       clock_stop();
   }
 }
@@ -212,6 +212,8 @@ bool update_clock_ticks() {
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST && /*playing && */check_and_unset_pc_usb_midi_clock_ticked()) {
     #ifdef USE_UCLOCK
       // don't do anything -- ticks is set by uClock's callback
+      if (ticks==last_processed_tick) // don't process the same tick twice?
+        return false;
     #else
       ticks++;
     #endif
