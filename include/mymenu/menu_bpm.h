@@ -78,9 +78,12 @@ class LoopMarkerPanel : public PinnedPanelMenuItem {
 
             //Serial.printf("percent %f, width %i\n", percent, tft->width());
             y += bar_height;
-            tft->setCursor(0,y);
-            tft->printf("Rendered for tick %i @ %u (global %i)\n", ticks, millis(), ::ticks);
-            return tft->getCursorY();
+            if (this->debug) {
+                tft->setCursor(0,y);
+    	            tft->setTextSize(0);
+                tft->printf("Rendered for tick %i @ %u (global %i)\n", ticks, millis(), ::ticks);
+                return tft->getCursorY();
+            }
             return y;
         }
         //#endif

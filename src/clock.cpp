@@ -54,11 +54,17 @@ volatile uint32_t last_ticked_at_micros = micros();
   }
 #endif
 
+void messages_log_add(String msg);
+
 volatile bool usb_midi_clock_ticked = false;
 volatile unsigned long last_usb_midi_clock_ticked_at;
 void pc_usb_midi_handle_clock() {
+  if(!playing)
+    return;
+
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST && usb_midi_clock_ticked) {
       if (Serial) Serial.printf("WARNING: received a usb midi clock tick at %u, but last one from %u was not yet processed (didn't process within gap of %u)!\n", millis(), last_usb_midi_clock_ticked_at, millis()-last_usb_midi_clock_ticked_at);
+      messages_log_add("WARNING: received a usb midi clock tick, but last one was not yet processed!");
   }
   /*if (CLOCK_EXTERNAL_USB_HOST) {  // TODO: figure out why tempo estimation isn't working and fix
       tap_tempo_tracker.push_beat();
@@ -73,6 +79,7 @@ void pc_usb_midi_handle_clock() {
 }
 
 void pc_usb_midi_handle_start() {
+  messages_log_add("pc_usb_midi_handle_start()!");
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
     //tap_tempo_tracker.reset();
     #ifdef USE_ATOMIC
@@ -88,6 +95,7 @@ void pc_usb_midi_handle_start() {
   }
 }
 void pc_usb_midi_handle_stop() {
+  messages_log_add("pc_usb_midi_handle_stop()!");
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
     if (!playing) {
       clock_reset();
@@ -99,6 +107,8 @@ void pc_usb_midi_handle_stop() {
   }
 }
 void pc_usb_midi_handle_continue() {
+  messages_log_add("pc_usb_midi_handle_continue()!");
+
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
     if (!playing)
       clock_start();
@@ -212,8 +222,8 @@ bool update_clock_ticks() {
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST && /*playing && */check_and_unset_pc_usb_midi_clock_ticked()) {
     #ifdef USE_UCLOCK
       // don't do anything -- ticks is set by uClock's callback
-      if (ticks==last_processed_tick) // don't process the same tick twice?
-        return false;
+      //if (ticks==last_processed_tick) // don't process the same tick twice?
+      //  return false;
     #else
       ticks++;
     #endif

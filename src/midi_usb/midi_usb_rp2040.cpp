@@ -55,7 +55,11 @@ void setup_usb() {
     //while( !TinyUSBDevice.mounted() ) delay(1);
 }
 
+void messages_log_add(String);
+
 void auto_handle_start() {
+    messages_log_add("auto_handle_start()!");
+
     if(clock_mode != CLOCK_EXTERNAL_USB_HOST) {
         // automatically switch to using external USB clock if we receive a START message from the usb host
         change_clock_mode(CLOCK_EXTERNAL_USB_HOST);
@@ -64,6 +68,8 @@ void auto_handle_start() {
     }
     pc_usb_midi_handle_start();
 }
+
+void auto_handle_start_wrapper();
 
 void setup_midi() {
     // setup USB MIDI connection
@@ -74,6 +80,7 @@ void setup_midi() {
         // callbacks for messages received from USB MIDI host
         USBMIDI.setHandleClock(pc_usb_midi_handle_clock);
         USBMIDI.setHandleStart(auto_handle_start); //pc_usb_midi_handle_start);
+        //USBMIDI.setHandleStart(auto_handle_start_wrapper);
         USBMIDI.setHandleStop(pc_usb_midi_handle_stop);
         USBMIDI.setHandleContinue(pc_usb_midi_handle_continue);
     #endif
@@ -104,6 +111,8 @@ void setup_midi() {
             snprintf(label, MENU_C_MAX, "CV-to-MIDI: %s", midi_cc_parameters[i].label);
             menu->add_page(label, C_WHITE, false);
 
+            /*
+            // todo: CC+channel selectors now moved to MIDICCParameter#addCustomTypeControls
             snprintf(label, MENU_C_MAX, "Settings");
             SubMenuItem *bar = new SubMenuItemBar(label, true, false);
 
@@ -125,10 +134,13 @@ void setup_midi() {
                 16
             ));
 
-            menu->add(bar);
+            menu->add(bar);*/
             
             //menu->add(midi_cc_parameters[i].makeControls());
             //use lowmemory controls instead of a full instance of each
+
+            // add a separator bar for the parameter; don't think we actually want this though...
+            //menu->add(new SeparatorMenuItem(midi_cc_parameters[i].label));            
             create_low_memory_parameter_controls(midi_cc_parameters[i].label, &midi_cc_parameters[i]);
         }
 

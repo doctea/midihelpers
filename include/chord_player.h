@@ -211,13 +211,13 @@ class ChordPlayer {
             //if (!(get_trigger_on_ticks()==0 || (ticks-trigger_delay_ticks) % get_trigger_on_ticks()==0))
             //    return;
 
-            int8_t just_stopped_note = NOTE_OFF;
+            //int8_t just_stopped_note = NOTE_OFF;
             
             if (this->debug) Serial.printf("---- on_pre_clock(%i, %i, %i)\n", ticks, new_note, velocity);
             // check if playing note duration has passed regardless of whether pitch_input is set, so that notes will still finish even if disconncted
             if (is_playing && this->get_note_length()>0 && abs((long)this->note_started_at_tick-(long)ticks) >= this->get_note_length()) {
                 if (this->debug) Serial.printf("ChordPlayer: Stopping note\t%i because playing and elapsed is (%u-%u=%u)\n", current_note, note_started_at_tick, ticks, abs((long)this->note_started_at_tick-(long)ticks));
-                just_stopped_note = current_note;
+                //just_stopped_note = current_note;
                 trigger_off_for_pitch_because_length(current_note);
                 //this->current_note = -1; // dont clear current_note, so that we don't retrigger it again
             }

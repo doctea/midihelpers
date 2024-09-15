@@ -197,15 +197,18 @@ class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget {
         #endif
     }
 
+    // todo: probably should use something else like ENABLE_PARAMETERS here, as this doesn't strictly rely on "CV input", can work equally well from MIDI and internal LFOs etc
+    // todo: define / set these up external to the library...
+    // todo: option to configure the CCs to be compatible with the CCs of the midimuso
     #ifdef ENABLE_CV_INPUT
         #define NUM_MIDI_CC_PARAMETERS 6
         MIDICCParameter<> midi_cc_parameters[NUM_MIDI_CC_PARAMETERS] = {
-            MIDICCParameter<> ("A",     this, 1, 1, true),
-            MIDICCParameter<> ("B",     this, 2, 1, true),
-            MIDICCParameter<> ("C",     this, 3, 1, true),
-            MIDICCParameter<> ("Mix1",  this, 4, 1, true),
-            MIDICCParameter<> ("Mix2",  this, 5, 1, true),
-            MIDICCParameter<> ("Mix3",  this, 6, 1, true),
+            MIDICCParameter<> ("A",     this, 1, 1, true, true),
+            MIDICCParameter<> ("B",     this, 2, 1, true, true),
+            MIDICCParameter<> ("C",     this, 3, 1, true, true),
+            MIDICCParameter<> ("Mix1",  this, 4, 1, true, true),
+            MIDICCParameter<> ("Mix2",  this, 5, 1, true, true),
+            MIDICCParameter<> ("Mix3",  this, 6, 1, true, true),
         };
 
         void setup_parameters() {
