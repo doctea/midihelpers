@@ -197,50 +197,6 @@ class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget {
         #endif
     }
 
-    // todo: probably should use something else like ENABLE_PARAMETERS here, as this doesn't strictly rely on "CV input", can work equally well from MIDI and internal LFOs etc
-    // todo: define / set these up external to the library...
-    // todo: option to configure the CCs to be compatible with the CCs of the midimuso
-    #ifdef ENABLE_CV_INPUT
-        #define NUM_MIDI_CC_PARAMETERS 6
-        MIDICCParameter<> midi_cc_parameters[NUM_MIDI_CC_PARAMETERS] = {
-            MIDICCParameter<> ("A",     this, 1, 1, true, true),
-            MIDICCParameter<> ("B",     this, 2, 1, true, true),
-            MIDICCParameter<> ("C",     this, 3, 1, true, true),
-            MIDICCParameter<> ("Mix1",  this, 4, 1, true, true),
-            MIDICCParameter<> ("Mix2",  this, 5, 1, true, true),
-            MIDICCParameter<> ("Mix3",  this, 6, 1, true, true),
-        };
-
-        void setup_parameters() {
-            for (int i = 0 ; i < 6 ; i++) {
-                parameter_manager->addParameter(&midi_cc_parameters[i]);
-            }
-            midi_cc_parameters[0].connect_input(0/*parameter_manager->getInputForName("A")*/, 1.0f);
-            midi_cc_parameters[0].connect_input(1/*parameter_manager->getInputForName("A")*/, 0.f);
-            midi_cc_parameters[0].connect_input(2/*parameter_manager->getInputForName("A")*/, 0.f);
-
-            midi_cc_parameters[1].connect_input(0/*parameter_manager->getInputForName("B")*/, 0.f);
-            midi_cc_parameters[1].connect_input(1/*parameter_manager->getInputForName("B")*/, 1.0f);
-            midi_cc_parameters[1].connect_input(2/*parameter_manager->getInputForName("B")*/, 0.f);
-
-            midi_cc_parameters[2].connect_input(0/*parameter_manager->getInputForName("C")*/, 0.f);
-            midi_cc_parameters[2].connect_input(1/*parameter_manager->getInputForName("C")*/, 0.f);
-            midi_cc_parameters[2].connect_input(2/*parameter_manager->getInputForName("C")*/, 1.0f);
-
-            midi_cc_parameters[3].connect_input(0, 1.0f);
-            midi_cc_parameters[3].connect_input(1, 1.0f);
-            midi_cc_parameters[3].connect_input(2, .0f);
-
-            midi_cc_parameters[4].connect_input(0, .0f);
-            midi_cc_parameters[4].connect_input(1, 1.0f);
-            midi_cc_parameters[4].connect_input(2, 1.0f);
-
-            midi_cc_parameters[5].connect_input(0, 1.0f);
-            midi_cc_parameters[5].connect_input(1, .0f);
-            midi_cc_parameters[5].connect_input(2, 1.0f);
-        }
-    #endif
-
     #ifdef ENABLE_SCREEN
         void create_menu_items();
     #endif

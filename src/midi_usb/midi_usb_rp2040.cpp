@@ -106,44 +106,6 @@ void setup_midi() {
     void RP2040DualMIDIOutputWrapper::create_menu_items() {
         // controls for cv-to-midi outputs..
 
-        char label[MENU_C_MAX];
-        for (int i = 0 ; i < NUM_MIDI_CC_PARAMETERS ; i++) {
-            snprintf(label, MENU_C_MAX, "CV-to-MIDI: %s", midi_cc_parameters[i].label);
-            menu->add_page(label, C_WHITE, false);
-
-            /*
-            // todo: CC+channel selectors now moved to MIDICCParameter#addCustomTypeControls
-            snprintf(label, MENU_C_MAX, "Settings");
-            SubMenuItem *bar = new SubMenuItemBar(label, true, false);
-
-            snprintf(label, MENU_C_MAX, "Output CC");
-            bar->add(new DirectNumberControl<byte>(
-                label, 
-                &midi_cc_parameters[i].cc_number,
-                midi_cc_parameters[i].cc_number,
-                0,
-                MIDI_MAX_VELOCITY
-            ));
-
-            snprintf(label, MENU_C_MAX, "Output MIDI Channel");
-            bar->add(new DirectNumberControl<byte>(
-                label, 
-                &midi_cc_parameters[i].channel,
-                midi_cc_parameters[i].channel,
-                1,
-                16
-            ));
-
-            menu->add(bar);*/
-            
-            //menu->add(midi_cc_parameters[i].makeControls());
-            //use lowmemory controls instead of a full instance of each
-
-            // add a separator bar for the parameter; don't think we actually want this though...
-            //menu->add(new SeparatorMenuItem(midi_cc_parameters[i].label));            
-            create_low_memory_parameter_controls(midi_cc_parameters[i].label, &midi_cc_parameters[i]);
-        }
-
         // todo: probably move this to another more generic 'settings' page
         menu->add_page("MIDI Output");
         LambdaSelectorControl<OUTPUT_TYPE> *output_mode_selector = new LambdaSelectorControl<OUTPUT_TYPE>(
