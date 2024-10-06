@@ -111,21 +111,31 @@ class BPMPositionIndicator : public MenuItem {
                     BPM_CURRENT_BEAT_OF_BAR + 1,
                     bpm_current
                 );
-            } else if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
-                tft->printf((char*)"%04i:%02i:%02i\n",
-                    BPM_CURRENT_PHRASE + 1, 
-                    BPM_CURRENT_BAR_OF_PHRASE + 1,
-                    BPM_CURRENT_BEAT_OF_BAR + 1
-                );
-                tft->setTextSize(1);
-                tft->println((char*)"from External USB Host");
             } else {
-                tft->printf((char*)"%04i:%02i:%02i\n",
-                    BPM_CURRENT_PHRASE + 1, 
-                    BPM_CURRENT_BAR_OF_PHRASE + 1,
-                    BPM_CURRENT_BEAT_OF_BAR + 1
-                );
-            }
+                #ifdef USE_UCLOCK
+                    tft->printf((char*)"%04i:%02i:%02i @ %03.2f\n",
+                        BPM_CURRENT_PHRASE + 1, 
+                        BPM_CURRENT_BAR_OF_PHRASE + 1,
+                        BPM_CURRENT_BEAT_OF_BAR + 1,
+                        uClock.getTempo()
+                    );
+                #else
+                    tft->printf((char*)"%04i:%02i:%02i\n",
+                        BPM_CURRENT_PHRASE + 1, 
+                        BPM_CURRENT_BAR_OF_PHRASE + 1,
+                        BPM_CURRENT_BEAT_OF_BAR + 1
+                    );
+                #endif
+                tft->setTextSize(1);
+                if (clock_mode==CLOCK_EXTERNAL_USB_HOST)
+                    tft->println((char*)"from External USB Host");
+                else if (clock_mode==CLOCK_EXTERNAL_MIDI_DIN) 
+                    tft->println((char*)"from External MIDI DIN");
+                #ifdef ENABLE_CLOCK_INPUT_CV
+                    else if (clock_mode==ENABLE_CLOCK_INPUT_CV)
+                        tft->println((char*)"from External CV Input");
+                #endif
+            } 
 
             return tft->getCursorY();
         }

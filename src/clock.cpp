@@ -80,6 +80,8 @@ void pc_usb_midi_handle_clock() {
 
 void pc_usb_midi_handle_start() {
   messages_log_add("pc_usb_midi_handle_start()!");
+  // see function "auto_handle_start" when you wanna make this automatically change clock mode when receiving a start message
+
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
     //tap_tempo_tracker.reset();
     #ifdef USE_ATOMIC
