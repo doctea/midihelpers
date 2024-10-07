@@ -1,5 +1,4 @@
-#ifndef CLOCK_H__INCLUDED
-#define CLOCK_H__INCLUDED
+#pragma once
 
 #include "bpm.h"
 //#include "midi/midi_outs.h"
@@ -74,15 +73,3 @@ void clock_start();
 void clock_stop();
 void clock_continue();
 void clock_set_playing(bool p);
-
-// tap tempo stuff
-#define CLOCK_TEMPO_HISTORY_MAX 4
-#define CLOCK_TEMPO_RESTARTTHRESHOLD (3.f*1000000.f)
-extern uint32_t clock_tempo_history[4];
-extern uint32_t clock_last_tap;
-extern int clock_tempo_history_pos;
-void clock_tempo_tap();
-float clock_tempo_estimate();
-void clock_tempo_update();
-
-#endif

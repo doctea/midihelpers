@@ -97,7 +97,7 @@ class BPMPositionIndicator : public MenuItem {
         virtual int display(Coord pos, bool selected, bool opened) override {
             //Serial.printf("positionindicator display for %s\n", label);
             tft->setCursor(pos.x,pos.y);
-            header("position", pos, selected, opened);
+            header(this->label, pos, selected, opened);
             tft->setTextSize(2);
             if (playing) {
                 colours(opened, GREEN,   BLACK);
@@ -137,12 +137,6 @@ class BPMPositionIndicator : public MenuItem {
                 #endif
             } 
 
-            tft->printf("Tap Estimate: %i\n", (int)clock_tempo_estimate());
-            tft->printf("Sample size: %i\n", clock_tempo_history_pos);
-            for (int i = 0 ; i < clock_tempo_history_pos && i < 4/*CLOCK_TEMPO_HISTORY_MAX*/ ; i++) {
-                tft->printf("%i: %i\n", i, clock_tempo_history[i]);
-            }
-
             return tft->getCursorY();
         }
 
@@ -157,13 +151,6 @@ class BPMPositionIndicator : public MenuItem {
             return true;
         }
 
-        virtual bool button_right() override {
-            clock_tempo_tap();
-            messages_log_add(String("tapped! ") + String(clock_tempo_history_pos));
-            messages_log_add(String("estimate=") + String(clock_tempo_estimate()));
-            return SELECT_DONTEXIT;
-        }
 };
-
 
 #endif
