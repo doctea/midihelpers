@@ -137,6 +137,12 @@ class BPMPositionIndicator : public MenuItem {
                 #endif
             } 
 
+            tft->printf("Tap Estimate: %i\n", (int)clock_tempo_estimate());
+            tft->printf("Sample size: %i\n", clock_tempo_history_pos);
+            for (int i = 0 ; i < clock_tempo_history_pos && i < 4/*CLOCK_TEMPO_HISTORY_MAX*/ ; i++) {
+                tft->printf("%i: %i\n", i, clock_tempo_history[i]);
+            }
+
             return tft->getCursorY();
         }
 
@@ -149,6 +155,13 @@ class BPMPositionIndicator : public MenuItem {
             if (clock_mode==CLOCK_INTERNAL)
                 set_bpm(bpm_current+1);
             return true;
+        }
+
+        virtual bool button_right() override {
+            clock_tempo_tap();
+            messages_log_add(String("tapped! ") + String(clock_tempo_history_pos));
+            messages_log_add(String("estimate=") + String(clock_tempo_estimate()));
+            return SELECT_DONTEXIT;
         }
 };
 
