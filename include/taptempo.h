@@ -11,11 +11,22 @@ class TapTempoTracker {
   uint32_t clock_last_tap;
   int clock_tempo_history_pos;
   bool clock_tempo_tracking = false;
+  bool tempo_setter = true;
 
   public:
+  TapTempoTracker(bool should_set_tempo = true) {
+    set_tempo_setter(should_set_tempo);
+  }
+
+  void set_tempo_setter(bool setter = true) {
+    this->tempo_setter = setter;
+  }
+  bool is_tempo_setter() {
+    return tempo_setter;
+  }
 
   bool is_tracking() {
-    return clock_tempo_tracking;
+    return clock_tempo_tracking && get_num_samples()>1;
   }
 
   uint32_t get_history_gap(int_fast8_t i) {
@@ -65,7 +76,15 @@ class TapTempoTracker {
     uint32_t now = micros();
     if (now - clock_last_tap >= CLOCK_TEMPO_RESTARTTHRESHOLD) {
       clock_tempo_tracking = false;
+    } else if (is_tracking() && is_tempo_setter()) {
+        float estimate = clock_tempo_estimate();
+        if (get_bpm() != estimate) {
+            set_bpm(estimate);
+        }
     }
   }
 
 };
+
+
+extern TapTempoTracker *tapper;
