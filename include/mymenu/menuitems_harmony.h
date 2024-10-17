@@ -6,6 +6,8 @@
 //String get_note_name(int pitch);
 //const char *get_note_name_c(int pitch);
 
+#include "menu.h"
+
 // todo: make this accept int8_t, or different datatypes, or even lambda
 class HarmonyStatus : public MenuItem {
     public:
@@ -86,6 +88,7 @@ class HarmonyStatus : public MenuItem {
 #define NUM_CHROMATIC_NOTES 12
 #define NUM_WHITE_NOTES 7
 
+#include <scales.h>
 class HarmonyDisplay : public MenuItem {
     public:
 
