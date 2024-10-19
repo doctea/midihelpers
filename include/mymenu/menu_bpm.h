@@ -129,8 +129,10 @@ class BPMPositionIndicator : public MenuItem {
                 tft->setTextSize(1);
                 if (clock_mode==CLOCK_EXTERNAL_USB_HOST)
                     tft->println((char*)"from External USB Host");
-                else if (clock_mode==CLOCK_EXTERNAL_MIDI_DIN) 
-                    tft->println((char*)"from External MIDI DIN");
+                #ifdef ENABLE_CLOCK_INPUT_MIDI_DIN
+                    else if (clock_mode==CLOCK_EXTERNAL_MIDI_DIN) 
+                        tft->println((char*)"from External MIDI DIN");
+                #endif
                 #ifdef ENABLE_CLOCK_INPUT_CV
                     else if (clock_mode==ENABLE_CLOCK_INPUT_CV)
                         tft->println((char*)"from External CV Input");
