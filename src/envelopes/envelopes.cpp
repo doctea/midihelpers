@@ -32,6 +32,7 @@ stage_t operator++ (stage_t& d) {
             SubMenuItemColumns *sub_menu_item_columns = new SubMenuItemColumns("Options", 5);
             sub_menu_item_columns->show_header = false;
 
+            // todo: convert all these ObjectNumberControls and ObjectToggleControls into LambdaNumberControls and LambdaToggleControls
             sub_menu_item_columns->add(new ObjectNumberControl<RegularEnvelope,int8_t>("Att", this, &RegularEnvelope::set_attack,  &RegularEnvelope::get_attack,    nullptr, 0, 127, true, true));
             sub_menu_item_columns->add(new ObjectNumberControl<RegularEnvelope,int8_t>("Hld", this, &RegularEnvelope::set_hold,    &RegularEnvelope::get_hold,      nullptr, 0, 127, true, true));
             sub_menu_item_columns->add(new ObjectNumberControl<RegularEnvelope,int8_t>("Dec", this, &RegularEnvelope::set_decay,   &RegularEnvelope::get_decay,     nullptr, 0, 127, true, true));
@@ -67,6 +68,7 @@ stage_t operator++ (stage_t& d) {
 
         SubMenuItemBar *typebar = new SubMenuItemBar("Type");
         typebar->show_header = false;
+        // todo: convert these to Lambdas
         typebar->add(new ObjectNumberControl<Weirdolope,float> ("Mix",       this, &Weirdolope::setMix,        &Weirdolope::getMix,          nullptr, 0.0f, 10.0f, true, true));
         typebar->add(new ObjectToggleControl<EnvelopeBase>     ("Inverted",  this, &EnvelopeBase::set_invert,  &EnvelopeBase::is_invert,     nullptr));
         typebar->add(new ObjectToggleControl<EnvelopeBase>     ("Looping",   this, &EnvelopeBase::set_loop,    &EnvelopeBase::is_loop,       nullptr));
@@ -83,6 +85,7 @@ stage_t operator++ (stage_t& d) {
 
             this->parameters = new LinkedList<FloatParameter*>();
             
+            // todo: make a LambdaDataParameter class and convert all DataParameters to it
             this->parameters->add(new DataParameter<RegularEnvelope,int8_t>("Attack", this, &RegularEnvelope::set_attack, &RegularEnvelope::get_attack, 0, 127));
             this->parameters->add(new DataParameter<RegularEnvelope,int8_t>("Hold",   this, &RegularEnvelope::set_hold,   &RegularEnvelope::get_hold,   0, 127));
             this->parameters->add(new DataParameter<RegularEnvelope,int8_t>("Decay",  this, &RegularEnvelope::set_decay,  &RegularEnvelope::get_decay,  0, 127));
