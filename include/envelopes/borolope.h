@@ -288,9 +288,12 @@ class Weirdolope : public EnvelopeBase {
         }
     }
 
-    virtual LinkedList<FloatParameter*> *get_parameters() override;
+    #ifdef ENABLE_PARAMETERS
+        virtual LinkedList<FloatParameter*> *get_parameters() override;
+    #endif
 
     #ifdef ENABLE_SCREEN
+        FLASHMEM
         virtual void make_menu_items(Menu *menu, int index) override;
     #endif
 

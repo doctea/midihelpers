@@ -263,6 +263,7 @@ class ChordPlayer {
             static LinkedList<LambdaSelectorControl<int32_t>::option> *trigger_delay_ticks_control_options;
         #endif
 
+        FLASHMEM
         LinkedList<MenuItem *> *make_menu_items(LinkedList<MenuItem *> *menuitems = nullptr) {
             if (menuitems==nullptr)
                 menuitems = new LinkedList<MenuItem *>();

@@ -16,8 +16,12 @@
 #include <LinkedList.h>
 //#endif
 
-class Menu;
-class FloatParameter;
+#ifdef ENABLE_SCREEN
+    class Menu;
+#endif
+#ifdef ENABLE_PARAMETERS
+    class FloatParameter;
+#endif
 
 enum stage_t : int8_t {
     OFF = 0,
@@ -108,6 +112,11 @@ class EnvelopeBase {
             this->setter(level);
         last_sent_actual_lvl = level;
     };
+
+    // so can eg pull the value to be used by a ParameterInput or something
+    virtual uint8_t get_envelope_level() {
+        return this->last_sent_actual_lvl;
+    }
 
     virtual void randomise() = 0;
     /*virtual void initialise_parameters() {
@@ -206,13 +215,16 @@ class EnvelopeBase {
     }
 
     #ifdef ENABLE_SCREEN
+        FLASHMEM
         virtual void make_menu_items(Menu *menu, int index);
     #endif
 
-    LinkedList<FloatParameter*> *parameters = nullptr;
-    virtual LinkedList<FloatParameter*> *get_parameters() {
-        return nullptr;
-    }
+    #ifdef ENABLE_PARAMETERS
+        LinkedList<FloatParameter*> *parameters = nullptr;
+        virtual LinkedList<FloatParameter*> *get_parameters() {
+            return nullptr;
+        }
+    #endif
 
 };
 
@@ -505,9 +517,12 @@ class RegularEnvelope : public EnvelopeBase {
         return this->cc_value_sync_modifier;
     }
 
-    virtual LinkedList<FloatParameter*> *get_parameters() override;
+    #ifdef ENABLE_PARAMETERS
+        virtual LinkedList<FloatParameter*> *get_parameters() override;
+    #endif
 
     #ifdef ENABLE_SCREEN
+        FLASHMEM
         virtual void make_menu_items(Menu *menu, int index) override;
     #endif
 

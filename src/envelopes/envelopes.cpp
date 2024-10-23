@@ -12,7 +12,7 @@ stage_t operator++ (stage_t& d) {
     #include "submenuitem_bar.h"
     #include "mymenu/menuitems_envelopegraph.h"
 
-
+    FLASHMEM
     void EnvelopeBase::make_menu_items(Menu *menu, int index) {
         char label[40];
         snprintf(label, 40, "Envelope %i: %s", index, this->label);
@@ -22,6 +22,7 @@ stage_t operator++ (stage_t& d) {
         menu->add(new EnvelopeIndicator("Indicator", this));
     }
 
+    FLASHMEM
     void RegularEnvelope::make_menu_items(Menu *menu, int index) {
         EnvelopeBase::make_menu_items(menu, index);
         //#ifdef ENABLE_ENVELOPE_MENUS
@@ -55,6 +56,7 @@ stage_t operator++ (stage_t& d) {
         //#endif
     }
 
+    FLASHMEM
     void Weirdolope::make_menu_items(Menu *menu, int index) {
         EnvelopeBase::make_menu_items(menu, index);
 
@@ -72,40 +74,41 @@ stage_t operator++ (stage_t& d) {
         menu->add(typebar);
     }
 
-    #include "parameters/Parameter.h"
+    #ifdef ENABLE_PARAMETERS
+        #include "parameters/Parameter.h"
 
-    LinkedList<FloatParameter*> *RegularEnvelope::get_parameters() {
-        if (this->parameters!=nullptr)
+        LinkedList<FloatParameter*> *RegularEnvelope::get_parameters() {
+            if (this->parameters!=nullptr)
+                return this->parameters;
+
+            this->parameters = new LinkedList<FloatParameter*>();
+            
+            this->parameters->add(new DataParameter<RegularEnvelope,int8_t>("Attack", this, &RegularEnvelope::set_attack, &RegularEnvelope::get_attack, 0, 127));
+            this->parameters->add(new DataParameter<RegularEnvelope,int8_t>("Hold",   this, &RegularEnvelope::set_hold,   &RegularEnvelope::get_hold,   0, 127));
+            this->parameters->add(new DataParameter<RegularEnvelope,int8_t>("Decay",  this, &RegularEnvelope::set_decay,  &RegularEnvelope::get_decay,  0, 127));
+            this->parameters->add(new DataParameter<RegularEnvelope,int8_t>("Sustain",this, &RegularEnvelope::set_sustain,&RegularEnvelope::get_sustain,0, 127));
+            this->parameters->add(new DataParameter<RegularEnvelope,int8_t>("Release",this, &RegularEnvelope::set_release,&RegularEnvelope::get_release,0, 127));
+
             return this->parameters;
+        }
 
-        this->parameters = new LinkedList<FloatParameter*>();
-        
-        this->parameters->add(new DataParameter<RegularEnvelope,int8_t>("Attack", this, &RegularEnvelope::set_attack, &RegularEnvelope::get_attack, 0, 127));
-        this->parameters->add(new DataParameter<RegularEnvelope,int8_t>("Hold",   this, &RegularEnvelope::set_hold,   &RegularEnvelope::get_hold,   0, 127));
-        this->parameters->add(new DataParameter<RegularEnvelope,int8_t>("Decay",  this, &RegularEnvelope::set_decay,  &RegularEnvelope::get_decay,  0, 127));
-        this->parameters->add(new DataParameter<RegularEnvelope,int8_t>("Sustain",this, &RegularEnvelope::set_sustain,&RegularEnvelope::get_sustain,0, 127));
-        this->parameters->add(new DataParameter<RegularEnvelope,int8_t>("Release",this, &RegularEnvelope::set_release,&RegularEnvelope::get_release,0, 127));
+        LinkedList<FloatParameter*> *Weirdolope::get_parameters() {
+            if (this->parameters!=nullptr)
+                return this->parameters;
 
-        return this->parameters;
-    }
+            this->parameters = new LinkedList<FloatParameter*>();
+            
+            this->parameters->add(new DataParameter<Weirdolope,float>(
+                "Mix",
+                this,
+                &Weirdolope::setMix,
+                &Weirdolope::getMix,
+                0.0f,
+                10.0f
+            ));
 
-    LinkedList<FloatParameter*> *Weirdolope::get_parameters() {
-        if (this->parameters!=nullptr)
             return this->parameters;
-
-        this->parameters = new LinkedList<FloatParameter*>();
-        
-        this->parameters->add(new DataParameter<Weirdolope,float>(
-            "Mix",
-            this,
-            &Weirdolope::setMix,
-            &Weirdolope::getMix,
-            0.0f,
-            10.0f
-        ));
-
-        return this->parameters;
-    }
-
+        }
+    #endif
 
 #endif

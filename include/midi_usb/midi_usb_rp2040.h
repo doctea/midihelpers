@@ -198,6 +198,7 @@ class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget {
     }
 
     #ifdef ENABLE_SCREEN
+        FLASHMEM
         void create_menu_items();
     #endif
 
