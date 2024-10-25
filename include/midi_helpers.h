@@ -16,11 +16,14 @@
 
 #define MIDI_MAX_VELOCITY 127
 #define MIDI_MIN_VELOCITY 0
+#define MIDI_MAX_CC       127
+#define MIDI_MIN_CC       0
 #define MIDI_MAX_NOTE     127
 #define MIDI_MIN_NOTE     0
 
 #define MIDI_MAX_CHANNEL 16
 #define MIDI_MIN_CHANNEL 1
+#define MIDI_CHANNEL_OMNI 0
 
 String get_note_name(int pitch);
 const char *get_note_name_c(int pitch, int channel = 1);

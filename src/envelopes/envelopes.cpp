@@ -86,11 +86,11 @@ stage_t operator++ (stage_t& d) {
             this->parameters = new LinkedList<FloatParameter*>();
             
             // todo: make a LambdaDataParameter class and convert all DataParameters to it
-            this->parameters->add(new DataParameter<RegularEnvelope,int8_t>("Attack", this, &RegularEnvelope::set_attack, &RegularEnvelope::get_attack, 0, 127));
-            this->parameters->add(new DataParameter<RegularEnvelope,int8_t>("Hold",   this, &RegularEnvelope::set_hold,   &RegularEnvelope::get_hold,   0, 127));
-            this->parameters->add(new DataParameter<RegularEnvelope,int8_t>("Decay",  this, &RegularEnvelope::set_decay,  &RegularEnvelope::get_decay,  0, 127));
-            this->parameters->add(new DataParameter<RegularEnvelope,int8_t>("Sustain",this, &RegularEnvelope::set_sustain,&RegularEnvelope::get_sustain,0, 127));
-            this->parameters->add(new DataParameter<RegularEnvelope,int8_t>("Release",this, &RegularEnvelope::set_release,&RegularEnvelope::get_release,0, 127));
+            this->parameters->add(new LDataParameter<int8_t>("Attack", [=](int8_t v) -> void { this->set_attack(v); }, [=](void) -> int8_t { return this->get_attack(); }, 0, 127));
+            this->parameters->add(new LDataParameter<int8_t>("Hold",   [=](int8_t v) -> void { this->set_hold(v); },   [=](void) -> int8_t { return this->get_hold();   }, 0, 127));
+            this->parameters->add(new LDataParameter<int8_t>("Decay",  [=](int8_t v) -> void { this->set_decay(v); },  [=](void) -> int8_t { return this->get_decay();  }, 0, 127));
+            this->parameters->add(new LDataParameter<int8_t>("Sustain",[=](int8_t v) -> void { this->set_sustain(v); },[=](void) -> int8_t { return this->get_sustain(); },0, 127));
+            this->parameters->add(new LDataParameter<int8_t>("Release",[=](int8_t v) -> void { this->set_release(v); },[=](void) -> int8_t { return this->get_release(); },0, 127));
 
             return this->parameters;
         }
@@ -101,11 +101,10 @@ stage_t operator++ (stage_t& d) {
 
             this->parameters = new LinkedList<FloatParameter*>();
             
-            this->parameters->add(new DataParameter<Weirdolope,float>(
+            this->parameters->add(new LDataParameter<float>(
                 "Mix",
-                this,
-                &Weirdolope::setMix,
-                &Weirdolope::getMix,
+                [=](int8_t v) -> void { this->setMix(v); },
+                [=](void) -> int8_t { return this->getMix(); },
                 0.0f,
                 10.0f
             ));
