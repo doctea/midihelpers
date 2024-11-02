@@ -64,7 +64,7 @@ bool is_bpm_on_thirtysecond(uint32_t  ticks,  unsigned long offset = 0);
 
 bool is_bpm_on_multiplier(unsigned long ticks, float multiplier, unsigned long offset = 0);
 
-void set_bpm(float new_bpm);
+void set_bpm(float new_bpm, bool temporary = false);
 float get_bpm();
 void set_restart_on_next_bar(bool v = true);
 void set_restart_on_next_bar_on();
