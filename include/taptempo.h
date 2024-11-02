@@ -99,14 +99,15 @@ class TapTempoTracker {
 
   void clock_tempo_tap() {
     uint32_t now = micros();
-    if (now - clock_last_tap == now || now - clock_last_tap >= CLOCK_TEMPO_RESTARTTHRESHOLD) {
+    if (clock_last_tap==0 || now - clock_last_tap >= CLOCK_TEMPO_RESTARTTHRESHOLD) {
       memset(clock_tempo_history, 0, sizeof(uint32_t)*max_sample_size);
       clock_tempo_history_pos = 0;
       clock_tempo_tracking = true;
       clock_last_tap = now; 
       messages_log_add("started tempo tracking");
     } else if (clock_tempo_tracking) {
-      clock_tempo_history[(clock_tempo_history_pos++) % max_sample_size] = now - clock_last_tap;
+      clock_tempo_history[clock_tempo_history_pos++] = now - clock_last_tap;
+      clock_tempo_history_pos %= max_sample_size;
       clock_last_tap = now;
       messages_log_add("added tempo value");
 
@@ -167,6 +168,7 @@ class TapTempoTracker {
       clock_tempo_tracking = false;
       tap_tick_duration = -1;
       tap_ticks = 0;
+      clock_last_tap = 0;
       set_bpm(clock_tempo_estimate());
     } /*else if (is_tracking() && is_tempo_setter()) {
         float estimate = clock_tempo_estimate();
@@ -188,11 +190,11 @@ class TapTempoTracker {
         phase_diff = beat_phase - tap_phase;
         phase_diff_pc = (beat_phase / phase_diff);// * 100.0;
         if (is_tracking()) {
-          if (phase_diff_pc >= 0.05f) {
+          if (phase_diff_pc >= 0.01f) {
             //last_temp_bpm = estimate + (estimate * phase_diff_pc);
             last_temp_bpm = estimate - (estimate * (phase_diff_pc*5.0));
             set_bpm(last_temp_bpm, true);
-          } else if (phase_diff_pc <= -0.05f) {
+          } else if (phase_diff_pc <= -0.01f) {
             last_temp_bpm = estimate + (estimate * (phase_diff_pc*5.0));
             set_bpm(last_temp_bpm, true);
           } else {
