@@ -26,10 +26,12 @@ class TapTempoControl : public MenuItem {
 
             tft->printf("Tap Estimate: %i\n", (int)taptempotracker->clock_tempo_estimate());
             tft->printf("Sample size: [%i/%i]\n", taptempotracker->get_num_samples(), taptempotracker->get_max_sample_size());
-            //tft->println(taptempotracker->is_tracking()?"Sensing.." : "Tap to start!");
+            tft->println(taptempotracker->is_tracking()?"Sensing.." : "Tap to start!");
             //for (int i = 0 ; i < taptempotracker->get_num_samples() ; i++) {
             //    tft->printf("%i: %i\n", i, taptempotracker->get_history_gap(i));
             //}
+            //tft->printf("Last tapped: %i\n", taptempotracker->clock_last_tap);
+            tft->printf("T since tap: %i\n", micros() - taptempotracker->clock_last_tap);
 
             tft->printf("Beat phase %%: %i\n", taptempotracker->beat_phase*100.0);
             tft->printf("Tap phase  %%: %i\n", taptempotracker->tap_phase*100.0);
@@ -37,8 +39,9 @@ class TapTempoControl : public MenuItem {
             //if (taptempotracker->is_tracking())
             char asf[20];
             snprintf(asf, 20, "%3.2f", taptempotracker->phase_diff_pc);
-                tft->printf("Phase diff %%: %s\n", asf);
-                tft->printf("Last temp bpm: %i\n", (int)taptempotracker->last_temp_bpm);
+            tft->printf("Phase diff %%: %s\n", asf);
+            snprintf(asf, 20, "%3.2f", taptempotracker->last_temp_bpm);
+            tft->printf("Temp bpm: %s\n", asf);
             //else 
               //  tft->println("..waiting..");*/
             //tft->printf("Tempo bpm: %i\n", (int)taptempotracker->temp_bpm);
