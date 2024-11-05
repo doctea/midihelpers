@@ -121,10 +121,10 @@ class TapTempoTracker {
       clock_last_tap = now;
       messages_log_add("added tempo value");
 
-      if (is_tempo_setter()) {
+      /*if (is_tempo_setter()) {
         pll.setFrequency( clock_tempo_estimate() / 60.0);
         set_bpm(clock_tempo_estimate());
-      }
+      }*/
 
       tap_phase = 0.0;
       tap_ticks = 0;
@@ -149,6 +149,7 @@ class TapTempoTracker {
     return 0.0f;
   }
 
+  float last_estimate;
   float clock_tempo_estimate() {
     if (is_tracking() && get_num_samples()>1) {  // at least 2 taps
       float t = get_gap_average();
@@ -160,9 +161,11 @@ class TapTempoTracker {
       float beats_per_second = 1000000.0 / t;
       float beats_per_minute = beats_per_second * 60.0;
 
+      last_estimate = beats_per_minute;
+
       return beats_per_minute;
     }
-    return 0.0f;
+    return last_estimate;
   }
 
   uint32_t tap_ticks = 0;
@@ -184,11 +187,11 @@ class TapTempoTracker {
       // stop tracking because we haven't had a tick in CLOCK_TEMPO_RESTARTTHRESHOLD ms
       clock_tempo_tracking = false;
       //tap_tick_duration = -1;
-      tap_ticks = 0;
+      //tap_ticks = 0;
       clock_last_tap = 0;
       memset(clock_tempo_history, 0, sizeof(uint32_t)*max_sample_size);
-      //set_bpm(clock_tempo_estimate());
-    } else if (is_tracking() && get_num_samples() >= 2) {
+      //set_bpm(clock_tempo_estimate()); //clock_tempo_estimate());
+    } //else if (is_tracking() && get_num_samples() >= 2) {
         /*else if (is_tracking() && is_tempo_setter()) {
           float estimate = clock_tempo_estimate();
           if (get_bpm() != estimate) {
@@ -199,30 +202,57 @@ class TapTempoTracker {
       float estimate = clock_tempo_estimate();
 
       // recalculate the tap tempo phase
-      if (estimate > 0 && tap_tick_duration > 0 && now >= last_tap_ticked + tap_tick_duration) {
+      if (/*estimate > 0 &&*/ now >= last_tap_ticked + tap_tick_duration) {
         tap_ticks++;
         tap_ticks %= PPQN;
         tap_phase = ((float)tap_ticks / (float)PPQN); // / PPQN;
         last_tap_ticked = now;
         // recalculate real beat phase
+      }
 
-        phase_diff = beat_phase - tap_phase;
+        //phase_diff = beat_phase - tap_phase;
 
-        if (is_tracking()) {
-          if (phase_diff > 0) {
+        float beat_degree = beat_phase * 360.0;
+        float tap_degree = tap_phase * 360.0;
+        float degree_diff = beat_degree - tap_degree;
+        if (degree_diff <= -180) 
+          degree_diff += 360.0;
+        else if (degree_diff >= 180)
+          degree_diff -= 360.0;
+
+        phase_diff = degree_diff / 360.0;
+
+        phase_diff *= -1.0;
+
+        //if (phase_diff < -50.0)
+        //  phase_diff = 100.0 + phase_diff;
+
+        //if (is_tracking()) {
+          if (phase_diff >= 0.01) {
             // beat is ahead of tap -- slow down temporarily
-            phase_diff_pc = (beat_phase / tap_phase) / 100.0;
-            last_temp_bpm = estimate - abs(estimate * (phase_diff_pc*5.0));
+            //phase_diff_pc = phase_diff; /// 100.0;
+            //last_temp_bpm = estimate + abs(/*estimate **/ (50.0*phase_diff));
+            //last_temp_bpm = constrain(estimate, estimate - 10.0, estimate + 10.0);
+            //last_temp_bpm = estimate + (20.0*abs(phase_diff)); //(estimate * (phase_diff/10.0));
+            //last_temp_bpm = estimate * abs(0.5 + phase_diff * 15.0); //(phase_diff * 50.0); //1.5;
+            last_temp_bpm = estimate * 2.0;
             set_bpm(last_temp_bpm, true);
-          } else if (phase_diff < 0) {
+          } else if (phase_diff <= -0.01) {
             // beat is behind tap -- speed up temporarily
-            phase_diff_pc = (tap_phase / beat_phase) / 100.0;
-            last_temp_bpm = estimate + abs(estimate * (phase_diff_pc*5.0));
+            //phase_diff_pc = (tap_phase / beat_phase);// / 100.0;
+            //last_temp_bpm = estimate - abs(/*estimate **/ (50.0*phase_diff));
+            //last_temp_bpm = constrain(estimate, estimate - 10.0, estimate + 10.0);
+            //last_temp_bpm = estimate - (20.0*abs(phase_diff)); //(estimate * (phase_diff/10.0));
+            //last_temp_bpm = estimate / abs(0.5 + phase_diff * 15.0);
+            last_temp_bpm = estimate / 2.0;
             set_bpm(last_temp_bpm, true);
-          } else {
+          } else { //if (is_tracking()) {
+            //last_temp_bpm = estimate;
             set_bpm(estimate);
           }
-        }
+        /*} else {
+          set_bpm(estimate);
+        }*/
         /*phase_diff_pc = (beat_phase / tap_phase); //phase_diff);// * 100.0;
         if (is_tracking()) {
           if (phase_diff >= 0.05f) {
@@ -237,11 +267,11 @@ class TapTempoTracker {
               set_bpm(estimate);
           }
         }*/
-      } else if (is_tracking() && estimate>0) {
+      /*} else if (is_tracking() && estimate>0) {
         set_bpm(estimate);
-      }
+      }*/
     //}
-    }
+    //}
 
     this->add_tap_phase(tap_phase, now);
 

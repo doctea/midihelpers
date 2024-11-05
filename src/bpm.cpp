@@ -56,7 +56,7 @@ bool is_bpm_on_multiplier(unsigned long ticks, float multiplier, unsigned long o
 }
 
 void set_bpm(float new_bpm, bool temporary) {
-  if (bpm_current!=new_bpm) {
+  //if (bpm_current!=new_bpm) {
     if (!temporary) 
       bpm_current = new_bpm;
     #ifdef USE_UCLOCK
@@ -75,7 +75,7 @@ void set_bpm(float new_bpm, bool temporary) {
     #endif
     //Serial.print(F("set bpm to "));
     //Serial.println(bpm_current);
-  }
+  //}
 }
 float get_bpm() {
   return bpm_current;
