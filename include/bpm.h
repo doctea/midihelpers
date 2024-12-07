@@ -1,5 +1,4 @@
-#ifndef BPM__INCLUDED
-#define BPM__INCLUDED
+#pragma once
 
 #ifdef ARDUINO
   #include <Arduino.h>
@@ -42,7 +41,10 @@ volatile extern float bpm_current; //BPM_MINIMUM; //60.0f;
   volatile extern float micros_per_tick; // = 1000.0f * (60.0f / (double)(bpm_current * (double)PPQN));
 //#endif
 
-#define BPM_CURRENT_PHRASE          (ticks / (TICKS_PER_PHRASE))
+#define BPM_CURRENT_BEAT            (ticks / PPQN)
+#define BPM_CURRENT_BAR             (BPM_CURRENT_BEAT / BEATS_PER_BAR)
+#define BPM_CURRENT_PHRASE          (BPM_CURRENT_BAR / BARS_PER_PHRASE)
+
 #define BPM_CURRENT_BAR_OF_PHRASE   (ticks % (PPQN*BEATS_PER_BAR*BARS_PER_PHRASE) / (PPQN*BEATS_PER_BAR))
 #define BPM_CURRENT_BEAT_OF_BAR     (ticks % (PPQN*BEATS_PER_BAR) / PPQN)
 #define BPM_CURRENT_STEP_OF_BAR     (ticks % (PPQN*BEATS_PER_BAR) / (PPQN/STEPS_PER_BEAT))
@@ -70,4 +72,3 @@ void set_restart_on_next_bar(bool v = true);
 void set_restart_on_next_bar_on();
 bool is_restart_on_next_bar();
 
-#endif

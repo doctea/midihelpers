@@ -43,7 +43,15 @@ class TapTempoControl : public MenuItem {
             //snprintf(asf, 20, "% 3.2f", taptempotracker->phase_diff_pc);
             //tft->printf("Phase diff %%:%s\n", asf);
             snprintf(asf, 20, "% 3.2f", taptempotracker->last_temp_bpm);
-            tft->printf("Temp bpm:    %s\n", asf);
+            tft->printf("Temp bpm:  % 5s\n", asf);
+
+            if (taptempotracker->continue_locking() || taptempotracker->is_tracking()) {
+                tft->println("[locked]");
+            } else {
+                tft->println("] free [");
+            }
+            tft->printf("Seq tk us: % 5i\n", micros_per_tick);
+            tft->printf("Tap tk us: % 5i\n", taptempotracker->tap_tick_duration);
             //else 
               //  tft->println("..waiting..");*/
             //tft->printf("Tempo bpm: %i\n", (int)taptempotracker->temp_bpm);

@@ -62,6 +62,8 @@ class TapTempoTracker {
   bool clock_tempo_tracking = false;
   bool tempo_setter = true;
 
+  bool should_continue_locking = true;
+
   PhaseLockedLoop pll = PhaseLockedLoop(2.0);
 
   float internal_phase_history[2000];
@@ -76,6 +78,10 @@ class TapTempoTracker {
     this->max_sample_size = max_sample_size;
   }
 
+  void set_continue_locking(bool l = true) {
+    this->should_continue_locking = l;
+  }
+
   void set_tempo_setter(bool setter = true) {
     this->tempo_setter = setter;
   }
@@ -85,6 +91,10 @@ class TapTempoTracker {
 
   bool is_tracking() {
     return clock_tempo_tracking && get_num_samples()>1;
+  }
+
+  bool continue_locking() {
+    return this->should_continue_locking;
   }
 
   uint32_t get_max_sample_size() {
@@ -132,7 +142,7 @@ class TapTempoTracker {
     }
   }
 
-  float get_gap_average() {
+  uint32_t get_gap_average() {
     #ifdef USE_MEDIAN
       shellSortKnuth(clock_tempo_history, clock_tempo_history_pos);
       return clock_tempo_history[clock_tempo_history_pos/2];
@@ -155,11 +165,13 @@ class TapTempoTracker {
       float t = get_gap_average();
 
       //next_expected_tap = clock_last_tap + t;
-      tap_tick_duration = t / (float)PPQN; // / (float)PPQN;
+      //tap_tick_duration = t / (float)PPQN; // / (float)PPQN;
 
       // at this point, t should be equal to the average micros between beats
       float beats_per_second = 1000000.0 / t;
-      float beats_per_minute = beats_per_second * 60.0;
+      uint32_t beats_per_minute = beats_per_second * 60.0;
+
+      tap_tick_duration = (2 * uClock.bpmToMicroSeconds(beats_per_minute));
 
       last_estimate = beats_per_minute;
 
@@ -202,7 +214,7 @@ class TapTempoTracker {
       float estimate = clock_tempo_estimate();
 
       // recalculate the tap tempo phase
-      if (/*estimate > 0 &&*/ now >= last_tap_ticked + tap_tick_duration) {
+      if (/*estimate > 0 &&*/ now >= last_tap_ticked + (uint32_t)tap_tick_duration) {
         tap_ticks++;
         tap_ticks %= PPQN;
         tap_phase = ((float)tap_ticks / (float)PPQN); // / PPQN;
@@ -227,7 +239,7 @@ class TapTempoTracker {
         //if (phase_diff < -50.0)
         //  phase_diff = 100.0 + phase_diff;
 
-        //if (is_tracking()) {
+        if (continue_locking() || is_tracking()) {
           if (phase_diff >= 0.01) {
             // beat is ahead of tap -- slow down temporarily
             //phase_diff_pc = phase_diff; /// 100.0;
@@ -250,9 +262,9 @@ class TapTempoTracker {
             //last_temp_bpm = estimate;
             set_bpm(estimate);
           }
-        /*} else {
-          set_bpm(estimate);
-        }*/
+        } else {
+          //set_bpm(estimate);
+        }
         /*phase_diff_pc = (beat_phase / tap_phase); //phase_diff);// * 100.0;
         if (is_tracking()) {
           if (phase_diff >= 0.05f) {
