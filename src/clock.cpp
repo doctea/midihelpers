@@ -6,12 +6,16 @@
     #if defined(CORE_TEENSY)
         #include <util/atomic.h>
         #define USE_ATOMIC
-    #elif defined(ARDUINO_ARCH_RP2040)
+    #elif defined(ARDUINO_ARCH_RP2040) || defined(ARDUINO_ARCH_RP2350)
         #include "uClock.h"
         #include "SimplyAtomic.h"
         #define ATOMIC_BLOCK(X) ATOMIC()
       #define USE_ATOMIC
     #endif
+#endif
+
+#if __has_include("debug.h")
+  #include "debug.h"
 #endif
 
 #ifndef CORE_TEENSY
