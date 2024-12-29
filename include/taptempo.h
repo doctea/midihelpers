@@ -17,7 +17,7 @@
   using ace_sorting::shellSortKnuth;
 #endif
 
-class PhaseLockedLoop {
+/*class PhaseLockedLoop {
 public:
     PhaseLockedLoop(double initialFrequency) : frequency(initialFrequency), beatsPassed(0) {}
 
@@ -54,6 +54,7 @@ private:
     int beatsPassed;
     double currentBPM;
 };
+*/
 
 
 class TapTempoTracker {
