@@ -39,7 +39,6 @@ class IMIDINoteTarget {
 };
 
 // interface for classes that can receive MIDI CC data
-// todo: probably wanna move this to midihelpers lib
 class IMIDICCTarget {
     public:
         virtual void sendControlChange(uint8_t cc_number, uint8_t value, uint8_t channel) {};

@@ -32,8 +32,8 @@
 void setup_midi();
 void setup_usb();
 
-
-#include "outputs/output.h"
+#if __has_include("outputs/output.h")
+    #include "outputs/output.h"
 
 // todo: port usb_midi_clocker's OutputWrapper to work here?
 // wrapper class to wrap different MIDI output types; handles both USB MIDI and DIN MIDI outputs
@@ -225,3 +225,5 @@ extern RP2040DualMIDIOutputWrapper *output_wrapper;
 
 void set_din_midi_clock_output_divider(uint32_t v);
 uint32_t get_din_midi_clock_output_divider();
+
+#endif
