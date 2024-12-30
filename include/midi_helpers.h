@@ -20,6 +20,7 @@
 #define MIDI_MIN_CC       0
 #define MIDI_MAX_NOTE     127
 #define MIDI_MIN_NOTE     0
+#define MIDI_NUM_NOTES	  128
 
 #define MIDI_MAX_CHANNEL 16
 #define MIDI_MIN_CHANNEL 1

@@ -53,5 +53,5 @@ const char *get_note_name_c(int pitch, int channel) {
 }
 
 bool is_valid_note(int8_t note) {
-    return note >= 0 && note <= MIDI_MAX_NOTE;
+    return note >= 0 && note < MIDI_NUM_NOTES;
 }
