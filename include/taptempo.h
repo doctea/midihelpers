@@ -69,7 +69,7 @@ class TapTempoTracker {
 
   bool should_continue_locking = true;
 
-  PhaseLockedLoop pll = PhaseLockedLoop(2.0);
+  //PhaseLockedLoop pll = PhaseLockedLoop(2.0);
 
   float internal_phase_history[2000];
   float tap_phase_history[2000];
@@ -301,7 +301,7 @@ class TapTempoTracker {
   void tick(uint32_t ticks) {
     return;
 
-    pll.update(ticks);
+    //pll.update(ticks);
 
     clock_tempo_estimate();
 
