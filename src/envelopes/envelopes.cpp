@@ -33,11 +33,11 @@ stage_t operator++ (stage_t& d) {
             sub_menu_item_columns->show_header = false;
 
             // todo: convert all these ObjectNumberControls and ObjectToggleControls into LambdaNumberControls and LambdaToggleControls
-            sub_menu_item_columns->add(new ObjectNumberControl<RegularEnvelope,int8_t>("Att", this, &RegularEnvelope::set_attack,  &RegularEnvelope::get_attack,    nullptr, 0, 127, true, true));
-            sub_menu_item_columns->add(new ObjectNumberControl<RegularEnvelope,int8_t>("Hld", this, &RegularEnvelope::set_hold,    &RegularEnvelope::get_hold,      nullptr, 0, 127, true, true));
-            sub_menu_item_columns->add(new ObjectNumberControl<RegularEnvelope,int8_t>("Dec", this, &RegularEnvelope::set_decay,   &RegularEnvelope::get_decay,     nullptr, 0, 127, true, true));
-            sub_menu_item_columns->add(new ObjectNumberControl<RegularEnvelope,int8_t>("Sus", this, &RegularEnvelope::set_sustain, &RegularEnvelope::get_sustain,   nullptr, 0, 127, true, true));
-            sub_menu_item_columns->add(new ObjectNumberControl<RegularEnvelope,int8_t>("Rel", this, &RegularEnvelope::set_release, &RegularEnvelope::get_release,   nullptr, 0, 127, true, true));
+            sub_menu_item_columns->add(new ObjectNumberControl<RegularEnvelope,float>("Att", this, &RegularEnvelope::set_attack,  &RegularEnvelope::get_attack,    nullptr, 0, 1.0, true, true));
+            sub_menu_item_columns->add(new ObjectNumberControl<RegularEnvelope,float>("Hld", this, &RegularEnvelope::set_hold,    &RegularEnvelope::get_hold,      nullptr, 0, 1.0, true, true));
+            sub_menu_item_columns->add(new ObjectNumberControl<RegularEnvelope,float>("Dec", this, &RegularEnvelope::set_decay,   &RegularEnvelope::get_decay,     nullptr, 0, 1.0, true, true));
+            sub_menu_item_columns->add(new ObjectNumberControl<RegularEnvelope,float>("Sus", this, &RegularEnvelope::set_sustain, &RegularEnvelope::get_sustain,   nullptr, 0, 1.0, true, true));
+            sub_menu_item_columns->add(new ObjectNumberControl<RegularEnvelope,float>("Rel", this, &RegularEnvelope::set_release, &RegularEnvelope::get_release,   nullptr, 0, 1.0, true, true));
 
             menu->add(sub_menu_item_columns);
 

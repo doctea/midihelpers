@@ -49,13 +49,13 @@ class EnvelopeDisplay : public MenuItem {
 
             const uint16_t base_row = pos.y;
 
-
+            // todo: see if we can omptimise this by drawing in the "direction" of the framebuffer axis (ie, horizontal lines instead of vertical, from the point of view of the framebuffer)
             int last_y = 0;
             for (int screen_x = 0 ; screen_x < tft->width() ; screen_x++) {
                 const uint16_t tick_for_screen_X = screen_x;
                 const float value = (float)envelope->graph[tick_for_screen_X].value;
                 const stage_t stage = envelope->graph[tick_for_screen_X].stage;
-                const int y = PARAMETER_INPUT_GRAPH_HEIGHT - ((value/127.0) * PARAMETER_INPUT_GRAPH_HEIGHT);
+                const int y = PARAMETER_INPUT_GRAPH_HEIGHT - (value * PARAMETER_INPUT_GRAPH_HEIGHT);
                 if (screen_x != 0) {
                     //int last_y = GRAPH_HEIGHT - (this->logged[tick_for_screen_X] * GRAPH_HEIGHT);
                     //actual->drawLine(screen_x-1, base_row + last_y, screen_x, base_row + y, YELLOW);                    
@@ -72,9 +72,9 @@ class EnvelopeDisplay : public MenuItem {
             // draw a horizontal line representing the current envelope level
             if (envelope->last_state.stage!=0) {
                 const int y = envelope->is_invert() ? 
-                    ((envelope->last_state.lvl_now/127.0) * PARAMETER_INPUT_GRAPH_HEIGHT)
+                    (envelope->last_state.lvl_now * PARAMETER_INPUT_GRAPH_HEIGHT)
                     :
-                    PARAMETER_INPUT_GRAPH_HEIGHT - ((envelope->last_state.lvl_now/127.0) * PARAMETER_INPUT_GRAPH_HEIGHT);
+                    PARAMETER_INPUT_GRAPH_HEIGHT - (envelope->last_state.lvl_now * PARAMETER_INPUT_GRAPH_HEIGHT);
                 tft->drawLine(0, base_row + y, tft->width(), base_row + y, stage_colours[envelope->last_state.stage]);
             }
 
@@ -111,7 +111,9 @@ class EnvelopeIndicator : public MenuItem {
         tft->printf("Stg: %7s | ", (char*)stage_labels[envelope->last_state.stage]);
         //tft->printf("Trig'd at: %-5i | ", envelope->stage_triggered_at);
         //tft->printf("Elapsed: %-5i\n", envelope->last_state.elapsed);
-        tft->printf("Lvl: %-3i\n", envelope->last_sent_actual_lvl); // last_state.lvl_now);
+        char buf[5];
+        snprintf(buf, 10, "%-1.2f", envelope->last_sent_actual_lvl);
+        tft->printf("Lvl: %s\n", buf);
         
         return tft->getCursorY();
     }

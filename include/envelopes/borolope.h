@@ -175,7 +175,7 @@ class Weirdolope : public EnvelopeBase {
 
     uint16_t last_processed_elapsed = -1;
     envelope_state_t cached_state;
-    virtual envelope_state_t calculate_envelope_level(stage_t stage, uint16_t stage_elapsed, uint8_t level_start, uint8_t velocity = 127, bool use_caching = true) {
+    virtual envelope_state_t calculate_envelope_level(stage_t stage, uint16_t stage_elapsed, float level_start, float velocity = 1.0f, bool use_caching = true) {
         if (use_caching && last_state.stage==stage && last_processed_elapsed==stage_elapsed && !this->is_dirty_calc())
             return cached_state;    // todo: need to check dirty flag!
 
@@ -184,7 +184,7 @@ class Weirdolope : public EnvelopeBase {
         EnvB = EnvA+1;
         EnvAlpha = constrain( x - EnvA, 0.0f, 1.0f );
 
-        float envelopeLevel = ((float)level_start) / 127.0;
+        float envelopeLevel = ((float)level_start);
         //float delta, damp;
 
         envelope_state_t return_state;
@@ -192,7 +192,7 @@ class Weirdolope : public EnvelopeBase {
         return_state.lvl_start = level_start;
         return_state.elapsed = stage_elapsed;
 
-        if (debug) Serial.printf("%s:\tcalculate_envelope_level(stage=%i,\tstage_elapsed=%i,\tlevel_start=%i,\tvelocity=%i)", this->label, stage, stage_elapsed, level_start, velocity);
+        if (debug) Serial.printf("%s:\tcalculate_envelope_level(stage=%i,\tstage_elapsed=%i,\tlevel_start=%1.3f,\tvelocity=%1.3f)", this->label, stage, stage_elapsed, level_start, velocity);
 
         if (stage==OFF) {
             envelopeLevel = 0.0;
@@ -207,12 +207,12 @@ class Weirdolope : public EnvelopeBase {
             );*/
         } else if (stage==ATTACK) {
             float delta = lerp( AttackRateTable[EnvA], AttackRateTable[EnvB], EnvAlpha );
-            if (debug && Serial) Serial.printf("%s: ATTACK phase, stage_elapsed=%i, envelopeLevel=%3.3f, delta=%3.3f =>", this->label, stage_elapsed, envelopeLevel, delta);
+            if (debug && Serial) Serial.printf("%s: ATTACK phase, stage_elapsed=%i, envelopeLevel=%1.3f, delta=%1.3f =>", this->label, stage_elapsed, envelopeLevel, delta);
             envelopeLevel += (delta * (float)(stage_elapsed+1));
             if (debug && Serial) Serial.printf("%3.3f\n", envelopeLevel);
             if (envelopeLevel >= 1.0f) {
                 envelopeLevel = 1.0f;
-                return_state.lvl_start = envelopeLevel * 127.0;
+                return_state.lvl_start = envelopeLevel;
                 return_state.stage = DECAY;
             }
         } else if (stage==DECAY) {
@@ -242,7 +242,7 @@ class Weirdolope : public EnvelopeBase {
                 envelopeLevel *= damp;
             }
             if (envelopeLevel <= envelopeStopLevel) {
-                if (debug && Serial) Serial.printf("%s:\t!!!! Release staged reached level %3.3f (passing threshold %3.3f) after %i stages\n", this->label, envelopeLevel, envelopeStopLevel, stage_elapsed);
+                if (debug && Serial) Serial.printf("%s:\t!!!! Release staged reached level %1.3f (passing threshold %3.3f) after %i stages\n", this->label, envelopeLevel, envelopeStopLevel, stage_elapsed);
                 return_state.stage = OFF;
                 envelopeLevel = 0.0f;
             } else {
@@ -250,10 +250,9 @@ class Weirdolope : public EnvelopeBase {
             }
         }
 
-        return_state.lvl_now = envelopeLevel * 127.0f;
-        //return_state.lvl_start = envelopeLevel * 127.0f;
+        return_state.lvl_now = envelopeLevel;
 
-        if (debug && Serial) Serial.printf(" => %i & %i from envelopeLevel=%3.3f\n", return_state.lvl_now, return_state.lvl_start, envelopeLevel);
+        if (debug && Serial) Serial.printf(" => %i & %i from envelopeLevel=%1.3f\n", return_state.lvl_now, return_state.lvl_start, envelopeLevel);
 
         if (use_caching) {
             this->clear_dirty_calc();
@@ -272,7 +271,7 @@ class Weirdolope : public EnvelopeBase {
         this->setMix(random(0.0f, 10.0f));
         this->set_invert((int8_t)random(0,10) < 2);
     }
-    virtual void update_state(int8_t velocity, bool state, uint32_t now = ticks) override {
+    virtual void update_state(float velocity, bool state, uint32_t now = ticks) override {
         if (!state) {
             if (stage==ATTACK || stage==HOLD || stage==DECAY || stage==SUSTAIN) { //!=OFF && stage!=RELEASE) {
                 last_state.stage = stage = RELEASE;
