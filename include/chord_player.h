@@ -224,7 +224,7 @@ class ChordPlayer {
 
             this->current_raw_note = new_note;
             if (this->is_quantise())
-                new_note = quantise_pitch(new_note, this->scale_root, this->scale);
+                new_note = quantise_pitch(new_note, this->scale_root, this->scale); //, chord_identity_t{.chord_type=this->selected_chord_number, .chord_degree=get_degree_for, .inversion=this->inversion});
 
             // has pitch become invalid?  is so and if note playing, stop note
             if (is_playing && !is_valid_note(new_note) && is_valid_note(this->current_note)) {
