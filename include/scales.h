@@ -103,16 +103,23 @@ namespace CHORD {
 
 #define NUMBER_CHORDS (sizeof(chords)/sizeof(chord_t))
 
+class chord_identity_t {
+    public:
+    CHORD::Type chord_type = CHORD::TRIAD;
+    int8_t chord_degree = -1;
+    int8_t inversion = 0;
+    //int8_t velocity = MIDI_MAX_VELOCITY;
+};
 
 class chord_instance_t {
     public:
     SCALE scale = SCALE::MAJOR;
     CHORD::Type chord_type = CHORD::NONE;
     int8_t chord_root = NOTE_OFF;
-    int8_t pitches[PITCHES_PER_CHORD] = { NOTE_OFF, NOTE_OFF, NOTE_OFF, NOTE_OFF };
     int8_t inversion = 0;
     int8_t velocity = MIDI_MAX_VELOCITY;
     bool changed = true;
+    int8_t pitches[PITCHES_PER_CHORD] = { NOTE_OFF, NOTE_OFF, NOTE_OFF, NOTE_OFF };
 
     const char *get_label() {
         return chords[chord_type].label;
@@ -187,14 +194,20 @@ extern SCALE    *global_scale_type;
 
 void set_global_scale_root_target(int8_t *root_note);
 void set_global_scale_type_target(SCALE *scale_type);
+void set_global_chord_degree_target(int8_t *chord_degree);
 
 int8_t get_effective_scale_root(int8_t scale_root);
 SCALE get_effective_scale_type(SCALE scale_number);
+int8_t get_effective_chord_degree(int8_t chord_degree);
 
 int8_t get_global_scale_root();
 SCALE get_global_scale_type();
+int8_t get_global_chord_degree();
 
-int8_t quantise_pitch(int8_t pitch, int8_t root_note = SCALE_GLOBAL_ROOT, SCALE scale_number = SCALE::GLOBAL);
+int8_t quantise_pitch(int8_t pitch, int8_t root_note = SCALE_GLOBAL_ROOT, SCALE scale_number = SCALE::GLOBAL, chord_identity_t chord_identity = {CHORD::TRIAD, -1, 0});
 int8_t quantise_pitch_chord_note(int8_t pitch, CHORD::Type chord_number, int8_t note_of_chord, int8_t root_note = SCALE_GLOBAL_ROOT, SCALE scale_number = SCALE::GLOBAL, int inversion = 0, bool debug = false);
+
+// gets the pitch note number for a scale degree 
+int8_t quantise_get_root_pitch_for_degree(int8_t degree, int8_t root_note = SCALE_GLOBAL_ROOT, SCALE scale_number = SCALE::GLOBAL);
 
 #endif

@@ -254,6 +254,8 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
     vl::Func<SCALE(void)> scale_getter_func;
     vl::Func<void(int8_t)> scale_root_setter_func;
     vl::Func<int8_t(void)> scale_root_getter_func;
+    vl::Func<void(int8_t)> chord_degree_setter_func;
+    vl::Func<int8_t(void)> chord_degree_getter_func;
 
     LambdaScaleMenuItemBar(
         const char *label,
@@ -301,6 +303,41 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
         }
         scale_selector->go_back_on_select = true;
         this->add(scale_selector);
+    }
+
+    LambdaScaleMenuItemBar(
+        const char *label,
+        vl::Func<void(SCALE)> scale_setter_func,
+        vl::Func<SCALE(void)> scale_getter_func,
+        vl::Func<void(int8_t)> scale_root_setter_func,
+        vl::Func<int8_t(void)> scale_root_getter_func,
+        vl::Func<void(int8_t)> chord_degree_setter_func,
+        vl::Func<int8_t(void)> chord_degree_getter_func,
+        bool allow_global = false,
+        bool show_sub_headers = true,
+        bool show_header = true
+    ) : LambdaScaleMenuItemBar (label, scale_setter_func, scale_getter_func, scale_root_setter_func, scale_root_getter_func, allow_global, show_sub_headers, show_header) {
+
+        LambdaSelectorControl<int8_t> *chord_degree_selector = new LambdaSelectorControl<int8_t>(
+            "Chord degree",
+            chord_degree_setter_func,
+            chord_degree_getter_func,
+            nullptr,
+            true,
+            true
+        );
+        if (allow_global)
+            chord_degree_selector->add_available_value(-1, "[use global]");
+        chord_degree_selector->add_available_value(0, "[none]");
+        chord_degree_selector->add_available_value(1, "1st");
+        chord_degree_selector->add_available_value(2, "2nd");
+        chord_degree_selector->add_available_value(3, "3rd");
+        chord_degree_selector->add_available_value(4, "4th");
+        chord_degree_selector->add_available_value(5, "5th");
+        chord_degree_selector->add_available_value(6, "6th");
+        chord_degree_selector->add_available_value(7, "7th");
+        
+        this->add(chord_degree_selector);
     }
 
     void set_scale(SCALE scale_number) {
