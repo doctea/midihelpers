@@ -1,3 +1,5 @@
+#pragma once
+
 // abstract handling of playing chords; taken from usb_midi_clocker's behaviour_cvinput, so that we can re-use this in Microlidian
 #if defined(ENABLE_SCALES)
 

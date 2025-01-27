@@ -1,3 +1,5 @@
+#pragma once
+
 #include "menuitems.h"
 
 #include "midi_helpers.h"
