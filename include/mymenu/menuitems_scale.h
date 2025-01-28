@@ -256,8 +256,6 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
     vl::Func<SCALE(void)> scale_getter_func;
     vl::Func<void(int8_t)> scale_root_setter_func;
     vl::Func<int8_t(void)> scale_root_getter_func;
-    vl::Func<void(int8_t)> chord_degree_setter_func;
-    vl::Func<int8_t(void)> chord_degree_getter_func;
 
     LambdaScaleMenuItemBar(
         const char *label,
@@ -307,18 +305,40 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
         this->add(scale_selector);
     }
 
-    LambdaScaleMenuItemBar(
+    void set_scale(SCALE scale_number) {
+        scale_setter_func(scale_number);
+    }
+    SCALE get_scale() {
+        return scale_getter_func();
+    }
+};
+
+class LambdaChordSubMenuItemBar : public SubMenuItemBar {
+    public:
+
+    vl::Func<void(int8_t)> chord_degree_setter_func;
+    vl::Func<int8_t(void)> chord_degree_getter_func;
+    vl::Func<void(CHORD::Type)> chord_setter_func;
+    vl::Func<CHORD::Type(void)> chord_getter_func;
+    vl::Func<void(int8_t)> inversion_setter_func;
+    vl::Func<int8_t(void)> inversion_getter_func;
+
+    LambdaChordSubMenuItemBar(
         const char *label,
-        vl::Func<void(SCALE)> scale_setter_func,
-        vl::Func<SCALE(void)> scale_getter_func,
-        vl::Func<void(int8_t)> scale_root_setter_func,
-        vl::Func<int8_t(void)> scale_root_getter_func,
         vl::Func<void(int8_t)> chord_degree_setter_func,
         vl::Func<int8_t(void)> chord_degree_getter_func,
-        bool allow_global = false,
+        vl::Func<void(CHORD::Type)> chord_setter_func,
+        vl::Func<CHORD::Type(void)> chord_getter_func,
+        vl::Func<void(int8_t)> inversion_setter_func,
+        vl::Func<int8_t(void)> inversion_getter_func,
+        bool allow_global = true,
         bool show_sub_headers = true,
         bool show_header = true
-    ) : LambdaScaleMenuItemBar (label, scale_setter_func, scale_getter_func, scale_root_setter_func, scale_root_getter_func, allow_global, show_sub_headers, show_header) {
+    ) : SubMenuItemBar (label, show_sub_headers, show_header) {
+        this->chord_setter_func = chord_setter_func;
+        this->chord_getter_func = chord_getter_func;
+        this->inversion_setter_func = inversion_setter_func;
+        this->inversion_getter_func = inversion_getter_func;
 
         LambdaSelectorControl<int8_t> *chord_degree_selector = new LambdaSelectorControl<int8_t>(
             "Chord degree",
@@ -340,17 +360,31 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
         chord_degree_selector->add_available_value(7, "7th");
         
         this->add(chord_degree_selector);
-    }
 
-    void set_scale(SCALE scale_number) {
-        scale_setter_func(scale_number);
-    }
-    SCALE get_scale() {
-        return scale_getter_func();
+        LambdaSelectorControl<CHORD::Type> *chord_selector = new LambdaSelectorControl<CHORD::Type>(
+            "Chord type", 
+            chord_setter_func,
+            chord_getter_func,
+            nullptr,
+            true,
+            true
+        );
+        for (size_t i = 0 ; i < NUMBER_CHORDS ; i++) {
+            chord_selector->add_available_value((CHORD::Type)i, chords[i].label);
+        }
+        chord_selector->go_back_on_select = true;
+        this->add(chord_selector);
+
+        LambdaNumberControl<int8_t> *inversion_selector = new LambdaNumberControl<int8_t>(
+            "Inversion", 
+            inversion_setter_func,
+            inversion_getter_func,
+            nullptr,
+            0, 4, true
+        );
+        this->add(inversion_selector);
     }
 };
-
-
 
 class ChordMenuItem : public MenuItem {
     public:
