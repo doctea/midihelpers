@@ -53,3 +53,15 @@ class IMIDIProxiedCCTarget : virtual public IMIDICCTarget {
 class IMIDINoteAndCCTarget : virtual public IMIDICCTarget, virtual public IMIDINoteTarget {
 
 };
+
+// interface for classes that can receive gate messages (ie GateManager); todo: should also make envelope generators implement this
+class IGateTarget {
+    public:
+      virtual void send_gate_on(int8_t bank, int8_t gate) {
+          this->send_gate(bank, gate, true);
+      }
+      virtual void send_gate_off(int8_t bank, int8_t gate) {
+          this->send_gate(bank, gate, false);
+      }
+      virtual void send_gate(int8_t bank, int8_t gate, bool state) = 0;
+};
