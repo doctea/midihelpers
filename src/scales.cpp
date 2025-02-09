@@ -105,10 +105,16 @@ int8_t quantise_get_root_pitch_for_degree(int8_t degree, int8_t scale_root, SCAL
 
   scale_root = get_effective_scale_root(scale_root);
   scale_number = get_effective_scale_type(scale_number);
-  if(scale_number==SCALE_GLOBAL_ROOT || scale_number==SCALE::GLOBAL)
+  if(scale_number==SCALE_GLOBAL_ROOT || scale_number==SCALE::GLOBAL) {
+    Serial.printf("quantise_get_root_pitch_for_degree(%i, %i, %s) - scale_number is global but get_effective_scale_type also returned global so only returning -1?\n", degree, scale_root, scales[scale_number].label);
     return -1;
+  }
 
-  return scale_root + scales[scale_number].valid_chromatic_pitches[degree-1];
+  int8_t result = scale_root + scales[scale_number].valid_chromatic_pitches[degree-1];
+
+  Serial.printf("quantise_get_root_pitch_for_degree(%i, %i, %s) - scale_number=%i and scale_root=%i (%s) => %i (%s)\n", degree, scale_root, scales[scale_number].label, scale_number, scale_root, get_note_name_c(scale_root), result, get_note_name_c(result));
+
+  return result;
 }
 
 int8_t quantise_pitch(int8_t pitch, int8_t scale_root, SCALE scale_number) {
@@ -144,7 +150,7 @@ int8_t quantise_pitch(int8_t pitch, int8_t scale_root, SCALE scale_number) {
       continue;
     if (interval == relative_pitch) {
       return_value = pitch;
-      //Serial.printf("branch#1: pitch %s (%i) is in scale %s (%i) at index %i\n", get_note_name_c(pitch), pitch, scales[scale_number].label, scale_number, index);
+      if (debug) Serial.printf("\tbranch#1: pitch %s (%i) is in scale %s (%i) at index %i\n", get_note_name_c(pitch), pitch, scales[scale_number].label, scale_number, index);
       break;
     }
     if (relative_pitch < interval) {
@@ -152,18 +158,18 @@ int8_t quantise_pitch(int8_t pitch, int8_t scale_root, SCALE scale_number) {
       int8_t v = last_interval + (octave*12) + scale_root;
       if (v - pitch > 7) // if we've crossed octave boundary, step down an octave
         v -= 12;
-      //Serial.printf("branch#2: Quantised \t%s (%i)\tto\t%s (%i), scale_number=%i and scale_root=%i (%s)\n", get_note_name_c(pitch), pitch, get_note_name_c(v), v, scale_number, scale_root, get_note_name_c(scale_root));
+      if (debug) Serial.printf("\tbranch#2: Quantised \t%s (%i)\tto\t%s (%i), scale_number=%i and scale_root=%i (%s)\n", get_note_name_c(pitch), pitch, get_note_name_c(v), v, scale_number, scale_root, get_note_name_c(scale_root));
       return_value = v;
       break;
     }
     last_interval = interval;
   }
-  if (debug) Serial.printf("branch#3: Quantised \t%s (%i)\tto\t%s (%i), scale_number=%i and scale_root=%i (%s)\n", get_note_name_c(pitch), pitch, get_note_name_c(last_interval), last_interval, scale_number, scale_root, get_note_name_c(scale_root));
+  if (debug) Serial.printf("\tbranch#3: Quantised \t%s (%i)\tto\t%s (%i), scale_number=%i and scale_root=%i (%s)\n", get_note_name_c(pitch), pitch, get_note_name_c(last_interval), last_interval, scale_number, scale_root, get_note_name_c(scale_root));
 
   return return_value;
 }
 
-int8_t quantise_chord(int8_t pitch, int8_t scale_root, SCALE scale_number, chord_identity_t chord_identity) {
+int8_t quantise_chord(int8_t pitch, int8_t quantised_to_nearest_tolerance, int8_t scale_root, SCALE scale_number, chord_identity_t chord_identity) {
   if (!is_valid_note(pitch))
     return NOTE_OFF;
 
@@ -187,37 +193,53 @@ int8_t quantise_chord(int8_t pitch, int8_t scale_root, SCALE scale_number, chord
   if (chord_identity.chord_degree<=0) {
     return pitch;
   } else { //if (chord_identity.chord_degree>0) {
-    if (debug) Serial.printf("quantise_pitch(%s, %s, %s, %i) - chord_degree>0\n", get_note_name_c(pitch), get_note_name_c(scale_root), scales[scale_number].label, chord_identity.chord_degree);
+    if (debug) Serial.printf("quantise_chord(%s, %s, %s, %i) - chord_degree>0\n", get_note_name_c(pitch), get_note_name_c(scale_root), scales[scale_number].label, chord_identity.chord_degree);
     // find nearest pitch for the current scale, scale_root, and chord_degree combination
     //int last_interval = -1;
     int8_t n = -1;
-    bool DEBUG_QUANTISE = true; // todo: remove this
+    bool DEBUG_QUANTISE = debug; // todo: remove this
     int8_t chord_root_pitch = quantise_get_root_pitch_for_degree(chord_identity.chord_degree, scale_root, scale_number);
-    if (debug) Serial.printf("\tchord_root_pitch=%s (%i)\n", get_note_name_c(chord_root_pitch), chord_root_pitch);
 
     if (debug) {
-      Serial.printf("\tchord notes (chord_type=%i): ", chord_identity.chord_type);
-      for (size_t i = 0 ; i < PITCHES_PER_CHORD && ((n = quantise_pitch_chord_note(chord_root_pitch, chord_identity.chord_type, i, scale_root, scale_number, chord_identity.inversion, DEBUG_QUANTISE)) >= 0) ; i++) {
+      Serial.printf("\tchord_root_pitch=%3s (%i)\t", get_note_name_c(chord_root_pitch), chord_root_pitch);
+      //Serial.printf("\tchord type=%s\t", chords[chord_identity.chord_type].label);
+      Serial.printf("\tchord notes (chord_type=%s %i): ", chords[chord_identity.chord_type].label, chord_identity.chord_type);
+      for (size_t i = 0 ; i < PITCHES_PER_CHORD && ((n = get_quantise_pitch_chord_note(chord_root_pitch, chord_identity.chord_type, i, scale_root, scale_number, chord_identity.inversion, DEBUG_QUANTISE)) >= 0) ; i++) {
         Serial.printf("%i = %s, \t", n, get_note_name_c(n));
       }
       Serial.println();
     }
 
-    for (size_t i = 0 ; i < PITCHES_PER_CHORD && ((n = quantise_pitch_chord_note(chord_root_pitch, chord_identity.chord_type, i, scale_root, scale_number, chord_identity.inversion, DEBUG_QUANTISE)) >= 0) ; i++) {
+    int8_t nearest_found = -1;
+    int8_t nearest_distance = quantised_to_nearest_tolerance;
+
+    for (size_t i = 0 ; i < PITCHES_PER_CHORD && ((n = get_quantise_pitch_chord_note(chord_root_pitch, chord_identity.chord_type, i, scale_root, scale_number, chord_identity.inversion, DEBUG_QUANTISE)) >= 0) ; i++) {
       n %= 12;
-      if (debug) Serial.printf("\t\t%i: checking if unquantised pitch %s\t(return_value=%i) aka %s\t(pitch=%i), n=%i) is in chord?\n", i, get_note_name_c(pitch), pitch, get_note_name_c(pitch), pitch, n);
-      if ((octave*12)+/*chord_root_pitch+*/n==pitch) {
-        if (debug) Serial.printf("\t\t%i: yes, found quantised pitch %s\t(pitch=%i) aka %s\t(pitch=%i), n=%i) in chord!\n", i, get_note_name_c(pitch), pitch, get_note_name_c(pitch), pitch, n);
+      if (debug)   Serial.printf("\t\t%i: matches chord note %i (%s)?\n", i, n, get_note_name_c(n));
+      if ((octave*12)+n==pitch) {
+        if (debug) Serial.printf("\t\t%i: yes, found quantised pitch 3%s\t(pitch=%i)  in chord!\n",      i, get_note_name_c(pitch), pitch, n);
         return pitch;
+      } else if (quantised_to_nearest_tolerance>0) {
+        int diff = abs(((octave*12)+n) - pitch);
+        if (debug) Serial.printf("\t\t\ttesting pitch %i vs %i: diff=%i against quantised_to_nearest_tolerance=%i and nearest_distance=%i\n", pitch, (octave*12)+n, diff, quantised_to_nearest_tolerance, nearest_distance);
+        if (diff <= quantised_to_nearest_tolerance && diff <= nearest_distance) {
+          nearest_distance = diff;
+          nearest_found = (octave*12)+n;
+          if (debug) Serial.printf("\t\tgot new nearest - %i vs %i: diff=%i, nearest_distance=%i\n", pitch, (octave*12)+n, diff, nearest_distance);
+        }
       }
     }
-    //Serial.println("no chord note found, returning no note!");
+    if (nearest_distance<=quantised_to_nearest_tolerance) {
+      if (debug) Serial.printf("\tnearest distance is %i, returning nearest note %i (%s)\n", nearest_distance, nearest_found, get_note_name_c(nearest_found));
+      return nearest_found;
+    }
+    if (debug) Serial.println("\tno chord note found, returning no note!");
     return NOTE_OFF;
   }
 }
 
 // find the Nth note of a given chord in a given scale
-int8_t quantise_pitch_chord_note(int8_t chord_root, CHORD::Type chord_number, int8_t note_of_chord, int8_t scale_root, SCALE scale_number, int inversion, bool debug) {
+int8_t get_quantise_pitch_chord_note(int8_t chord_root, CHORD::Type chord_number, int8_t note_of_chord, int8_t scale_root, SCALE scale_number, int inversion, bool debug) {
   //bool debug = false; //true;
 
   if (note_of_chord>=PITCHES_PER_CHORD || chords[chord_number].degree_number[note_of_chord]==-1)
@@ -234,7 +256,7 @@ int8_t quantise_pitch_chord_note(int8_t chord_root, CHORD::Type chord_number, in
 
   #ifdef DEBUG_CHORDS
     if (debug) {
-      Serial.printf("quantise_pitch_chord_note(%3s,", get_note_name_c(chord_root));
+      Serial.printf("get_quantise_pitch_chord_note(%3s,", get_note_name_c(chord_root));
       Serial.printf("\t%s, %i, %s, %s):\t", ch->label, note_of_chord, get_note_name_c(scale_root), sc->label);
       Serial.printf("chord_root%12=%s,\t", get_note_name_c(chord_root%12));
     }

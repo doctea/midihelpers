@@ -44,8 +44,8 @@ class ChordPlayer {
         #endif
 
         bool quantise = false, play_chords = false;
-        SCALE scale = SCALE::MAJOR;
-        int8_t scale_root = SCALE_ROOT_C;
+        SCALE scale = SCALE::GLOBAL; //SCALE::MAJOR;
+        int8_t scale_root = SCALE_GLOBAL_ROOT; //-1; //SCALE_ROOT_C;
  
         uint8_t channel = 0;
         #ifdef CVINPUT_CONFIGURABLE_CHANNEL
@@ -120,18 +120,24 @@ class ChordPlayer {
         }
 
 
+        void stop_chord() {
+            this->stop_chord(this->current_chord_data);
+        }
         void stop_chord(chord_instance_t chord) {
-            this->stop_chord(chord.chord_root, chord.chord_type, chord.inversion, chord.velocity);
+            if (this->is_playing_chord) {
+                if (this->debug) Serial.printf("stop_chord(): Stopping chord degree root %i\n", this->current_chord_data.chord_root);
+                this->stop_chord(chord.chord_root, chord.chord_type, chord.inversion, chord.velocity);
+            }
         }
 
         void stop_chord(int8_t pitch, CHORD::Type chord_number = CHORD::TRIAD, int8_t inversion = 0, uint8_t velocity = 0) {
             if (debug) Serial.printf("\t---\nstop_chord: Stopping chord for %i (%s) - chord type %s, inversion %i\n", pitch, get_note_name_c(pitch), chords[chord_number].label, inversion);
 
             //int8_t n = -1;
-            //for (size_t i = 0 ; (n = quantise_pitch_chord_note(pitch, chord_number, i, this->scale_root, this->scale, this->current_chord_data->inversion, this->debug)) >= 0 ; i++) {
+            //for (size_t i = 0 ; (n = get_quantise_pitch_chord_note(pitch, chord_number, i, this->scale_root, this->scale, this->current_chord_data->inversion, this->debug)) >= 0 ; i++) {
             for (size_t i = 0 ; i < PITCHES_PER_CHORD /*&& ((n = this->current_chord_data.pitches[i]) >= 0)*/ ; i++) {
                 int8_t n = this->current_chord_data.pitches[i];
-                if (debug) Serial.printf("\t\tStopping note\t[%i/%i]: %i\t(%s)\n", i, PITCHES_PER_CHORD, n, get_note_name_c(n));
+                if (debug) Serial.printf("\t\tStopping note\t[%i/%i]: %i\t(%s)\n", i+1, PITCHES_PER_CHORD, n, get_note_name_c(n));
                 if (is_valid_note(n))
                     receive_note_off(channel, n, velocity);
             }
@@ -155,13 +161,13 @@ class ChordPlayer {
             is_playing_chord = true;
 
             int8_t previously_played_note = -1; // avoid duplicating notes, like what happens sometimes when playing inverted +octaved chords..!
-            for (size_t i = 0 ; i < PITCHES_PER_CHORD && ((n = quantise_pitch_chord_note(pitch, chord_number, i, this->get_scale_root(), this->get_scale(), inversion, this->debug)) >= 0) ; i++) {
+            for (size_t i = 0 ; i < PITCHES_PER_CHORD && ((n = get_quantise_pitch_chord_note(pitch, chord_number, i, this->get_scale_root(), this->get_scale(), inversion, this->debug)) >= 0) ; i++) {
                 this->current_chord_data.set_pitch(i, n);
-                if (debug) Serial.printf("\t\tPlaying note\t[%i/%i]: %i\t(%s)\n", i, PITCHES_PER_CHORD, n, get_note_name_c(n));
+                if (debug) Serial.printf("\t\tPlaying note\t[%i/%i]: %i\t(%s)\n", i+1, PITCHES_PER_CHORD, n, get_note_name_c(n));
                 if (n!=previously_played_note) {
                     receive_note_on(channel, n, velocity);
                 } else {
-                    if (debug) Serial.printf("\t\tSkipping note\t[%i/%i]: %i\t(%s)\n", i, PITCHES_PER_CHORD, n, get_note_name_c(n));
+                    if (debug) Serial.printf("\t\tSkipping note\t[%i/%i]: %i\t(%s)\n", i+1, PITCHES_PER_CHORD, n, get_note_name_c(n));
                 }
                 previously_played_note = n;
             }
