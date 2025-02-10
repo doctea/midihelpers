@@ -90,6 +90,7 @@ const chord_t chords[] = {
 namespace CHORD {
     typedef int Type;
     const int 
+        GLOBAL = -1,
         TRIAD = 0,
         SUS2 = 1,
         SUS4 = 2,
@@ -105,8 +106,8 @@ namespace CHORD {
 
 class chord_identity_t {
     public:
-    CHORD::Type chord_type = CHORD::TRIAD;
-    int8_t chord_degree = -1;
+    CHORD::Type type = CHORD::TRIAD;
+    int8_t degree = -1;
     int8_t inversion = 0;
     //int8_t velocity = MIDI_MAX_VELOCITY;
 };
@@ -114,7 +115,7 @@ class chord_identity_t {
 class chord_instance_t {
     public:
     SCALE scale = SCALE::MAJOR;
-    CHORD::Type chord_type = CHORD::NONE;
+    CHORD::Type type = CHORD::NONE;
     int8_t chord_root = NOTE_OFF;
     int8_t inversion = 0;
     int8_t velocity = MIDI_MAX_VELOCITY;
@@ -122,7 +123,7 @@ class chord_instance_t {
     int8_t pitches[PITCHES_PER_CHORD] = { NOTE_OFF, NOTE_OFF, NOTE_OFF, NOTE_OFF };
 
     const char *get_label() {
-        return chords[chord_type].label;
+        return chords[type].label;
     }
     char pitch_string[40];
     const char *get_pitch_string() {
@@ -130,7 +131,7 @@ class chord_instance_t {
             snprintf(pitch_string, 40, 
                 "%3s %6s: %3s,%3s,%3s,%3s inv%1i,ve=%3i", 
                 get_note_name_c(chord_root), 
-                chord_type!=CHORD::NONE ? chords[chord_type].label : "N/A", 
+                type!=CHORD::NONE ? chords[type].label : "N/A", 
                 get_note_name_c(pitches[0]), 
                 get_note_name_c(pitches[1]), 
                 get_note_name_c(pitches[2]), 
@@ -144,14 +145,14 @@ class chord_instance_t {
     }
     void set(CHORD::Type type, int8_t root, int8_t inversion = 0, int8_t velocity = 0) {
         //this->clear();
-        this->chord_type = type;
+        this->type = type;
         this->chord_root = root;
         this->inversion = inversion;
         this->velocity = velocity;
         this->changed = true;
     }
     void set_chord_type(CHORD::Type type) {
-        this->chord_type = type;
+        this->type = type;
         this->changed = true;
     }
     void set_chord_root(int8_t root) {
@@ -171,7 +172,7 @@ class chord_instance_t {
         this->changed = true;
     }
     void clear() {
-        this->chord_type = CHORD::NONE;
+        this->type = CHORD::NONE;
         this->chord_root = -1;
         this->inversion = 0;
         this->velocity = 0;
@@ -194,18 +195,23 @@ extern SCALE    *global_scale_type;
 
 void set_global_scale_root_target(int8_t *root_note);
 void set_global_scale_type_target(SCALE *scale_type);
-void set_global_chord_degree_target(int8_t *chord_degree);
+void set_global_chord_identity_target(chord_identity_t *chord_identity);
 
 int8_t get_effective_scale_root(int8_t scale_root);
 SCALE get_effective_scale_type(SCALE scale_number);
-int8_t get_effective_chord_degree(int8_t chord_degree);
 
 int8_t get_global_scale_root();
 SCALE get_global_scale_type();
 int8_t get_global_chord_degree();
 
-int8_t quantise_pitch(int8_t pitch, int8_t root_note = SCALE_GLOBAL_ROOT, SCALE scale_number = SCALE::GLOBAL); //, chord_identity_t chord_identity = {CHORD::TRIAD, -1, 0});
-int8_t quantise_chord(int8_t pitch, int8_t quantise_to_nearest_range = 0, int8_t scale_root = SCALE_GLOBAL_ROOT, SCALE scale_number = SCALE::GLOBAL, chord_identity_t chord_identity = {CHORD::TRIAD, -1, 0});
+
+chord_identity_t get_global_chord_identity();
+int8_t get_effective_chord_degree(int8_t chord_degree);
+CHORD::Type get_effective_chord_type(CHORD::Type chord_type);
+int8_t get_effective_chord_inversion(int8_t inversion);
+
+int8_t quantise_pitch(int8_t pitch, int8_t root_note = SCALE_GLOBAL_ROOT, SCALE scale_number = SCALE::GLOBAL, bool debug = false); //, chord_identity_t chord_identity = {CHORD::TRIAD, -1, 0});
+int8_t quantise_chord(int8_t pitch, int8_t quantise_to_nearest_range = 0, int8_t scale_root = SCALE_GLOBAL_ROOT, SCALE scale_number = SCALE::GLOBAL, chord_identity_t chord_identity = {CHORD::GLOBAL, -1, 0}, bool debug = false);
 int8_t get_quantise_pitch_chord_note(int8_t pitch, CHORD::Type chord_number, int8_t note_of_chord, int8_t root_note = SCALE_GLOBAL_ROOT, SCALE scale_number = SCALE::GLOBAL, int inversion = 0, bool debug = false);
 
 // gets the pitch note number for a scale degree 
