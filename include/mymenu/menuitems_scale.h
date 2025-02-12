@@ -210,8 +210,13 @@ class ObjectScaleMenuItemBar : public SubMenuItemBar {
             true
         );
         if (scale_root_options==nullptr) {
+            // add all 12 notes, arranged in circle of fifths
+            // todo: make this endlessly scrollable
+            int note = 0;
             for (size_t i = 0 ; i < 12 ; i++) {
-                scale_root->add_available_value(i, note_names[i]);
+                scale_root->add_available_value(note, note_names[note]);
+                note += 7;
+                note %= 12;
             }
             scale_root_options = scale_root->get_available_values();
         } else {
@@ -282,8 +287,17 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
         );
         if (allow_global)
             scale_root->add_available_value(SCALE_GLOBAL_ROOT, "[use global]");
+        
+        // add all 12 notes, arranged in circle of fifths
+        // todo: make whether its circle of fifths or chromatic configurable
+        // todo: make this endlessly scrollable
+        // todo: make this able to re-use the scale_root_options list, same as ObjectScaleMenuItemBar
+        // todo: make this able to re-use a global scale_selector_options list
+        int note = 0;
         for (size_t i = 0 ; i < 12 ; i++) {
-            scale_root->add_available_value(i, note_names[i]);
+            scale_root->add_available_value(note, note_names[note]);
+            note += 7;
+            note %= 12;
         }
         scale_root->go_back_on_select = true;
         this->add(scale_root);
