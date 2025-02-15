@@ -348,6 +348,7 @@ int8_t get_quantise_pitch_chord_note(int8_t chord_root, CHORD::Type chord_number
   #ifdef DEBUG_CHORDS
     if (debug) Serial.printf("got chord_root_pitch %3s (%i), \t", get_note_name_c(chord_root_pitch), chord_root_pitch);
     if (debug) Serial.printf("got chord_target_degree (%i), \t", chord_target_degree);
+    if (debug) Serial.printf("got chord_target_octave (%i), \t", chord_target_octave);
   #endif
 
   // then when we know the degree number and octave offset, we can use note_of_chord as on offset on it to discover the real pitch to use
@@ -363,6 +364,19 @@ int8_t get_quantise_pitch_chord_note(int8_t chord_root, CHORD::Type chord_number
     return -1;
 
   return actual_pitch;
+}
+
+
+void print_scale(int8_t root_note, SCALE scale_number) {
+  root_note = get_effective_scale_root(root_note);
+  scale_number = get_effective_scale_type(scale_number);
+  Serial.printf("Scale %s (%i) starting at %s (%i):\t", scales[scale_number].label, scale_number, get_note_name_c(root_note), root_note);
+  for (int i = 0 ; i < PITCHES_PER_SCALE ; i++) {
+    int note = root_note + scales[scale_number].valid_chromatic_pitches[i];
+    //Serial.printf("%i: %s\n", i, get_note_name_c(note));
+    Serial.printf("%-3s ", get_note_name_c(note));
+  }
+  Serial.println();
 }
 
 #endif

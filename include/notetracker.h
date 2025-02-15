@@ -41,6 +41,27 @@ class NoteTracker {
 
     using foreach_func_def = vl::Func<void(int8_t note)>;
 
+    const char *get_held_notes_c() {
+      static char buffer[256];
+      buffer[0] = 0;
+      for (int i = 0; i < MIDI_NUM_NOTES; i++) {
+        if (is_note_held(i)) {
+          sprintf(buffer + strlen(buffer), "%s ", get_note_name_c(i));
+        }
+      }
+      return buffer;
+    }
+
+    int count_held() {
+      int count = 0;
+      for (int i = 0; i < MIDI_NUM_NOTES; i++) {
+        if (is_note_held(i)) {
+          count++;
+        }
+      }
+      return count;
+    }
+
     void foreach_note(foreach_func_def func) {
       for (int i = 0; i < MIDI_NUM_NOTES; i++) {
         if (is_note_held(i)) {

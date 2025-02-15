@@ -69,6 +69,7 @@ enum SCALE {
 #define NUMBER_SCALES ((sizeof(scales)/sizeof(scale_t)))    // uses size of real scales[] array, ie existant scales, rather than the SCALE enum (which has an extra value to represent GLOBAL)
 
 
+
 #define PITCHES_PER_CHORD 4
 #define MAXIMUM_INVERSIONS  PITCHES_PER_CHORD
 struct chord_t {
@@ -189,6 +190,13 @@ SCALE& operator++(SCALE& orig, int);
 SCALE& operator--(SCALE& orig);
 SCALE& operator--(SCALE& orig, int);
 
+// todo: make use of this to replace the scale and chord variables
+struct quantise_settings_t {
+    int8_t scale_root = SCALE_ROOT_C;
+    SCALE scale_type = SCALE::MAJOR;
+    chord_identity_t chord_identity = {CHORD::TRIAD, -1, 0};
+};
+
 
 extern int8_t   *global_scale_root;
 extern SCALE    *global_scale_type;
@@ -216,5 +224,8 @@ int8_t get_quantise_pitch_chord_note(int8_t pitch, CHORD::Type chord_number, int
 
 // gets the pitch note number for a scale degree 
 int8_t quantise_get_root_pitch_for_degree(int8_t degree, int8_t root_note = SCALE_GLOBAL_ROOT, SCALE scale_number = SCALE::GLOBAL);
+
+
+void print_scale(int8_t root_note, SCALE scale_number); //, bool debug = false);
 
 #endif

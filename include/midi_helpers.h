@@ -65,3 +65,11 @@ class IGateTarget {
       }
       virtual void send_gate(int8_t bank, int8_t gate, bool state) = 0;
 };
+
+
+// todo: utilise this!
+class IMIDIPitchBendTarget {
+    public:
+        virtual void sendPitchBend(int16_t bend, uint8_t channel) {};
+};
+
