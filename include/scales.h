@@ -218,8 +218,8 @@ int8_t get_effective_chord_degree(int8_t chord_degree);
 CHORD::Type get_effective_chord_type(CHORD::Type chord_type);
 int8_t get_effective_chord_inversion(int8_t inversion);
 
-int8_t quantise_pitch(int8_t pitch, int8_t root_note = SCALE_GLOBAL_ROOT, SCALE scale_number = SCALE::GLOBAL, bool debug = false); //, chord_identity_t chord_identity = {CHORD::TRIAD, -1, 0});
-int8_t quantise_chord(int8_t pitch, int8_t quantise_to_nearest_range = 0, int8_t scale_root = SCALE_GLOBAL_ROOT, SCALE scale_number = SCALE::GLOBAL, chord_identity_t chord_identity = {CHORD::GLOBAL, -1, 0}, bool debug = false);
+int8_t quantise_pitch_to_scale(int8_t pitch, int8_t root_note = SCALE_GLOBAL_ROOT, SCALE scale_number = SCALE::GLOBAL, bool debug = false); //, chord_identity_t chord_identity = {CHORD::TRIAD, -1, 0});
+int8_t quantise_pitch_to_chord(int8_t pitch, int8_t quantise_to_nearest_range = 0, int8_t scale_root = SCALE_GLOBAL_ROOT, SCALE scale_number = SCALE::GLOBAL, chord_identity_t chord_identity = {CHORD::GLOBAL, -1, 0}, bool debug = false);
 int8_t get_quantise_pitch_chord_note(int8_t pitch, CHORD::Type chord_number, int8_t note_of_chord, int8_t root_note = SCALE_GLOBAL_ROOT, SCALE scale_number = SCALE::GLOBAL, int inversion = 0, bool debug = false);
 
 // gets the pitch note number for a scale degree 

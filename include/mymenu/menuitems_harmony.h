@@ -130,7 +130,7 @@ class HarmonyDisplay : public MenuItem {
 
             if (white_key) { // white key
                 uint16_t colour = playing ? YELLOW : (white_key?C_WHITE:tft->halfbright_565(C_WHITE));
-                const bool valid = !*quantise_enabled || (*quantise_enabled && quantise_pitch(r, *scale_root, *scale_number)==r);
+                const bool valid = !*quantise_enabled || (*quantise_enabled && quantise_pitch_to_scale(r, *scale_root, *scale_number)==r);
                 if (!valid) colour = tft->halfbright_565(colour);
 
                 if (valid)
@@ -153,7 +153,7 @@ class HarmonyDisplay : public MenuItem {
                 c++;
             } else {    // black key
                 uint16_t colour = playing ? YELLOW : (white_key?C_WHITE:tft->halfbright_565(C_WHITE));
-                const bool valid = !*quantise_enabled || (*quantise_enabled && quantise_pitch(r, *scale_root, *scale_number)==r);
+                const bool valid = !*quantise_enabled || (*quantise_enabled && quantise_pitch_to_scale(r, *scale_root, *scale_number)==r);
                 if (!valid) colour = tft->halfbright_565(colour);
 
                 x_pos -= (key_width/2);

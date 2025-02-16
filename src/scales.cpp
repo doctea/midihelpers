@@ -146,7 +146,7 @@ int8_t quantise_get_root_pitch_for_degree(int8_t degree, int8_t scale_root, SCAL
   return result;
 }
 
-int8_t quantise_pitch(int8_t pitch, int8_t scale_root, SCALE scale_number, bool debug) {
+int8_t quantise_pitch_to_scale(int8_t pitch, int8_t scale_root, SCALE scale_number, bool debug) {
   if (!is_valid_note(pitch))
     return NOTE_OFF;
     
@@ -157,7 +157,7 @@ int8_t quantise_pitch(int8_t pitch, int8_t scale_root, SCALE scale_number, bool 
   scale_root = get_effective_scale_root(scale_root);
   scale_number = get_effective_scale_type(scale_number);
   
-  if (debug) Serial.printf("quantise_pitch(%s,\t%s,\t%s)\n", get_note_name_c(pitch), get_note_name_c(scale_root), scales[scale_number].label);
+  if (debug) Serial.printf("quantise_pitch_to_scale(%s,\t%s,\t%s)\n", get_note_name_c(pitch), get_note_name_c(scale_root), scales[scale_number].label);
   if(scale_number==SCALE_GLOBAL_ROOT || scale_number==SCALE::GLOBAL)  // todo: check that pitch is in the chord...?
     return pitch;
 
@@ -198,7 +198,7 @@ int8_t quantise_pitch(int8_t pitch, int8_t scale_root, SCALE scale_number, bool 
   return return_value;
 }
 
-int8_t quantise_chord(int8_t pitch, int8_t quantised_to_nearest_tolerance, int8_t scale_root, SCALE scale_number, chord_identity_t chord_identity, bool debug) {
+int8_t quantise_pitch_to_chord(int8_t pitch, int8_t quantised_to_nearest_tolerance, int8_t scale_root, SCALE scale_number, chord_identity_t chord_identity, bool debug) {
   if (!is_valid_note(pitch))
     return NOTE_OFF;
 

@@ -44,7 +44,7 @@ class ScaleMenuItem : public MenuItem {
                     if (i>=12) 
                         tft->setCursor(tft->width()/2, tft->getCursorY());
 
-                    byte quantised_note = quantise_pitch(note, root_note, scale_number);
+                    byte quantised_note = quantise_pitch_to_scale(note, root_note, scale_number);
 
                     if (quantised_note != note) {
                         colours(false, BLUE);
