@@ -83,7 +83,7 @@ class NoteHarmonyDisplay : public MenuItem {
         for (int_fast8_t r = 0 ; r < NUM_CHROMATIC_NOTES ; r++) {
             x_pos = c * key_width;
 
-            const bool playing = note_tracker->is_note_held_any_octave(r); // r == (*current_note % NUM_CHROMATIC_NOTES);
+            const bool playing = note_tracker->is_note_held_any_octave_transposed(r); // r == (*current_note % NUM_CHROMATIC_NOTES);
             const bool white_key = (r==0 || r==2 || r==4 || r==5 || r==7 || r==9 || r==11);
 
             if (white_key) { // white key
@@ -104,7 +104,7 @@ class NoteHarmonyDisplay : public MenuItem {
         for (int_fast8_t r = 0 ; r < NUM_CHROMATIC_NOTES ; r++) {
             x_pos = c * key_width;
 
-            const bool playing = note_tracker->is_note_held_any_octave(r); //r == (*current_note % NUM_CHROMATIC_NOTES);
+            const bool playing = note_tracker->is_note_held_any_octave_transposed(r); //r == (*current_note % NUM_CHROMATIC_NOTES);
             const bool white_key = (r==0 || r==2 || r==4 || r==5 || r==7 || r==9 || r==11);
 
             if (white_key) {
