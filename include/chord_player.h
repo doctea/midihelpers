@@ -121,7 +121,11 @@ class ChordPlayer {
 
 
         void stop_chord() {
-            this->stop_chord(this->current_chord_data);
+            if (this->current_chord_data.chord_root>=0) {
+                if (this->debug) Serial.printf("stop_chord(): Stopping chord degree root %i\n", this->current_chord_data.chord_root);
+                this->stop_chord(this->current_chord_data);
+            }
+            //this->stop_chord(this->current_chord_data);
         }
         void stop_chord(chord_instance_t chord) {
             if (this->is_playing_chord) {
@@ -148,6 +152,11 @@ class ChordPlayer {
             this->is_playing_chord = false;
             this->current_chord_data.clear();
             if (debug) Serial.println("---");
+        }
+
+        void play_chord(chord_identity_t chord, uint8_t velocity = MIDI_MAX_VELOCITY) {
+            int8_t pitch = quantise_get_root_pitch_for_degree(chord.degree);
+            this->play_chord(pitch, chord.type, chord.inversion, velocity);
         }
         void play_chord(int8_t pitch, CHORD::Type chord_number = CHORD::TRIAD, int8_t inversion = 0, uint8_t velocity = MIDI_MAX_VELOCITY) {
             if (debug) Serial.printf("\t--- play_chord: playing chord for %i (%s) - chord type %s, inversion %i\n", pitch, get_note_name_c(pitch), chords[chord_number].label, inversion);
@@ -417,7 +426,7 @@ class ChordPlayer {
                 "Inversion", 
                 [=](int8_t v) -> void { this->set_inversion(v); }, 
                 [=]() -> int8_t { return this->get_inversion(); },
-                nullptr, 0, 4, true
+                nullptr, 0, MAX_INVERSIONS, true
             ));
             bar->add(selected_chord_control);
 

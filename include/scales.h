@@ -34,6 +34,8 @@
 
 #define SCALE_GLOBAL_ROOT (-1)
 
+#define MAX_INVERSIONS     4
+
 #define MAXIMUM_OCTAVE     9
 
 struct scale_t {
@@ -81,11 +83,11 @@ const chord_t chords[] = {
     { "Triad",       { 0, 2, 4, NOTE_OFF  } },
     { "Sus 2",       { 0, 1, 4, NOTE_OFF  } },
     { "Sus 4",       { 0, 3, 4, NOTE_OFF  } },
-    { "Seven",       { 0, 2, 4,  6  } },
-    { "Ninth",       { 0, 2, 6,  8  } },
-    { "Oct+1",       { 0, 7, NOTE_OFF, NOTE_OFF } },
+    { "Seven",       { 0, 2, 4,  6        } },
+    { "Ninth",       { 0, 2, 6,  8        } },
+    { "Oct+1",       { 0, 7,    NOTE_OFF, NOTE_OFF } },
     { "Oct+2",       { 0, 7, 14, NOTE_OFF } },
-    { "Oct+3",       { 0, 7, 14, 21 } },
+    { "Oct+3",       { 0, 7, 14, 21       } },
 };
 
 namespace CHORD {
@@ -111,6 +113,19 @@ class chord_identity_t {
     int8_t degree = -1;
     int8_t inversion = 0;
     //int8_t velocity = MIDI_MAX_VELOCITY;
+
+    bool diff(chord_identity_t other) {
+        if (
+            this->type!=other.type ||
+            this->degree!=other.degree ||
+            this->inversion!=other.inversion
+        ) return true;
+
+        return false;
+    }
+    bool is_valid_chord() {
+        return this->degree>0;
+    }
 };
 
 class chord_instance_t {

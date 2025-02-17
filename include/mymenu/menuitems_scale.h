@@ -394,7 +394,7 @@ class LambdaChordSubMenuItemBar : public SubMenuItemBar {
             inversion_setter_func,
             inversion_getter_func,
             nullptr,
-            0, 4, true
+            0, MAX_INVERSIONS, true
         );
         this->add(inversion_selector);
     }

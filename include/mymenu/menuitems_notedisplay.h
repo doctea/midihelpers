@@ -8,7 +8,7 @@ class NoteDisplay : public MenuItem {
 public:
     NoteTracker *note_tracker = nullptr;
 
-    NoteDisplay(char *label, NoteTracker *note_tracker) : MenuItem(label) {
+    NoteDisplay(const char *label, NoteTracker *note_tracker) : MenuItem(label) {
         this->note_tracker = note_tracker;
     };
 
