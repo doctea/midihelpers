@@ -125,4 +125,18 @@ class NoteTracker {
       return buffer;
     }
 
+    int get_held_note_index(int index) {
+      int count = 0;
+      index %= count_held();
+      for (int i = 0; i < MIDI_NUM_NOTES; i++) {
+        if (is_note_held(i)) {
+          if (count == index) {
+            return i;
+          }
+          count++;
+        }
+      }
+      return NOTE_OFF;
+    }
+
 };
