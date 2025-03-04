@@ -2,6 +2,10 @@
 
 #include <Arduino.h>
 
+#ifndef CALLOC_FUNC
+    #define CALLOC_FUNC calloc
+#endif
+
 #if __has_include("menu_messages.h")
   #include "menu_messages.h"
 #endif
@@ -23,7 +27,7 @@ class TapTempoTracker {
   public:
   TapTempoTracker(int max_sample_size = DEFAULT_CLOCK_TEMPO_HISTORY_MAX, bool should_set_tempo = true) {
     set_tempo_setter(should_set_tempo);
-    clock_tempo_history = (uint32_t*)calloc(sizeof(uint32_t), max_sample_size);
+    clock_tempo_history = (uint32_t*)CALLOC_FUNC(sizeof(uint32_t), max_sample_size);
     this->max_sample_size = max_sample_size;
   }
 
