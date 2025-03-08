@@ -107,5 +107,4 @@ class TapTempoTracker {
 
 };
 
-
 extern TapTempoTracker *tapper;

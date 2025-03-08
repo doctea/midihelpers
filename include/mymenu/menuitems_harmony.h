@@ -88,6 +88,8 @@ class HarmonyStatus : public MenuItem {
 #define NUM_CHROMATIC_NOTES 12
 #define NUM_WHITE_NOTES 7
 
+#ifdef ENABLE_SCALES
+
 #include <scales.h>
 class HarmonyDisplay : public MenuItem {
     public:
@@ -173,3 +175,5 @@ class HarmonyDisplay : public MenuItem {
     }
 
 };
+
+#endif
