@@ -43,17 +43,18 @@ struct scale_t {
     int8_t valid_chromatic_pitches[PITCHES_PER_SCALE];
 };
 
+scale_t *make_scale_t_from_string(const char *scale_signature, const char *name, int rotation = 0);
+
 const scale_t scales[] = {
-    { "Major",            { 0, 2, 4, 5, 7, 9, 11 }},
-    { "Minor (Natural)",  { 0, 2, 3, 5, 7, 8, 10 }},
-    { "Minor (Melodic)",  { 0, 2, 3, 5, 7, 9, 11 }},
-    { "Minor (Harmonic)", { 0, 2, 3, 5, 7, 8, 11 }},
-    { "Minor (Hungarian)",{ 0, 2, 3, 6, 7, 8, 11 }},
-    { "Lydian",           { 0, 2, 4, 6, 7, 9, 11 }},
-    { "Mixolydian",       { 0, 2, 4, 5, 7, 9, 10 }},
-    { "Phrygian",         { 0, 1, 3, 5, 7, 8, 10 }},
-    { "Whole-tone",       { 0, 2, 4, 6, 8, 10, (12) }},
-    //{ "TEST",             { 0, 1, 2, 3, 4, 5, 6 }},
+    *make_scale_t_from_string("w w h w w w h", "Major"),
+    *make_scale_t_from_string("w h w w h w w", "Minor (Natural)"),
+    *make_scale_t_from_string("w h w w w w h", "Minor (Melodic)"),
+    *make_scale_t_from_string("w h w w h w h", "Minor (Harmonic)"),
+    *make_scale_t_from_string("w h + h h + h", "Minor (Hungarian)"),
+    *make_scale_t_from_string("w w w h w w h", "Lydian"),
+    *make_scale_t_from_string("w w h w w h w", "Mixolydian"),
+    *make_scale_t_from_string("h w w w h w w", "Phrygian"),
+    *make_scale_t_from_string("w w w w w w w", "Whole-tone"),
 };
 enum SCALE {
     MAJOR,
@@ -69,8 +70,6 @@ enum SCALE {
     GLOBAL
 };
 #define NUMBER_SCALES ((sizeof(scales)/sizeof(scale_t)))    // uses size of real scales[] array, ie existant scales, rather than the SCALE enum (which has an extra value to represent GLOBAL)
-
-
 
 #define PITCHES_PER_CHORD 4
 #define MAXIMUM_INVERSIONS  PITCHES_PER_CHORD
@@ -167,6 +166,14 @@ class chord_instance_t {
         this->velocity = velocity;
         this->changed = true;
     }
+    void set_from_chord_identity(chord_identity_t chord_identity, int8_t root, SCALE scale) {
+        this->type = chord_identity.type;
+        //this->chord_root = root;
+        this->chord_root = root + scales[scale].valid_chromatic_pitches[chord_identity.degree-1];
+        this->inversion = chord_identity.inversion;
+        this->scale = scale;
+        this->changed = true;
+    }
     void set_chord_type(CHORD::Type type) {
         this->type = type;
         this->changed = true;
@@ -242,5 +249,6 @@ int8_t quantise_get_root_pitch_for_degree(int8_t degree, int8_t root_note = SCAL
 
 
 void print_scale(int8_t root_note, SCALE scale_number); //, bool debug = false);
+void print_scale(int8_t root_note, scale_t scale);
 
 #endif

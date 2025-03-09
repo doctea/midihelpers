@@ -379,4 +379,76 @@ void print_scale(int8_t root_note, SCALE scale_number) {
   Serial.println();
 }
 
+void print_scale(int8_t root_note, scale_t scale) {
+  Serial.printf("Scale %s:\t", scale.label);
+  for (int i = 0 ; i < PITCHES_PER_SCALE ; i++) {
+    int note = scale.valid_chromatic_pitches[i];
+    Serial.printf("%-3s ", get_note_name_c(root_note + note));
+  }
+  Serial.println();
+}
+
+scale_t *make_scale_t_from_string(const char *scale_signature, const char *name, int rotation) {
+  scale_t *return_scale = new scale_t();
+  return_scale->label = name;
+  return_scale->valid_chromatic_pitches[0] = 0;
+
+  Serial.printf("make_scale_t_from_string(%s, %s, %i)\n", scale_signature, name, rotation);
+
+  int steps[PITCHES_PER_SCALE] = { 0, 0, 0, 0, 0, 0, 0 };
+
+  int idx = 1;
+  int total_steps = 0;
+  for (char *scale = (char*)scale_signature ; scale < scale_signature + strlen(scale_signature) ; scale++) {
+    if (idx > PITCHES_PER_SCALE) {
+      Serial.printf("make_scale_t_from_string: scale_signature[%i] = %c is too long!\n", scale - scale_signature, *scale);
+      break;
+    }
+    if (*scale == ' ') continue;
+    *scale = tolower(*scale);
+
+    int next_step = 0;
+    if (*scale == 'w') {
+        next_step = 2;
+    } else if (*scale == 'h') {
+        next_step = 1;
+    } else if (*scale == '+') {
+        next_step = 3;
+    } else {
+        Serial.printf("make_scale_t_from_string: scale_signature[%i] = %c is invalid!\n", scale - scale_signature, *scale);
+    }
+    if (Serial) Serial.printf("index %i: input %c => step %i\n", idx, *scale, next_step);
+    steps[idx] = next_step;
+    total_steps += next_step;
+    if (idx==PITCHES_PER_SCALE && total_steps != 12) {
+      Serial.printf("WARNING: scale does not correctly meet itself!  Reached %i, so it is off by %i.\n", total_steps, 12 - total_steps);
+    }
+    idx++;
+  }
+
+  if (rotation>0) {
+    for (int i = 0 ; i < PITCHES_PER_SCALE ; i++) {
+      steps[i] = steps[(i + rotation) % PITCHES_PER_SCALE];
+    }
+  }
+
+  for (int i = 1 ; i < PITCHES_PER_SCALE ; i++) {
+    return_scale->valid_chromatic_pitches[i] = return_scale->valid_chromatic_pitches[i-1] + steps[i];
+  }
+
+  /*if (rotation>0) {
+      scale_t tmp_scale;
+      for (int i = 0 ; i < PITCHES_PER_SCALE ; i++) {
+          int idx = (i + rotation) % PITCHES_PER_SCALE;
+          tmp_scale.valid_chromatic_pitches[i] = return_scale->valid_chromatic_pitches[idx];
+          Serial.printf("Rotating %i to %i\n", i, idx);
+      }
+      for (int i = 0 ; i < PITCHES_PER_SCALE ; i++) {
+          return_scale->valid_chromatic_pitches[i] = (tmp_scale.valid_chromatic_pitches[i] - rotation);
+      }
+  }*/
+
+  return return_scale;
+}
+
 #endif
