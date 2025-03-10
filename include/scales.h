@@ -38,24 +38,70 @@
 
 #define MAXIMUM_OCTAVE     9
 
-struct scale_t {
+struct scale_pattern_t {
     const char *label;
     int8_t valid_chromatic_pitches[PITCHES_PER_SCALE];
 };
 
-scale_t *make_scale_t_from_string(const char *scale_signature, const char *name, int rotation = 0);
+struct scale_t {
+    const char *label;
+    const scale_pattern_t *pattern = nullptr;
+    int rotation = 0;
+};
+
+//scale_t *make_scale_t_from_string(const char *scale_signature, const char *name, int rotation = 0);
+const scale_pattern_t *make_scale_pattern_t_from_string(const char *scale_pattern_name, const char *name, int rotation = 0);
+
+const scale_pattern_t scale_patterns[] = {
+    *make_scale_pattern_t_from_string("w w h w w w h", "Natural"),
+    *make_scale_pattern_t_from_string("w h w w w w h", "Melodic"),
+    *make_scale_pattern_t_from_string("w w h w h + h", "Harmonic Major"),
+    *make_scale_pattern_t_from_string("w h w w h + h", "Harmonic Minor"),
+    *make_scale_pattern_t_from_string("h + h w h + h", "Byzantine"),            // " this scale is commonly represented with the first and last half step each being represented with quarter tones:"
+};
 
 const scale_t scales[] = {
-    *make_scale_t_from_string("w w h w w w h", "Major"),
-    *make_scale_t_from_string("w h w w h w w", "Minor (Natural)"),
-    *make_scale_t_from_string("w h w w w w h", "Minor (Melodic)"),
-    *make_scale_t_from_string("w h w w h w h", "Minor (Harmonic)"),
-    *make_scale_t_from_string("w h + h h + h", "Minor (Hungarian)"),
-    *make_scale_t_from_string("w w w h w w h", "Lydian"),
-    *make_scale_t_from_string("w w h w w h w", "Mixolydian"),
-    *make_scale_t_from_string("h w w w h w w", "Phrygian"),
-    *make_scale_t_from_string("w w w w w w w", "Whole-tone"),
+    { "Ionian", &scale_patterns[0], 0 },
+    { "Dorian", &scale_patterns[0], 1 },
+    { "Phrygian", &scale_patterns[0], 2 },
+    { "Lydian", &scale_patterns[0], 3 },
+    { "Mixolydian", &scale_patterns[0], 4 },
+    { "Aeolian", &scale_patterns[0], 5 },
+    { "Locrian", &scale_patterns[0], 6 },
+
+    { "Melodic Minor", &scale_patterns[1], 0 },
+    { "Dorian.b2", &scale_patterns[1], 1 },
+    { "Lydian.aug", &scale_patterns[1], 2 },
+    { "Lydian.dom", &scale_patterns[1], 3 },
+    { "Mixolydian.b6", &scale_patterns[1], 4 },
+    { "Locrian.#2", &scale_patterns[1], 5 },
+    { "Superlocrian", &scale_patterns[1], 6 },
+
+    { "Harm. Major", &scale_patterns[2], 0 },
+    { "Dorian.b5", &scale_patterns[2], 1 },
+    { "Phrygian.b4", &scale_patterns[2], 2 },
+    { "Lydian.b3", &scale_patterns[2], 3 },
+    { "Mixolydian.b2", &scale_patterns[2], 4 },
+    { "Lydian.#2", &scale_patterns[2], 5 },
+    { "Locrian.bb7", &scale_patterns[2], 6 },
+
+    { "Harm. Minor", &scale_patterns[3], 0 },
+    { "Locrian.#6", &scale_patterns[3], 1 },
+    { "Ionian.#5", &scale_patterns[3], 2 },
+    { "Dorian.#4", &scale_patterns[3], 3 },
+    { "Phrygian dom", &scale_patterns[3], 4 },
+    { "Lydian.#2", &scale_patterns[3], 5 },
+    { "Superlocrian.bb7", &scale_patterns[3], 6 },
+
+    { "Double harm.maj", &scale_patterns[4], 0 },
+    { "Lydian.#2.#6", &scale_patterns[4], 1 },
+    { "Ultraphrygian", &scale_patterns[4], 2 },
+    { "Hungarian minor", &scale_patterns[4], 3 },
+    { "Oriential", &scale_patterns[4], 4 },
+    { "Ionian.#2.#5", &scale_patterns[4], 5 },
+    { "Locrian.b3.bb7", &scale_patterns[4], 6 },
 };
+    
 enum SCALE {
     MAJOR,
     MINOR_NATURAL,
@@ -177,7 +223,7 @@ class chord_instance_t {
     void set_from_chord_identity(chord_identity_t chord_identity, int8_t root, SCALE scale) {
         this->chord.type = chord_identity.type;
         //this->chord_root = root;
-        this->chord_root = root + scales[scale].valid_chromatic_pitches[chord_identity.degree-1];
+        this->chord_root = root + scales[scale].pattern->valid_chromatic_pitches[chord_identity.degree-1];
         this->chord.inversion = chord_identity.inversion;
         this->scale.scale_number = scale;
         this->changed = true;

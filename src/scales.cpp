@@ -134,7 +134,7 @@ int8_t quantise_get_root_pitch_for_degree(int8_t degree, int8_t scale_root, SCAL
     return -1;
   }
 
-  int8_t result = scale_root + scales[scale_number].valid_chromatic_pitches[degree-1];
+  int8_t result = scale_root + scales[scale_number].pattern->valid_chromatic_pitches[degree-1];
 
   //Serial.printf("quantise_get_root_pitch_for_degree(%i, %i, %s) - scale_number=%i and scale_root=%i (%s) => %i (%s)\n", degree, scale_root, scales[scale_number].label, scale_number, scale_root, get_note_name_c(scale_root), result, get_note_name_c(result));
 
@@ -169,7 +169,7 @@ int8_t quantise_pitch_to_scale(int8_t pitch, int8_t scale_root, SCALE scale_numb
   // find the closest note in the scale to the pitch
   int last_interval = -1;
   for (int index = 0 ; index < PITCHES_PER_SCALE ; index++) {
-    int8_t interval = scales[scale_number].valid_chromatic_pitches[index];
+    int8_t interval = scales[scale_number].pattern->valid_chromatic_pitches[index];
     if (!is_valid_note(interval)) 
       continue;
     if (interval == relative_pitch) {
@@ -295,9 +295,9 @@ int8_t get_quantise_pitch_chord_note(int8_t chord_root, CHORD::Type chord_number
   int root_pitch_degree = -1;
   int root_pitch_offset = -1;
   for (int i = 0 ; i < PITCHES_PER_SCALE ; i++) {
-    if ((scale_root+sc->valid_chromatic_pitches[i])%12==chord_root%12) {
+    if ((scale_root+sc->pattern->valid_chromatic_pitches[i])%12==chord_root%12) {
       root_pitch_degree = i;
-      root_pitch_offset = sc->valid_chromatic_pitches[i];
+      root_pitch_offset = sc->pattern->valid_chromatic_pitches[i];
       break;
     }
   }
@@ -347,7 +347,7 @@ int8_t get_quantise_pitch_chord_note(int8_t chord_root, CHORD::Type chord_number
   #endif
 
   // then when we know the degree number and octave offset, we can use note_of_chord as on offset on it to discover the real pitch to use
-  int8_t actual_pitch = (chord_target_octave*12) + sc->valid_chromatic_pitches[chord_target_degree];
+  int8_t actual_pitch = (chord_target_octave*12) + sc->pattern->valid_chromatic_pitches[chord_target_degree];
   actual_pitch += chord_root_pitch;
 
   #ifdef DEBUG_CHORDS
@@ -367,7 +367,7 @@ void print_scale(int8_t root_note, SCALE scale_number) {
   scale_number = get_effective_scale_type(scale_number);
   Serial.printf("Scale %s (%i) starting at %s (%i):\t", scales[scale_number].label, scale_number, get_note_name_c(root_note), root_note);
   for (int i = 0 ; i < PITCHES_PER_SCALE ; i++) {
-    int note = root_note + scales[scale_number].valid_chromatic_pitches[i];
+    int note = root_note + scales[scale_number].pattern->valid_chromatic_pitches[i];
     //Serial.printf("%i: %s\n", i, get_note_name_c(note));
     Serial.printf("%-3s ", get_note_name_c(note));
   }
@@ -377,14 +377,14 @@ void print_scale(int8_t root_note, SCALE scale_number) {
 void print_scale(int8_t root_note, scale_t scale) {
   Serial.printf("Scale %s:\t", scale.label);
   for (int i = 0 ; i < PITCHES_PER_SCALE ; i++) {
-    int note = scale.valid_chromatic_pitches[i];
+    int note = scale.pattern->valid_chromatic_pitches[i];
     Serial.printf("%-3s ", get_note_name_c(root_note + note));
   }
   Serial.println();
 }
 
-scale_t *make_scale_t_from_string(const char *scale_signature, const char *name, int rotation) {
-  scale_t *return_scale = new scale_t();
+const scale_pattern_t *make_scale_pattern_t_from_string(const char *scale_signature, const char *name, int rotation) {
+  scale_pattern_t *return_scale = new scale_pattern_t();
   return_scale->label = name;
   return_scale->valid_chromatic_pitches[0] = 0;
 
