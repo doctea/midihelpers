@@ -97,7 +97,7 @@ const scale_t scales[] = {
     { "Lydian.#2.#6", &scale_patterns[4], 1 },
     { "Ultraphrygian", &scale_patterns[4], 2 },
     { "Hungarian minor", &scale_patterns[4], 3 },
-    { "Oriential", &scale_patterns[4], 4 },
+    { "Oriental", &scale_patterns[4], 4 },
     { "Ionian.#2.#5", &scale_patterns[4], 5 },
     { "Locrian.b3.bb7", &scale_patterns[4], 6 },
 };
