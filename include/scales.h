@@ -40,17 +40,35 @@
 
 struct scale_pattern_t {
     const char *label;
-    int8_t valid_chromatic_pitches[PITCHES_PER_SCALE];
+    int8_t steps[PITCHES_PER_SCALE];
 };
 
 struct scale_t {
+    public:
+
     const char *label;
     const scale_pattern_t *pattern = nullptr;
     int rotation = 0;
+
+    int8_t valid_chromatic_pitches[PITCHES_PER_SCALE];
+
+    /*int8_t valid_chromatic_pitches(int degree) {
+        Serial.printf(
+            "in %s (based on %s): valid_chromatic_pitches(%i => %i) = %i\n", 
+            this->label, 
+            pattern->label, 
+            degree, 
+            (degree + rotation) % PITCHES_PER_SCALE,
+            pattern->valid_chromatic_pitches[(degree - rotation) % PITCHES_PER_SCALE]
+        );
+        return pattern->valid_chromatic_pitches[(degree + rotation) % PITCHES_PER_SCALE];
+        //return pattern->valid_chromatic_pitches[degree];
+    }*/
 };
 
 //scale_t *make_scale_t_from_string(const char *scale_signature, const char *name, int rotation = 0);
-const scale_pattern_t *make_scale_pattern_t_from_string(const char *scale_pattern_name, const char *name, int rotation = 0);
+const scale_pattern_t *make_scale_pattern_t_from_string(const char *scale_pattern_name, const char *name);
+const scale_t make_scale_t_from_pattern(const scale_pattern_t *scale_signature, const char *name, int rotation = 0);
 
 const scale_pattern_t scale_patterns[] = {
     *make_scale_pattern_t_from_string("w w h w w w h", "Natural"),
@@ -61,45 +79,45 @@ const scale_pattern_t scale_patterns[] = {
 };
 
 const scale_t scales[] = {
-    { "Ionian", &scale_patterns[0], 0 },
-    { "Dorian", &scale_patterns[0], 1 },
-    { "Phrygian", &scale_patterns[0], 2 },
-    { "Lydian", &scale_patterns[0], 3 },
-    { "Mixolydian", &scale_patterns[0], 4 },
-    { "Aeolian", &scale_patterns[0], 5 },
-    { "Locrian", &scale_patterns[0], 6 },
+    make_scale_t_from_pattern(&scale_patterns[0], "Ionian", 0),
+    make_scale_t_from_pattern(&scale_patterns[0], "Dorian", 1),
+    make_scale_t_from_pattern(&scale_patterns[0], "Phrygian", 2),
+    make_scale_t_from_pattern(&scale_patterns[0], "Lydian", 3),
+    make_scale_t_from_pattern(&scale_patterns[0], "Mixolydian", 4),
+    make_scale_t_from_pattern(&scale_patterns[0], "Aeolian", 5),
+    make_scale_t_from_pattern(&scale_patterns[0], "Locrian", 6),
 
-    { "Melodic Minor", &scale_patterns[1], 0 },
-    { "Dorian.b2", &scale_patterns[1], 1 },
-    { "Lydian.aug", &scale_patterns[1], 2 },
-    { "Lydian.dom", &scale_patterns[1], 3 },
-    { "Mixolydian.b6", &scale_patterns[1], 4 },
-    { "Locrian.#2", &scale_patterns[1], 5 },
-    { "Superlocrian", &scale_patterns[1], 6 },
+    make_scale_t_from_pattern(&scale_patterns[1], "Melodic Minor", 0),
+    make_scale_t_from_pattern(&scale_patterns[1], "Dorian.b2", 1),
+    make_scale_t_from_pattern(&scale_patterns[1], "Lydian.aug", 2),
+    make_scale_t_from_pattern(&scale_patterns[1], "Lydian.dom", 3),
+    make_scale_t_from_pattern(&scale_patterns[1], "Mixolydian.b6", 4),
+    make_scale_t_from_pattern(&scale_patterns[1], "Locrian.#2", 5),
+    make_scale_t_from_pattern(&scale_patterns[1], "Superlocrian", 6),
 
-    { "Harm. Major", &scale_patterns[2], 0 },
-    { "Dorian.b5", &scale_patterns[2], 1 },
-    { "Phrygian.b4", &scale_patterns[2], 2 },
-    { "Lydian.b3", &scale_patterns[2], 3 },
-    { "Mixolydian.b2", &scale_patterns[2], 4 },
-    { "Lydian.#2", &scale_patterns[2], 5 },
-    { "Locrian.bb7", &scale_patterns[2], 6 },
+    make_scale_t_from_pattern(&scale_patterns[2], "Harm. Major", 0),
+    make_scale_t_from_pattern(&scale_patterns[2], "Dorian.b5", 1),
+    make_scale_t_from_pattern(&scale_patterns[2], "Phrygian.b4", 2),
+    make_scale_t_from_pattern(&scale_patterns[2], "Lydian.b3", 3),
+    make_scale_t_from_pattern(&scale_patterns[2], "Mixolydian.b2", 4),
+    make_scale_t_from_pattern(&scale_patterns[2], "Lydian.#2", 5),
 
-    { "Harm. Minor", &scale_patterns[3], 0 },
-    { "Locrian.#6", &scale_patterns[3], 1 },
-    { "Ionian.#5", &scale_patterns[3], 2 },
-    { "Dorian.#4", &scale_patterns[3], 3 },
-    { "Phrygian dom", &scale_patterns[3], 4 },
-    { "Lydian.#2", &scale_patterns[3], 5 },
-    { "Superlocrian.bb7", &scale_patterns[3], 6 },
+    make_scale_t_from_pattern(&scale_patterns[3], "Harm. Minor", 0),
+    make_scale_t_from_pattern(&scale_patterns[3], "Locrian.#6", 1),
+    make_scale_t_from_pattern(&scale_patterns[3], "Ionian.#5", 2),
+    make_scale_t_from_pattern(&scale_patterns[3], "Dorian.#4", 3),
+    make_scale_t_from_pattern(&scale_patterns[3], "Phrygian dom", 4),
+    make_scale_t_from_pattern(&scale_patterns[3], "Lydian.#2", 5),
+    make_scale_t_from_pattern(&scale_patterns[3], "Superlocrian.bb7", 6),
 
-    { "Double harm.maj", &scale_patterns[4], 0 },
-    { "Lydian.#2.#6", &scale_patterns[4], 1 },
-    { "Ultraphrygian", &scale_patterns[4], 2 },
-    { "Hungarian minor", &scale_patterns[4], 3 },
-    { "Oriental", &scale_patterns[4], 4 },
-    { "Ionian.#2.#5", &scale_patterns[4], 5 },
-    { "Locrian.b3.bb7", &scale_patterns[4], 6 },
+    make_scale_t_from_pattern(&scale_patterns[4], "Double harm.maj", 0),
+    make_scale_t_from_pattern(&scale_patterns[4], "Lydian.#2.#6", 1),
+    make_scale_t_from_pattern(&scale_patterns[4], "Ultraphrygian", 2),
+    make_scale_t_from_pattern(&scale_patterns[4], "Hungarian minor", 3),
+    make_scale_t_from_pattern(&scale_patterns[4], "Oriental", 4),
+    make_scale_t_from_pattern(&scale_patterns[4], "Ionian.#2.#5", 5),
+    make_scale_t_from_pattern(&scale_patterns[4], "Locrian.b3.bb7", 6),
+
 };
     
 enum SCALE {
@@ -223,7 +241,7 @@ class chord_instance_t {
     void set_from_chord_identity(chord_identity_t chord_identity, int8_t root, SCALE scale) {
         this->chord.type = chord_identity.type;
         //this->chord_root = root;
-        this->chord_root = root + scales[scale].pattern->valid_chromatic_pitches[chord_identity.degree-1];
+        this->chord_root = root + scales[scale].valid_chromatic_pitches[chord_identity.degree-1];
         this->chord.inversion = chord_identity.inversion;
         this->scale.scale_number = scale;
         this->changed = true;
