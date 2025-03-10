@@ -106,6 +106,12 @@ namespace CHORD {
 
 #define NUMBER_CHORDS (sizeof(chords)/sizeof(chord_t))
 
+class scale_identity_t {
+    public:
+    SCALE scale_number = SCALE::MAJOR;
+    int8_t root_note = SCALE_ROOT_C;
+};
+
 class chord_identity_t {
     public:
     CHORD::Type type = CHORD::TRIAD;
@@ -129,16 +135,18 @@ class chord_identity_t {
 
 class chord_instance_t {
     public:
-    SCALE scale = SCALE::MAJOR;
-    CHORD::Type type = CHORD::NONE;
+    //SCALE scale = SCALE::MAJOR;
+    scale_identity_t scale;
+    chord_identity_t chord;
+    //CHORD::Type type = CHORD::NONE;
     int8_t chord_root = NOTE_OFF;
-    int8_t inversion = 0;
+    //int8_t inversion = 0;
     int8_t velocity = MIDI_MAX_VELOCITY;
     bool changed = true;
     int8_t pitches[PITCHES_PER_CHORD] = { NOTE_OFF, NOTE_OFF, NOTE_OFF, NOTE_OFF };
 
     const char *get_label() {
-        return chords[type].label;
+        return chords[chord.type].label;
     }
     char pitch_string[40];
     const char *get_pitch_string() {
@@ -146,12 +154,12 @@ class chord_instance_t {
             snprintf(pitch_string, 40, 
                 "%3s %6s: %3s,%3s,%3s,%3s inv%1i,ve=%3i", 
                 get_note_name_c(chord_root), 
-                type!=CHORD::NONE ? chords[type].label : "N/A", 
+                chord.type!=CHORD::NONE ? chords[chord.type].label : "N/A", 
                 get_note_name_c(pitches[0]), 
                 get_note_name_c(pitches[1]), 
                 get_note_name_c(pitches[2]), 
                 get_note_name_c(pitches[3]), 
-                inversion,
+                chord.inversion,
                 velocity
             );
             changed = false;
@@ -160,22 +168,22 @@ class chord_instance_t {
     }
     void set(CHORD::Type type, int8_t root, int8_t inversion = 0, int8_t velocity = 0) {
         //this->clear();
-        this->type = type;
+        this->chord.type = type;
         this->chord_root = root;
-        this->inversion = inversion;
+        this->chord.inversion = inversion;
         this->velocity = velocity;
         this->changed = true;
     }
     void set_from_chord_identity(chord_identity_t chord_identity, int8_t root, SCALE scale) {
-        this->type = chord_identity.type;
+        this->chord.type = chord_identity.type;
         //this->chord_root = root;
         this->chord_root = root + scales[scale].valid_chromatic_pitches[chord_identity.degree-1];
-        this->inversion = chord_identity.inversion;
-        this->scale = scale;
+        this->chord.inversion = chord_identity.inversion;
+        this->scale.scale_number = scale;
         this->changed = true;
     }
     void set_chord_type(CHORD::Type type) {
-        this->type = type;
+        this->chord.type = type;
         this->changed = true;
     }
     void set_chord_root(int8_t root) {
@@ -187,7 +195,7 @@ class chord_instance_t {
         this->changed = true;
     }
     void set_inversion(int8_t inversion) {
-        this->inversion = inversion;
+        this->chord.inversion = inversion;
         this->changed = true;
     }
     void set_velocity(int8_t velocity) {
@@ -195,9 +203,9 @@ class chord_instance_t {
         this->changed = true;
     }
     void clear() {
-        this->type = CHORD::NONE;
+        this->chord.type = CHORD::NONE;
         this->chord_root = -1;
-        this->inversion = 0;
+        this->chord.inversion = 0;
         this->velocity = 0;
         memset(pitches, -1, sizeof(pitches));
         this->changed = true;
@@ -219,12 +227,7 @@ struct quantise_settings_t {
     chord_identity_t chord_identity = {CHORD::TRIAD, -1, 0};
 };
 
-
-extern int8_t   *global_scale_root;
-extern SCALE    *global_scale_type;
-
-void set_global_scale_root_target(int8_t *root_note);
-void set_global_scale_type_target(SCALE *scale_type);
+void set_global_scale_identity_target(scale_identity_t *scale);
 void set_global_chord_identity_target(chord_identity_t *chord_identity);
 
 int8_t get_effective_scale_root(int8_t scale_root);
@@ -232,6 +235,7 @@ SCALE get_effective_scale_type(SCALE scale_number);
 
 int8_t get_global_scale_root();
 SCALE get_global_scale_type();
+scale_identity_t *get_global_scale_identity();
 int8_t get_global_chord_degree();
 
 

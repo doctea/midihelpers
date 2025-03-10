@@ -35,26 +35,21 @@ SCALE& operator--(SCALE& orig, int) {
     return rVal;
 }
 
-int8_t *global_scale_root = nullptr;
-SCALE  *global_scale_type = nullptr;
-//int8_t *global_chord_degree = nullptr;
+scale_identity_t *global_scale_identity = nullptr;
 chord_identity_t *global_chord_identity = nullptr;
 
-void set_global_scale_root_target(int8_t *root_note) {
-    global_scale_root = root_note;
-}
-void set_global_scale_type_target(SCALE *scale_type) {
-    global_scale_type = scale_type;
+void set_global_scale_identity_target(scale_identity_t *scale) {
+  global_scale_identity = scale;
 }
 
 int8_t get_global_scale_root() {
-  if (global_scale_root!=nullptr)
-    return *global_scale_root;
+  if (global_scale_identity!=nullptr)
+    return global_scale_identity->root_note;
   return SCALE_GLOBAL_ROOT;
 }
 SCALE get_global_scale_type() {
-  if (global_scale_type!=nullptr)
-    return *global_scale_type;
+  if (global_scale_identity!=nullptr)
+    return global_scale_identity->scale_number;
   return SCALE::GLOBAL;
 }
 

@@ -130,7 +130,7 @@ class ChordPlayer {
         void stop_chord(chord_instance_t chord) {
             if (this->is_playing_chord) {
                 if (this->debug) Serial.printf("stop_chord(): Stopping chord degree root %i\n", this->current_chord_data.chord_root);
-                this->stop_chord(chord.chord_root, chord.type, chord.inversion, chord.velocity);
+                this->stop_chord(chord.chord_root, chord.chord.type, chord.chord.inversion, chord.velocity);
             }
         }
 
