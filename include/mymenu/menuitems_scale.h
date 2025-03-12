@@ -252,6 +252,30 @@ class ObjectScaleMenuItemBar : public SubMenuItemBar {
 #include "functional-vlpp.h"
 #include "menuitems_lambda_selector.h"
 
+template<class DataType>
+class LambdaScaleSelector : public LambdaSelectorControl<DataType> {
+    public:
+
+    LambdaScaleSelector(
+        const char* label, 
+        vl::Func<void(DataType)> setter_func,
+        vl::Func<DataType(void)> getter_func,
+        void (*on_change_handler)(DataType last_value, DataType new_value) = nullptr,
+        bool go_back_on_select = false,
+        bool direct = false
+    ) : LambdaSelectorControl<DataType>(label, setter_func, getter_func, on_change_handler, go_back_on_select, direct) {
+    }
+
+    virtual char *get_label() override {
+        SCALE scale_number = (SCALE)this->get_current_value();
+        scale_number = get_effective_scale_type(scale_number);
+        if (scale_number!=SCALE::GLOBAL)
+            return (char*)scales[scale_number].pattern->label;
+        else
+            return "[global]";        
+    }
+};
+
 class LambdaScaleMenuItemBar : public SubMenuItemBar {
     public:
 
@@ -302,7 +326,7 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
         scale_root->go_back_on_select = true;
         this->add(scale_root);
 
-        LambdaSelectorControl<SCALE> *scale_selector = new LambdaSelectorControl<SCALE>(
+        LambdaScaleSelector<SCALE> *scale_selector = new LambdaScaleSelector<SCALE>(
             "Scale type", 
             scale_setter_func,
             scale_getter_func,
