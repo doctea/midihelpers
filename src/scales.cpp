@@ -8,16 +8,70 @@
 
 #include "scales.h"
 
+// Change array declaration to use pointers
+const scale_pattern_t *scale_patterns[] = {
+  make_scale_pattern_t_from_string("w w h w w w h", "0. Natural"),
+  make_scale_pattern_t_from_string("w h w w w w h", "1. Melodic"),
+  make_scale_pattern_t_from_string("w w h w h + h", "2. Harmonic Major"),
+  make_scale_pattern_t_from_string("w h w w h + h", "3. Harmonic Minor"),
+  make_scale_pattern_t_from_string("h + h w h + h", "4. Byzantine"),            // " this scale is commonly represented with the first and last half step each being represented with quarter tones:"
+};
+
+const scale_t* scales[] = {
+  make_scale_t_from_pattern(scale_patterns[0], "Ionian", 0),
+  make_scale_t_from_pattern(scale_patterns[0], "Dorian", 1),
+  make_scale_t_from_pattern(scale_patterns[0], "Phrygian", 2),
+  make_scale_t_from_pattern(scale_patterns[0], "Lydian", 3),
+  make_scale_t_from_pattern(scale_patterns[0], "Mixolydian", 4),
+  make_scale_t_from_pattern(scale_patterns[0], "Aeolian", 5),
+  make_scale_t_from_pattern(scale_patterns[0], "Locrian", 6),
+
+  make_scale_t_from_pattern(scale_patterns[1], "Melodic Minor", 0),
+  make_scale_t_from_pattern(scale_patterns[1], "Dorian.b2", 1),
+  make_scale_t_from_pattern(scale_patterns[1], "Lydian.aug", 2),
+  make_scale_t_from_pattern(scale_patterns[1], "Lydian.dom", 3),
+  make_scale_t_from_pattern(scale_patterns[1], "Mixolydian.b6", 4),
+  make_scale_t_from_pattern(scale_patterns[1], "Locrian.#2", 5),
+  make_scale_t_from_pattern(scale_patterns[1], "Superlocrian", 6),
+
+  make_scale_t_from_pattern(scale_patterns[2], "Harm. Major", 0),
+  make_scale_t_from_pattern(scale_patterns[2], "Dorian.b5", 1),
+  make_scale_t_from_pattern(scale_patterns[2], "Phrygian.b4", 2),
+  make_scale_t_from_pattern(scale_patterns[2], "Lydian.b3", 3),
+  make_scale_t_from_pattern(scale_patterns[2], "Mixolydian.b2", 4),
+  make_scale_t_from_pattern(scale_patterns[2], "Lydian.#2", 5),
+  make_scale_t_from_pattern(scale_patterns[2], "Locrian.bb7", 6),
+
+  make_scale_t_from_pattern(scale_patterns[3], "Harm. Minor", 0),
+  make_scale_t_from_pattern(scale_patterns[3], "Locrian.#6", 1),
+  make_scale_t_from_pattern(scale_patterns[3], "Ionian.#5", 2),
+  make_scale_t_from_pattern(scale_patterns[3], "Dorian.#4", 3),
+  make_scale_t_from_pattern(scale_patterns[3], "Phrygian dom", 4),
+  make_scale_t_from_pattern(scale_patterns[3], "Lydian.#2", 5),
+  make_scale_t_from_pattern(scale_patterns[3], "Superlocrian.bb7", 6),
+
+  make_scale_t_from_pattern(scale_patterns[4], "Double harm.maj", 0),
+  make_scale_t_from_pattern(scale_patterns[4], "Lydian.#2.#6", 1),
+  make_scale_t_from_pattern(scale_patterns[4], "Ultraphrygian", 2),
+  make_scale_t_from_pattern(scale_patterns[4], "Hungarian minor", 3),
+  make_scale_t_from_pattern(scale_patterns[4], "Oriental", 4),
+  make_scale_t_from_pattern(scale_patterns[4], "Ionian.#2.#5", 5),
+  make_scale_t_from_pattern(scale_patterns[4], "Locrian.b3.bb7", 6),
+};
+
+//#define NUMBER_SCALES ((sizeof(scales)/sizeof(scale_t)))    // uses size of real scales[] array, ie existant scales, rather than the SCALE enum (which has an extra value to represent GLOBAL)
+const size_t NUMBER_SCALES = sizeof(scales)/sizeof(scale_t*);
+
 //#define DEBUG_CHORDS
 
-SCALE& operator++(SCALE& orig) {
+/*SCALE& operator++(SCALE& orig) {
   if (orig==static_cast<SCALE>(NUMBER_SCALES-1))
     orig = static_cast<SCALE>(0);
   else
     orig = static_cast<SCALE>(orig+1);
   return orig;
 }
-SCALE& operator++(SCALE& orig, int) {
+SCALE operator++(SCALE& orig, int) {
     SCALE rVal = orig;
     ++orig;
     return rVal;
@@ -29,11 +83,11 @@ SCALE& operator--(SCALE& orig) {
     orig = static_cast<SCALE>(orig-1);
   return orig;
 }
-SCALE& operator--(SCALE& orig, int) {
+SCALE operator--(SCALE& orig, int) {
     SCALE rVal = orig;
     --orig;
     return rVal;
-}
+}*/
 
 scale_identity_t *global_scale_identity = nullptr;
 chord_identity_t *global_chord_identity = nullptr;
@@ -47,10 +101,10 @@ int8_t get_global_scale_root() {
     return global_scale_identity->root_note;
   return SCALE_GLOBAL_ROOT;
 }
-SCALE get_global_scale_type() {
+scale_index_t get_global_scale_type() {
   if (global_scale_identity!=nullptr)
     return global_scale_identity->scale_number;
-  return SCALE::GLOBAL;
+  return SCALE_GLOBAL;
 }
 
 void set_global_chord_identity_target(chord_identity_t *chord_identity) {
@@ -98,11 +152,11 @@ int8_t get_effective_scale_root(int8_t scale_root) {
 }
 
 // check the passed-in scale type to see if we should use global setting - return global setting if so, otherwise return passed-in scale type
-SCALE get_effective_scale_type(SCALE scale_number) {
-  if (scale_number==SCALE::GLOBAL)
+scale_index_t get_effective_scale_type(scale_index_t scale_number) {
+  if (scale_number==SCALE_GLOBAL)
     scale_number = get_global_scale_type();
-  if (scale_number==SCALE::GLOBAL)
-    scale_number = SCALE::MAJOR;
+  if (scale_number==SCALE_GLOBAL)
+    scale_number = SCALE_FIRST;
   return scale_number;
 }
 
@@ -123,25 +177,25 @@ SCALE get_effective_scale_type(SCALE scale_number) {
   return chord_degree;
 }*/
 
-int8_t quantise_get_root_pitch_for_degree(int8_t degree, int8_t scale_root, SCALE scale_number) {
+int8_t quantise_get_root_pitch_for_degree(int8_t degree, int8_t scale_root, scale_index_t scale_number) {
   if (degree<1 || degree>PITCHES_PER_SCALE)
     return -1;
 
   scale_root = get_effective_scale_root(scale_root);
   scale_number = get_effective_scale_type(scale_number);
-  if(scale_number==SCALE_GLOBAL_ROOT || scale_number==SCALE::GLOBAL) {
+  if(scale_number==SCALE_GLOBAL_ROOT || scale_number==SCALE_GLOBAL) {
     //Serial.printf("quantise_get_root_pitch_for_degree(%i, %i, %s) - scale_number is global but get_effective_scale_type also returned global so only returning -1?\n", degree, scale_root, scales[scale_number].label);
     return -1;
   }
 
-  int8_t result = scale_root + scales[scale_number].valid_chromatic_pitches[degree-1];
+  int8_t result = scale_root + scales[scale_number]->valid_chromatic_pitches[degree-1];
 
   //Serial.printf("quantise_get_root_pitch_for_degree(%i, %i, %s) - scale_number=%i and scale_root=%i (%s) => %i (%s)\n", degree, scale_root, scales[scale_number].label, scale_number, scale_root, get_note_name_c(scale_root), result, get_note_name_c(result));
 
   return result;
 }
 
-int8_t quantise_pitch_to_scale(int8_t pitch, int8_t scale_root, SCALE scale_number, bool debug) {
+int8_t quantise_pitch_to_scale(int8_t pitch, int8_t scale_root, scale_index_t scale_number, bool debug) {
   if (!is_valid_note(pitch))
     return NOTE_OFF;
     
@@ -152,8 +206,8 @@ int8_t quantise_pitch_to_scale(int8_t pitch, int8_t scale_root, SCALE scale_numb
   scale_root = get_effective_scale_root(scale_root);
   scale_number = get_effective_scale_type(scale_number);
   
-  if (debug) Serial.printf("quantise_pitch_to_scale(%s,\t%s,\t%s)\n", get_note_name_c(pitch), get_note_name_c(scale_root), scales[scale_number].label);
-  if(scale_number==SCALE_GLOBAL_ROOT || scale_number==SCALE::GLOBAL)  // todo: check that pitch is in the chord...?
+  if (debug) Serial.printf("quantise_pitch_to_scale(%s,\t%s,\t%s)\n", get_note_name_c(pitch), get_note_name_c(scale_root), scales[scale_number]->label);
+  if(scale_number==SCALE_GLOBAL_ROOT || scale_number==SCALE_GLOBAL)  // todo: check that pitch is in the chord...?
     return pitch;
 
   int octave = pitch/12;
@@ -169,12 +223,12 @@ int8_t quantise_pitch_to_scale(int8_t pitch, int8_t scale_root, SCALE scale_numb
   // find the closest note in the scale to the pitch
   int last_interval = -1;
   for (int index = 0 ; index < PITCHES_PER_SCALE ; index++) {
-    int8_t interval = scales[scale_number].valid_chromatic_pitches[index];
+    int8_t interval = scales[scale_number]->valid_chromatic_pitches[index];
     if (!is_valid_note(interval)) 
       continue;
     if (interval == relative_pitch) {
       return_value = pitch;
-      if (debug) Serial.printf("\tbranch#1: pitch %s (%i) is in scale %s (%i) at index %i\n", get_note_name_c(pitch), pitch, scales[scale_number].label, scale_number, index);
+      if (debug) Serial.printf("\tbranch#1: pitch %s (%i) is in scale %s (%i) at index %i\n", get_note_name_c(pitch), pitch, scales[scale_number]->label, scale_number, index);
       break;
     }
     if (relative_pitch < interval) {
@@ -193,7 +247,7 @@ int8_t quantise_pitch_to_scale(int8_t pitch, int8_t scale_root, SCALE scale_numb
   return return_value;
 }
 
-int8_t quantise_pitch_to_chord(int8_t pitch, int8_t quantised_to_nearest_tolerance, int8_t scale_root, SCALE scale_number, chord_identity_t chord_identity, bool debug) {
+int8_t quantise_pitch_to_chord(int8_t pitch, int8_t quantised_to_nearest_tolerance, int8_t scale_root, scale_index_t scale_number, chord_identity_t chord_identity, bool debug) {
   if (!is_valid_note(pitch))
     return NOTE_OFF;
 
@@ -219,7 +273,7 @@ int8_t quantise_pitch_to_chord(int8_t pitch, int8_t quantised_to_nearest_toleran
   if (chord_identity.degree<=0) {
     return pitch;
   } else { //if (chord_identity.chord_degree>0) {
-    if (debug) Serial.printf("quantise_chord(%s, %s, %s, %i) - chord_degree>0\n", get_note_name_c(pitch), get_note_name_c(scale_root), scales[scale_number].label, chord_identity.degree);
+    if (debug) Serial.printf("quantise_chord(%s, %s, %s, %i) - chord_degree>0\n", get_note_name_c(pitch), get_note_name_c(scale_root), scales[scale_number]->label, chord_identity.degree);
     // find nearest pitch for the current scale, scale_root, and chord_degree combination
     //int last_interval = -1;
     int8_t n = -1;
@@ -265,7 +319,7 @@ int8_t quantise_pitch_to_chord(int8_t pitch, int8_t quantised_to_nearest_toleran
 }
 
 // find the Nth note of a given chord in a given scale
-int8_t get_quantise_pitch_chord_note(int8_t chord_root, CHORD::Type chord_number, int8_t note_of_chord, int8_t scale_root, SCALE scale_number, int inversion, bool debug) {
+int8_t get_quantise_pitch_chord_note(int8_t chord_root, CHORD::Type chord_number, int8_t note_of_chord, int8_t scale_root, scale_index_t scale_number, int inversion, bool debug) {
   //bool debug = false; //true;
 
   if (note_of_chord>=PITCHES_PER_CHORD || chords[chord_number].degree_number[note_of_chord]==-1)
@@ -273,11 +327,11 @@ int8_t get_quantise_pitch_chord_note(int8_t chord_root, CHORD::Type chord_number
 
   scale_root = get_effective_scale_root(scale_root);
   scale_number = get_effective_scale_type(scale_number);
-  if(scale_number==SCALE_GLOBAL_ROOT || scale_number==SCALE::GLOBAL)
+  if(scale_number==SCALE_GLOBAL_ROOT || scale_number==SCALE_GLOBAL)
     return -1;
 
   // get pointers to the selected scale and chord 
-  const scale_t *sc = &scales[scale_number];
+  const scale_t *sc = scales[scale_number];
   const chord_t *ch = &chords[chord_number];
 
   #ifdef DEBUG_CHORDS
@@ -362,35 +416,30 @@ int8_t get_quantise_pitch_chord_note(int8_t chord_root, CHORD::Type chord_number
 }
 
 
-void print_scale(int8_t root_note, SCALE scale_number) {
+void print_scale(int8_t root_note, scale_index_t scale_number) {
   root_note = get_effective_scale_root(root_note);
   scale_number = get_effective_scale_type(scale_number);
-  Serial.printf("Scale %s (%i) starting at %s (%i):\t", scales[scale_number].label, scale_number, get_note_name_c(root_note), root_note);
+  Serial.printf("Scale %s (%i) starting at %s (%i):\t", scales[scale_number]->label, scale_number, get_note_name_c(root_note), root_note);
   for (int i = 0 ; i < PITCHES_PER_SCALE ; i++) {
-    int note = root_note + scales[scale_number].valid_chromatic_pitches[i];
-    //Serial.printf("%i: %s\n", i, get_note_name_c(note));
+    int note = root_note + scales[scale_number]->valid_chromatic_pitches[i];
     Serial.printf("%-3s ", get_note_name_c(note));
   }
   Serial.println();
 }
 
 void print_scale(int8_t root_note, scale_t scale) {
-  Serial.printf("Scale %s:\t", scale.label);
+  Serial.printf("Scale %s based on pattern %s:\t", scale.label, scale.pattern->label);
   for (int i = 0 ; i < PITCHES_PER_SCALE ; i++) {
-    int note = scale.valid_chromatic_pitches[i];
-    Serial.printf("%-3s ", get_note_name_c(root_note + note));
+    int note = root_note + scale.valid_chromatic_pitches[i];
+    Serial.printf("%-3s ", get_note_name_c(note));
   }
   Serial.println();
 }
 
-const scale_pattern_t *make_scale_pattern_t_from_string(const char *scale_signature, const char *name) {
-  scale_pattern_t *return_scale = new scale_pattern_t();
+// Change return type and implementation
+scale_pattern_t *make_scale_pattern_t_from_string(const char *scale_signature, const char *name) {
+  scale_pattern_t* return_scale = new scale_pattern_t();
   return_scale->label = name;
-  //return_scale->valid_chromatic_pitches[0] = 0;
-
-  Serial.printf("make_scale_t_from_string(%s, %s)\n", scale_signature, name);
-
-  //int steps[PITCHES_PER_SCALE] = { 0, 0, 0, 0, 0, 0, 0 };
 
   int idx = 1;
   int total_steps = 0;
@@ -450,32 +499,15 @@ const scale_pattern_t *make_scale_pattern_t_from_string(const char *scale_signat
   return return_scale;
 }
 
-const scale_t make_scale_t_from_pattern(const scale_pattern_t *scale_signature, const char *name, int rotation) {
-  //scale_t *return_scale = new scale_t();
-  scale_t return_scale; // = new scale_t();
-  return_scale.label = name;
-  return_scale.pattern = scale_signature;
-  return_scale.rotation = rotation;
+scale_t *make_scale_t_from_pattern(const scale_pattern_t *scale_signature, const char *name, int rotation) {
+  scale_t *return_scale = new scale_t { name, scale_signature, rotation };
 
-  return_scale.valid_chromatic_pitches[0] = 0;
+  // Initialize first pitch
+  return_scale->valid_chromatic_pitches[0] = 0;
 
-  /*if (rotation>0) {
-    for (int i = 0 ; i < PITCHES_PER_SCALE ; i++) {
-      steps[i] = steps[(i + rotation) % PITCHES_PER_SCALE];
-    }
-  }*/
-
-  //if (rotation>0) {
-      //scale_t tmp_scale;
-      /*for (int i = 0 ; i < PITCHES_PER_SCALE ; i++) {
-          int idx = (i + rotation) % PITCHES_PER_SCALE;
-          tmp_scale.valid_chromatic_pitches[i] = scale_signature->valid_chromatic_pitches[idx];
-          //Serial.printf("Rotating %i to %i\n", i, idx);
-      }*/
-      for (int i = 1 ; i < PITCHES_PER_SCALE ; i++) {
-          return_scale.valid_chromatic_pitches[i] = return_scale.valid_chromatic_pitches[i-1] + scale_signature->steps[(i - 1 + rotation) % PITCHES_PER_SCALE];
-      }
-  //}
+  for (int i = 1 ; i < PITCHES_PER_SCALE ; i++) {
+      return_scale->valid_chromatic_pitches[i] = return_scale->valid_chromatic_pitches[i-1] + scale_signature->steps[(i - 1 + rotation) % PITCHES_PER_SCALE];
+  }
 
   return return_scale;
 }

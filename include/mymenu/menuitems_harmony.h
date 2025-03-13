@@ -94,12 +94,12 @@ class HarmonyStatus : public MenuItem {
 class HarmonyDisplay : public MenuItem {
     public:
 
-    SCALE *scale_number;
+    scale_index_t *scale_number;
     int_fast8_t *scale_root;
     int_fast8_t *current_note;
     bool *quantise_enabled;
 
-    HarmonyDisplay(const char *label, SCALE *scale_number, int_fast8_t *scale_root, int_fast8_t *current_note, bool *quantise_enabled) : MenuItem(label, false) {
+    HarmonyDisplay(const char *label, scale_index_t *scale_number, int_fast8_t *scale_root, int_fast8_t *current_note, bool *quantise_enabled) : MenuItem(label, false) {
         this->scale_number = scale_number;
         this->scale_root = scale_root;
         this->current_note = current_note;

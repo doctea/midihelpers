@@ -48,79 +48,21 @@ struct scale_t {
 
     const char *label;
     const scale_pattern_t *pattern = nullptr;
-    int rotation = 0;
+    const int rotation = 0;
 
     int8_t valid_chromatic_pitches[PITCHES_PER_SCALE];
-
-    /*int8_t valid_chromatic_pitches(int degree) {
-        Serial.printf(
-            "in %s (based on %s): valid_chromatic_pitches(%i => %i) = %i\n", 
-            this->label, 
-            pattern->label, 
-            degree, 
-            (degree + rotation) % PITCHES_PER_SCALE,
-            pattern->valid_chromatic_pitches[(degree - rotation) % PITCHES_PER_SCALE]
-        );
-        return pattern->valid_chromatic_pitches[(degree + rotation) % PITCHES_PER_SCALE];
-        //return pattern->valid_chromatic_pitches[degree];
-    }*/
 };
 
 //scale_t *make_scale_t_from_string(const char *scale_signature, const char *name, int rotation = 0);
-const scale_pattern_t *make_scale_pattern_t_from_string(const char *scale_pattern_name, const char *name);
-const scale_t make_scale_t_from_pattern(const scale_pattern_t *scale_signature, const char *name, int rotation = 0);
+scale_pattern_t *make_scale_pattern_t_from_string(const char *scale_pattern_name, const char *name);
+scale_t *make_scale_t_from_pattern(const scale_pattern_t *scale_signature, const char *name, int rotation = 0);
 
-const scale_pattern_t scale_patterns[] = {
-    *make_scale_pattern_t_from_string("w w h w w w h", "Natural"),
-    *make_scale_pattern_t_from_string("w h w w w w h", "Melodic"),
-    *make_scale_pattern_t_from_string("w w h w h + h", "Harmonic Major"),
-    *make_scale_pattern_t_from_string("w h w w h + h", "Harmonic Minor"),
-    *make_scale_pattern_t_from_string("h + h w h + h", "Byzantine"),            // " this scale is commonly represented with the first and last half step each being represented with quarter tones:"
-};
-
-const scale_t scales[] = {
-    make_scale_t_from_pattern(&scale_patterns[0], "Ionian", 0),
-    make_scale_t_from_pattern(&scale_patterns[0], "Dorian", 1),
-    make_scale_t_from_pattern(&scale_patterns[0], "Phrygian", 2),
-    make_scale_t_from_pattern(&scale_patterns[0], "Lydian", 3),
-    make_scale_t_from_pattern(&scale_patterns[0], "Mixolydian", 4),
-    make_scale_t_from_pattern(&scale_patterns[0], "Aeolian", 5),
-    make_scale_t_from_pattern(&scale_patterns[0], "Locrian", 6),
-
-    make_scale_t_from_pattern(&scale_patterns[1], "Melodic Minor", 0),
-    make_scale_t_from_pattern(&scale_patterns[1], "Dorian.b2", 1),
-    make_scale_t_from_pattern(&scale_patterns[1], "Lydian.aug", 2),
-    make_scale_t_from_pattern(&scale_patterns[1], "Lydian.dom", 3),
-    make_scale_t_from_pattern(&scale_patterns[1], "Mixolydian.b6", 4),
-    make_scale_t_from_pattern(&scale_patterns[1], "Locrian.#2", 5),
-    make_scale_t_from_pattern(&scale_patterns[1], "Superlocrian", 6),
-
-    make_scale_t_from_pattern(&scale_patterns[2], "Harm. Major", 0),
-    make_scale_t_from_pattern(&scale_patterns[2], "Dorian.b5", 1),
-    make_scale_t_from_pattern(&scale_patterns[2], "Phrygian.b4", 2),
-    make_scale_t_from_pattern(&scale_patterns[2], "Lydian.b3", 3),
-    make_scale_t_from_pattern(&scale_patterns[2], "Mixolydian.b2", 4),
-    make_scale_t_from_pattern(&scale_patterns[2], "Lydian.#2", 5),
-
-    make_scale_t_from_pattern(&scale_patterns[3], "Harm. Minor", 0),
-    make_scale_t_from_pattern(&scale_patterns[3], "Locrian.#6", 1),
-    make_scale_t_from_pattern(&scale_patterns[3], "Ionian.#5", 2),
-    make_scale_t_from_pattern(&scale_patterns[3], "Dorian.#4", 3),
-    make_scale_t_from_pattern(&scale_patterns[3], "Phrygian dom", 4),
-    make_scale_t_from_pattern(&scale_patterns[3], "Lydian.#2", 5),
-    make_scale_t_from_pattern(&scale_patterns[3], "Superlocrian.bb7", 6),
-
-    make_scale_t_from_pattern(&scale_patterns[4], "Double harm.maj", 0),
-    make_scale_t_from_pattern(&scale_patterns[4], "Lydian.#2.#6", 1),
-    make_scale_t_from_pattern(&scale_patterns[4], "Ultraphrygian", 2),
-    make_scale_t_from_pattern(&scale_patterns[4], "Hungarian minor", 3),
-    make_scale_t_from_pattern(&scale_patterns[4], "Oriental", 4),
-    make_scale_t_from_pattern(&scale_patterns[4], "Ionian.#2.#5", 5),
-    make_scale_t_from_pattern(&scale_patterns[4], "Locrian.b3.bb7", 6),
-
-};
+extern const scale_pattern_t *scale_patterns[];
+extern const scale_t *scales[];
+extern const size_t NUMBER_SCALES;
+//#define NUMBER_SCALES ((sizeof(scales)/sizeof(scale_t)))    // uses size of real scales[] array, ie existant scales, rather than the SCALE enum (which has an extra value to represent GLOBAL)
     
-enum SCALE {
+/*enum SCALE {
     MAJOR,
     MINOR_NATURAL,
     MINOR_MELODIC,
@@ -132,8 +74,11 @@ enum SCALE {
     WHOLE_TONE,
     //test,
     GLOBAL
-};
-#define NUMBER_SCALES ((sizeof(scales)/sizeof(scale_t)))    // uses size of real scales[] array, ie existant scales, rather than the SCALE enum (which has an extra value to represent GLOBAL)
+};*/
+typedef int8_t scale_index_t;
+#define SCALE_MAJOR 0
+#define SCALE_FIRST SCALE_MAJOR
+#define SCALE_GLOBAL (-1)
 
 #define PITCHES_PER_CHORD 4
 #define MAXIMUM_INVERSIONS  PITCHES_PER_CHORD
@@ -172,7 +117,7 @@ namespace CHORD {
 
 class scale_identity_t {
     public:
-    SCALE scale_number = SCALE::MAJOR;
+    scale_index_t scale_number = 0;
     int8_t root_note = SCALE_ROOT_C;
 };
 
@@ -238,10 +183,10 @@ class chord_instance_t {
         this->velocity = velocity;
         this->changed = true;
     }
-    void set_from_chord_identity(chord_identity_t chord_identity, int8_t root, SCALE scale) {
+    void set_from_chord_identity(chord_identity_t chord_identity, int8_t root, scale_index_t scale) {
         this->chord.type = chord_identity.type;
         //this->chord_root = root;
-        this->chord_root = root + scales[scale].valid_chromatic_pitches[chord_identity.degree-1];
+        this->chord_root = root + scales[scale]->valid_chromatic_pitches[chord_identity.degree-1];
         this->chord.inversion = chord_identity.inversion;
         this->scale.scale_number = scale;
         this->changed = true;
@@ -279,15 +224,15 @@ class chord_instance_t {
     }*/
 };
 
-SCALE& operator++(SCALE& orig);
-SCALE& operator++(SCALE& orig, int);
+/*SCALE& operator++(SCALE& orig);
+SCALE operator++(SCALE& orig, int);
 SCALE& operator--(SCALE& orig);
-SCALE& operator--(SCALE& orig, int);
+SCALE operator--(SCALE& orig, int);*/
 
 // todo: make use of this to replace the scale and chord variables
 struct quantise_settings_t {
     int8_t scale_root = SCALE_ROOT_C;
-    SCALE scale_type = SCALE::MAJOR;
+    scale_index_t scale_type = SCALE_FIRST;
     chord_identity_t chord_identity = {CHORD::TRIAD, -1, 0};
 };
 
@@ -295,10 +240,10 @@ void set_global_scale_identity_target(scale_identity_t *scale);
 void set_global_chord_identity_target(chord_identity_t *chord_identity);
 
 int8_t get_effective_scale_root(int8_t scale_root);
-SCALE get_effective_scale_type(SCALE scale_number);
+scale_index_t get_effective_scale_type(scale_index_t scale_number);
 
 int8_t get_global_scale_root();
-SCALE get_global_scale_type();
+scale_index_t get_global_scale_type();
 scale_identity_t *get_global_scale_identity();
 int8_t get_global_chord_degree();
 
@@ -308,15 +253,15 @@ int8_t get_effective_chord_degree(int8_t chord_degree);
 CHORD::Type get_effective_chord_type(CHORD::Type chord_type);
 int8_t get_effective_chord_inversion(int8_t inversion);
 
-int8_t quantise_pitch_to_scale(int8_t pitch, int8_t root_note = SCALE_GLOBAL_ROOT, SCALE scale_number = SCALE::GLOBAL, bool debug = false); //, chord_identity_t chord_identity = {CHORD::TRIAD, -1, 0});
-int8_t quantise_pitch_to_chord(int8_t pitch, int8_t quantise_to_nearest_range = 0, int8_t scale_root = SCALE_GLOBAL_ROOT, SCALE scale_number = SCALE::GLOBAL, chord_identity_t chord_identity = {CHORD::GLOBAL, -1, 0}, bool debug = false);
-int8_t get_quantise_pitch_chord_note(int8_t pitch, CHORD::Type chord_number, int8_t note_of_chord, int8_t root_note = SCALE_GLOBAL_ROOT, SCALE scale_number = SCALE::GLOBAL, int inversion = 0, bool debug = false);
+int8_t quantise_pitch_to_scale(int8_t pitch, int8_t root_note = SCALE_GLOBAL_ROOT, scale_index_t scale_number = SCALE_GLOBAL, bool debug = false); //, chord_identity_t chord_identity = {CHORD::TRIAD, -1, 0});
+int8_t quantise_pitch_to_chord(int8_t pitch, int8_t quantise_to_nearest_range = 0, int8_t scale_root = SCALE_GLOBAL_ROOT, scale_index_t scale_number = SCALE_GLOBAL, chord_identity_t chord_identity = {CHORD::GLOBAL, -1, 0}, bool debug = false);
+int8_t get_quantise_pitch_chord_note(int8_t pitch, CHORD::Type chord_number, int8_t note_of_chord, int8_t root_note = SCALE_GLOBAL_ROOT, scale_index_t scale_number = SCALE_GLOBAL, int inversion = 0, bool debug = false);
 
 // gets the pitch note number for a scale degree 
-int8_t quantise_get_root_pitch_for_degree(int8_t degree, int8_t root_note = SCALE_GLOBAL_ROOT, SCALE scale_number = SCALE::GLOBAL);
+int8_t quantise_get_root_pitch_for_degree(int8_t degree, int8_t root_note = SCALE_GLOBAL_ROOT, scale_index_t scale_number = SCALE_GLOBAL);
 
 
-void print_scale(int8_t root_note, SCALE scale_number); //, bool debug = false);
+void print_scale(int8_t root_note, scale_index_t scale_number); //, bool debug = false);
 void print_scale(int8_t root_note, scale_t scale);
 
 #endif

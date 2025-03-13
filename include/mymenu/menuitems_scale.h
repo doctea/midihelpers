@@ -9,13 +9,13 @@ class ScaleMenuItem : public MenuItem {
     public:
 
         //SCALE *scale_number = nullptr; //SCALE::MAJOR;
-        SCALE scale_number = SCALE::MAJOR;
+        scale_index_t scale_number = SCALE_FIRST;
         int8_t root_note = SCALE_ROOT_A;
         bool full_display = true;
 
         ScaleMenuItem(const char *label, bool full_display = true) : MenuItem(label), full_display(full_display) {}
 
-        virtual SCALE getScaleNumber() {
+        virtual scale_index_t getScaleNumber() {
             return this->scale_number;
         }
         virtual int getRootNote() {
@@ -23,7 +23,7 @@ class ScaleMenuItem : public MenuItem {
         }
 
         virtual int display(Coord pos, bool selected, bool opened) override {
-            SCALE scale_number = this->getScaleNumber();
+            scale_index_t scale_number = this->getScaleNumber();
             int8_t root_note = this->getRootNote();
 
             char label[MENU_C_MAX];
@@ -31,7 +31,7 @@ class ScaleMenuItem : public MenuItem {
                 "%s: %-3i => %3s %s", this->label,  //  [%i]
                 root_note, 
                 (char*)get_note_name_c(root_note), 
-                scales[scale_number].label
+                scales[scale_number]->label
                 //, scale_number
             );
             pos.y = header(label, pos, selected, opened);
@@ -105,15 +105,15 @@ class ObjectScaleMenuItem : public ScaleMenuItem {
     public:
 
     TargetClass *target = nullptr;
-    void(TargetClass::*scale_setter_func)(SCALE) = nullptr;
-    SCALE(TargetClass::*scale_getter_func)(void) = nullptr;
+    void(TargetClass::*scale_setter_func)(scale_index_t) = nullptr;
+    scale_index_t(TargetClass::*scale_getter_func)(void) = nullptr;
     void(TargetClass::*scale_root_setter_func)(int) = nullptr;
     int(TargetClass::*scale_root_getter_func)(void) = nullptr;
 
     ObjectScaleMenuItem(const char *label, 
         TargetClass *target,
-        void(TargetClass::*scale_setter_func)(SCALE), 
-        SCALE(TargetClass::*scale_getter_func)(void),
+        void(TargetClass::*scale_setter_func)(scale_index_t), 
+        scale_index_t(TargetClass::*scale_getter_func)(void),
         void(TargetClass::*scale_root_setter_func)(int),
         int(TargetClass::*scale_root_getter_func)(void),
         bool full_display = false
@@ -132,7 +132,7 @@ class ObjectScaleMenuItem : public ScaleMenuItem {
             (target->*scale_root_setter_func)(root_note);
         } else {
             //(scale_number)--;
-            SCALE scale_number = (target->*scale_getter_func)();
+            scale_index_t scale_number = (target->*scale_getter_func)();
             scale_number--;
             (target->*scale_setter_func)(scale_number);
         }
@@ -145,14 +145,14 @@ class ObjectScaleMenuItem : public ScaleMenuItem {
             (target->*scale_root_setter_func)(root_note);
         } else {
             //(scale_number)++;
-            SCALE scale_number = (target->*scale_getter_func)();
+            scale_index_t scale_number = (target->*scale_getter_func)();
             scale_number++;
             (target->*scale_setter_func)(scale_number);
         }
         return true;
     }
 
-    virtual SCALE getScaleNumber() override {
+    virtual scale_index_t getScaleNumber() override {
         return (this->target->*scale_getter_func)();
     }
     virtual int getRootNote() override {
@@ -172,12 +172,12 @@ class ObjectScaleMenuItemBar : public SubMenuItemBar {
     TargetClass *target_object = nullptr;
 
     // have difficulty using SCALE type with ObjectSelectorControls, so wrap it as int
-    void(TargetClass::*scale_setter_func)(SCALE) = nullptr;
-    SCALE(TargetClass::*scale_getter_func)(void) = nullptr;
+    void(TargetClass::*scale_setter_func)(scale_index_t) = nullptr;
+    scale_index_t(TargetClass::*scale_getter_func)(void) = nullptr;
 
     void set_scale(int scale_number) {
         if (this->target_object!=nullptr && this->scale_setter_func!=nullptr)
-            (this->target_object->*scale_setter_func)((SCALE)scale_number);
+            (this->target_object->*scale_setter_func)((scale_index_t)scale_number);
     }
     int get_scale() {
         if (this->target_object!=nullptr && this->scale_getter_func!=nullptr)
@@ -188,8 +188,8 @@ class ObjectScaleMenuItemBar : public SubMenuItemBar {
     ObjectScaleMenuItemBar(
         const char *label, 
         TargetClass *target_object,
-        void(TargetClass::*scale_setter_func)(SCALE),
-        SCALE(TargetClass::*scale_getter_func)(void),
+        void(TargetClass::*scale_setter_func)(scale_index_t),
+        scale_index_t(TargetClass::*scale_getter_func)(void),
         void(TargetClass::*scale_root_setter_func)(int),
         int(TargetClass::*scale_root_getter_func)(void)
     ) : SubMenuItemBar(label) {
@@ -237,7 +237,7 @@ class ObjectScaleMenuItemBar : public SubMenuItemBar {
         );
         if(scale_selector_options==nullptr) {
             for (size_t i = 0 ; i < NUMBER_SCALES ; i++) {
-                scale_selector->add_available_value(i, scales[i].label);
+                scale_selector->add_available_value(i, scales[i]->label);
             }   
             scale_selector_options = scale_selector->get_available_values();
         } else {
@@ -266,11 +266,11 @@ class LambdaScaleSelector : public LambdaSelectorControl<DataType> {
     ) : LambdaSelectorControl<DataType>(label, setter_func, getter_func, on_change_handler, go_back_on_select, direct) {
     }
 
-    virtual char *get_label() override {
-        SCALE scale_number = (SCALE)this->get_current_value();
+    virtual const char *get_label() override {
+        scale_index_t scale_number = (scale_index_t)this->get_current_value();
         scale_number = get_effective_scale_type(scale_number);
-        if (scale_number!=SCALE::GLOBAL)
-            return (char*)scales[scale_number].pattern->label;
+        if (scale_number!=SCALE_GLOBAL)
+            return (char*)scales[scale_number]->pattern->label;
         else
             return "[global]";        
     }
@@ -281,15 +281,15 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
 
     bool allow_global = false;
 
-    vl::Func<void(SCALE)> scale_setter_func;
-    vl::Func<SCALE(void)> scale_getter_func;
+    vl::Func<void(scale_index_t)> scale_setter_func;
+    vl::Func<scale_index_t(void)> scale_getter_func;
     vl::Func<void(int8_t)> scale_root_setter_func;
     vl::Func<int8_t(void)> scale_root_getter_func;
 
     LambdaScaleMenuItemBar(
         const char *label,
-        vl::Func<void(SCALE)> scale_setter_func,
-        vl::Func<SCALE(void)> scale_getter_func,
+        vl::Func<void(scale_index_t)> scale_setter_func,
+        vl::Func<scale_index_t(void)> scale_getter_func,
         vl::Func<void(int8_t)> scale_root_setter_func,
         vl::Func<int8_t(void)> scale_root_getter_func,
         bool allow_global = false,
@@ -326,7 +326,7 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
         scale_root->go_back_on_select = true;
         this->add(scale_root);
 
-        LambdaScaleSelector<SCALE> *scale_selector = new LambdaScaleSelector<SCALE>(
+        LambdaScaleSelector<scale_index_t> *scale_selector = new LambdaScaleSelector<scale_index_t>(
             "Scale type", 
             scale_setter_func,
             scale_getter_func,
@@ -335,18 +335,20 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
             true
         );
         if (allow_global)
-            scale_selector->add_available_value(SCALE::GLOBAL, "[use global]");
+            scale_selector->add_available_value(SCALE_GLOBAL, "[use global]");
         for (size_t i = 0 ; i < NUMBER_SCALES ; i++) {
-            scale_selector->add_available_value((SCALE)i, scales[i].label);
+            Serial.printf("LambdaScaleMenuItemBar: adding scale %i: %s @ %p\n", i, scales[i]->label, scales[i]);
+            print_scale(0, *scales[i]);
+            scale_selector->add_available_value((scale_index_t)i, scales[i]->label);
         }
         scale_selector->go_back_on_select = true;
         this->add(scale_selector);
     }
 
-    void set_scale(SCALE scale_number) {
+    void set_scale(scale_index_t scale_number) {
         scale_setter_func(scale_number);
     }
-    SCALE get_scale() {
+    scale_index_t get_scale() {
         return scale_getter_func();
     }
 };

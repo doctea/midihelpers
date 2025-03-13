@@ -42,7 +42,7 @@ public:
 class NoteHarmonyDisplay : public MenuItem {
     public:
 
-    SCALE *scale_number;
+    scale_index_t *scale_number;
     int8_t *scale_root;
     //int_fast8_t *current_note;
     bool *quantise_enabled;
@@ -50,7 +50,7 @@ class NoteHarmonyDisplay : public MenuItem {
 
     NoteHarmonyDisplay(
         const char *label, 
-        SCALE *scale_number, 
+        scale_index_t *scale_number, 
         int8_t *scale_root, 
         NoteTracker *note_tracker, 
         bool *quantise_enabled
@@ -78,6 +78,8 @@ class NoteHarmonyDisplay : public MenuItem {
         int16_t x_pos = 0;
 
         int c = 0;
+
+        //Serial.printf("NoteHarmonyDisplay display: scale_number %i, scale_root %i\n", *scale_number, *scale_root);
 
         // draw all white notes first
         for (int_fast8_t r = 0 ; r < NUM_CHROMATIC_NOTES ; r++) {
@@ -123,6 +125,7 @@ class NoteHarmonyDisplay : public MenuItem {
             }
         }
 
+        //Serial.printf("NoteHarmonyDisplay finished drawing keyboard\n");
 
         tft->setCursor(0, pos.y + key_height + gap);
         //tft->printf("drew %i white notes?\n", c);

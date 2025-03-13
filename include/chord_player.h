@@ -44,7 +44,7 @@ class ChordPlayer {
         #endif
 
         bool quantise = false, play_chords = false;
-        SCALE scale = SCALE::GLOBAL; //SCALE::MAJOR;
+        scale_index_t scale = SCALE_GLOBAL; //SCALE::MAJOR;
         int8_t scale_root = SCALE_GLOBAL_ROOT; //-1; //SCALE_ROOT_C;
  
         uint8_t channel = 0;
@@ -53,11 +53,11 @@ class ChordPlayer {
             void set_channel(uint8_t channel) { this->channel = channel; }
         #endif
 
-        void set_scale(SCALE scale) {
+        void set_scale(scale_index_t scale) {
             //trigger_off_for_pitch_because_changed(this->current_note);
             this->scale = scale;
         }
-        SCALE get_scale() {
+        scale_index_t get_scale() {
             return this->scale;
         }
         void set_scale_root(int8_t scale_root) {
@@ -395,8 +395,8 @@ class ChordPlayer {
             // TODO: allow all pitched behaviours to use a 'global scale' setting (-1?)
             menuitems->add(new LambdaScaleMenuItemBar(
                 "Scale / Key", 
-                [=](SCALE scale) -> void { this->set_scale(scale); }, 
-                [=]() -> SCALE { return this->get_scale(); },
+                [=](scale_index_t scale) -> void { this->set_scale(scale); }, 
+                [=]() -> scale_index_t { return this->get_scale(); },
                 [=](int8_t scale_root) -> void { this->set_scale_root(scale_root); },
                 [=]() -> int8_t { return this->get_scale_root(); },
                 true
