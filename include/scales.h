@@ -40,6 +40,7 @@
 
 struct scale_pattern_t {
     const char *label;
+    const char *interval_pattern;
     int8_t steps[PITCHES_PER_SCALE];
 };
 
@@ -54,7 +55,7 @@ struct scale_t {
 };
 
 //scale_t *make_scale_t_from_string(const char *scale_signature, const char *name, int rotation = 0);
-scale_pattern_t *make_scale_pattern_t_from_string(const char *scale_pattern_name, const char *name);
+scale_pattern_t *make_scale_pattern_t_from_string(const char *scale_pattern, const char *name);
 scale_t *make_scale_t_from_pattern(const scale_pattern_t *scale_signature, const char *name, int rotation = 0);
 
 extern const scale_pattern_t *scale_patterns[];
@@ -263,5 +264,9 @@ int8_t quantise_get_root_pitch_for_degree(int8_t degree, int8_t root_note = SCAL
 
 void print_scale(int8_t root_note, scale_index_t scale_number); //, bool debug = false);
 void print_scale(int8_t root_note, scale_t scale);
+
+void dump_all_scales_and_chords(bool all_inversions = false, bool debug = false);
+void dump_all_chords(bool all_inversions = false, bool debug = false);
+void dump_all_scales();
 
 #endif

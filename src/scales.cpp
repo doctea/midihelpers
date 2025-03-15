@@ -419,7 +419,15 @@ int8_t get_quantise_pitch_chord_note(int8_t chord_root, CHORD::Type chord_number
 void print_scale(int8_t root_note, scale_index_t scale_number) {
   root_note = get_effective_scale_root(root_note);
   scale_number = get_effective_scale_type(scale_number);
-  Serial.printf("Scale %s (%i) starting at %s (%i):\t", scales[scale_number]->label, scale_number, get_note_name_c(root_note), root_note);
+  //Serial.printf("Scale %s (%i) starting at %s (%i):\t", scales[scale_number]->label, scale_number, get_note_name_c(root_note), root_note);
+  Serial.printf("Pattern %s (%s) in mode #%i (%s), starting on note %s (%i):\t", 
+    scales[scale_number]->pattern->label, 
+    scales[scale_number]->pattern->interval_pattern,
+    scales[scale_number]->rotation+1, 
+    scales[scale_number]->label, 
+    get_note_name_c(root_note), 
+    root_note
+  );
   for (int i = 0 ; i < PITCHES_PER_SCALE ; i++) {
     int note = root_note + scales[scale_number]->valid_chromatic_pitches[i];
     Serial.printf("%-3s ", get_note_name_c(note));
@@ -428,7 +436,15 @@ void print_scale(int8_t root_note, scale_index_t scale_number) {
 }
 
 void print_scale(int8_t root_note, scale_t scale) {
-  Serial.printf("Scale %s based on pattern %s:\t", scale.label, scale.pattern->label);
+  //Serial.printf("Scale %s based on pattern %s:\t", scale.label, scale.pattern->label);
+  Serial.printf("Pattern %s (%s) in mode #%i (%s), starting on note %s (%i):\t", 
+    scale.pattern->label, 
+    scale.pattern->interval_pattern,
+    scale.rotation+1, 
+    scale.label, 
+    get_note_name_c(root_note), 
+    root_note
+  );
   for (int i = 0 ; i < PITCHES_PER_SCALE ; i++) {
     int note = root_note + scale.valid_chromatic_pitches[i];
     Serial.printf("%-3s ", get_note_name_c(note));
@@ -440,6 +456,7 @@ void print_scale(int8_t root_note, scale_t scale) {
 scale_pattern_t *make_scale_pattern_t_from_string(const char *scale_signature, const char *name) {
   scale_pattern_t* return_scale = new scale_pattern_t();
   return_scale->label = name;
+  return_scale->interval_pattern = scale_signature;
 
   int idx = 1;
   int total_steps = 0;
@@ -510,6 +527,88 @@ scale_t *make_scale_t_from_pattern(const scale_pattern_t *scale_signature, const
   }
 
   return return_scale;
+}
+
+
+void dump_all_scales_and_chords(bool all_inversions, bool debug) {
+  Serial.printf("Outputting all scales and chords...\n");
+  for (unsigned int i = 0 ; i < NUMBER_SCALES ; i++) {
+      for (unsigned int root = 0 ; root < 12 ; root++) {
+          const scale_t *scale = scales[(scale_index_t)i];
+
+          //Serial.printf("For %s with root %s: ", scale->pattern->label, get_note_name_c(root));
+          print_scale(root, *scale);
+
+          for (int j = 0 ; j < PITCHES_PER_SCALE ; j++) {
+              chord_identity_t chord;
+              chord.degree = j+1;
+              chord.inversion = 0;
+              for (CHORD::Type t = 0 ; t < CHORD::NONE ; t++) {
+                  chord.type = t;
+
+                  for (int inversion = 0 ; inversion <= all_inversions ? MAX_INVERSIONS : 1 ; inversion++) {
+                      chord.inversion = inversion;
+
+                      chord_instance_t instance;
+                      instance.set_from_chord_identity(chord, root, (scale_index_t)i);
+
+                      int n;
+                      for (size_t x = 0 ; x < PITCHES_PER_CHORD && ((n = get_quantise_pitch_chord_note(instance.chord_root, instance.chord.type, x, root, (scale_index_t)i, instance.chord.inversion, debug)) >= 0) ; x++) {
+                          instance.set_pitch(x, n);
+                      }
+
+                      Serial.printf("\tChord %i:\t %s, inversion %i\t", j+1, chords[instance.chord.type].label, chord.inversion);
+                      Serial.printf("\t%s\n", instance.get_pitch_string());
+                  }
+              }
+          }
+          Serial.println("----");
+      }
+      Serial.printf("----\n");
+  }
+  Serial.printf("Done.");
+}
+
+void dump_all_scales() {
+  Serial.printf("Outputting all scales...\n");
+  for (unsigned int root = 0 ; root < 12 ; root++) {
+      Serial.printf("For root %s:\n", get_note_name_c(root));
+      for (unsigned int i = 0 ; i < NUMBER_SCALES ; i++) {
+          const scale_t *scale = scales[(scale_index_t)i];
+          print_scale(root, *scale);
+      }
+      Serial.printf("----\n");
+  }
+  Serial.printf("Done.");
+}
+
+void dump_all_chords(bool all_inversions, bool debug) {
+  Serial.printf("Outputting all chords in the current scale %s - %s...\n", get_note_name_c(get_global_scale_root()), scales[get_global_scale_type()]->label);
+  for (int i = 0 ; i < PITCHES_PER_SCALE ; i++) {
+      chord_identity_t chord;
+      chord.degree = i+1;
+      chord.inversion = 0;
+      Serial.printf("For scale degree %i: %s\n", i+1, get_note_name_c(scales[get_global_scale_type()]->valid_chromatic_pitches[i]));
+      for (CHORD::Type t = 0 ; t < CHORD::NONE ; t++) {
+          chord.type = t;
+
+          for (int inversion = 0 ; inversion <= all_inversions ? MAX_INVERSIONS : 1 ; inversion++) {
+              chord.inversion = inversion;
+
+              chord_instance_t instance;
+              instance.set_from_chord_identity(chord, get_global_scale_root(), get_global_scale_type());
+
+              int n;
+              for (size_t x = 0 ; x < PITCHES_PER_CHORD && ((n = get_quantise_pitch_chord_note(instance.chord_root, instance.chord.type, x, get_global_scale_root(), get_global_scale_type(), instance.chord.inversion, debug)) >= 0) ; x++) {
+                  instance.set_pitch(x, n);
+              }
+
+              Serial.printf("\tChord %i:\t %s, inversion %i\t", i+1, chords[instance.chord.type].label, chord.inversion);
+              Serial.printf("\tNotes:\t%s\n", instance.get_pitch_string());
+          }
+      }
+      Serial.println("----");
+  }
 }
 
 #endif
