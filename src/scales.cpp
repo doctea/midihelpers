@@ -47,7 +47,7 @@ const scale_t* scales[] = {
   make_scale_t_from_pattern(scale_patterns[3], "Ionian.#5", 2),
   make_scale_t_from_pattern(scale_patterns[3], "Dorian.#4", 3),
   make_scale_t_from_pattern(scale_patterns[3], "Phrygian dom", 4),
-  make_scale_t_from_pattern(scale_patterns[3], "Lydian.#2", 5),
+  make_scale_t_from_pattern(scale_patterns[3], "Lydian.Aug.#2", 5),
   make_scale_t_from_pattern(scale_patterns[3], "Superlocrian.bb7", 6),
 
   make_scale_t_from_pattern(scale_patterns[4], "Double harm.maj", 0),
@@ -546,7 +546,7 @@ void dump_all_scales_and_chords(bool all_inversions, bool debug) {
               for (CHORD::Type t = 0 ; t < CHORD::NONE ; t++) {
                   chord.type = t;
 
-                  for (int inversion = 0 ; inversion <= all_inversions ? MAX_INVERSIONS : 1 ; inversion++) {
+                  for (unsigned int inversion = 0 ; inversion <= all_inversions ? MAX_INVERSIONS : 0 ; inversion++) {
                       chord.inversion = inversion;
 
                       chord_instance_t instance;
@@ -592,7 +592,7 @@ void dump_all_chords(bool all_inversions, bool debug) {
       for (CHORD::Type t = 0 ; t < CHORD::NONE ; t++) {
           chord.type = t;
 
-          for (int inversion = 0 ; inversion <= all_inversions ? MAX_INVERSIONS : 1 ; inversion++) {
+          for (unsigned int inversion = 0 ; inversion <= all_inversions ? MAX_INVERSIONS : 0 ; inversion++) {
               chord.inversion = inversion;
 
               chord_instance_t instance;
