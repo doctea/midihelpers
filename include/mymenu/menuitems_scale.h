@@ -301,6 +301,69 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
         this->scale_root_setter_func = scale_root_setter_func;
         this->scale_root_getter_func = scale_root_getter_func;
 
+        // choose which set of options to use (creating if necessary)
+
+        static LinkedList<LambdaSelectorControl<scale_index_t>::option> *scale_selector_options_with_global;
+        static LinkedList<LambdaSelectorControl<scale_index_t>::option> *scale_selector_options_no_global;
+        static LinkedList<LambdaSelectorControl<int8_t>::option> *scale_root_options_with_global;
+        static LinkedList<LambdaSelectorControl<int8_t>::option> *scale_root_options_no_global;
+    
+        LinkedList<LambdaSelectorControl<int8_t>::option> *scale_root_options = nullptr;
+        LinkedList<LambdaSelectorControl<scale_index_t>::option> *scale_selector_options = nullptr;
+
+        if (allow_global) {
+            // first, versions with 'global' as an option
+            if (scale_root_options_with_global==nullptr) {
+                scale_root_options_with_global = new LinkedList<LambdaSelectorControl<int8_t>::option>();
+                scale_root_options_with_global->add(LambdaSelectorControl<int8_t>::option {SCALE_GLOBAL_ROOT, "[use global]"});
+            }
+            scale_root_options = scale_root_options_with_global;
+
+            if (scale_selector_options_with_global==nullptr) {
+                scale_selector_options_with_global = new LinkedList<LambdaSelectorControl<scale_index_t>::option>();
+                scale_selector_options_with_global->add(LambdaSelectorControl<scale_index_t>::option {SCALE_GLOBAL, "[use global]"});
+            }
+            scale_selector_options = scale_selector_options_with_global;
+        } else {
+            // then versions without 'global' as an option
+            if (scale_root_options_no_global==nullptr) {
+                scale_root_options_no_global = new LinkedList<LambdaSelectorControl<int8_t>::option>();
+            }
+            scale_root_options = scale_root_options_no_global;
+
+            if (scale_selector_options_no_global==nullptr) {
+                scale_selector_options_no_global = new LinkedList<LambdaSelectorControl<scale_index_t>::option>();
+            }
+            scale_selector_options = scale_selector_options_no_global;            
+        }
+       
+        // todo: make whether its circle of fifths or chromatic configurable
+        // todo: make this endlessly scrollable
+        // --todo: make this able to re-use the scale_root_options list, same as ObjectScaleMenuItemBar
+        // --todo: make this able to re-use a global scale_selector_options list
+
+        // add all 12 notes to scale_root_options, arranged in circle of fifths
+        if (scale_root_options->size()==0) {
+            Serial.printf("populating scale_root_options with 12 notes\n");
+            int8_t note = 0;
+            for (size_t i = 0 ; i < 12 ; i++) {
+                scale_root_options->add(LambdaSelectorControl<int8_t>::option { note, note_names[note]});
+                note += 7;
+                note %= 12;
+            }
+        } 
+
+        // add all the scales to the scale_selector_options list
+        if (scale_selector_options->size()==0) {
+            Serial.printf("populating scale_selector_options with %i scales\n", NUMBER_SCALES);
+            for (size_t i = 0 ; i < NUMBER_SCALES ; i++) {
+                if (debug) Serial.printf("LambdaScaleMenuItemBar: adding scale %i: %s @ %p\n", i, scales[i]->label, scales[i]);
+                //print_scale(0, *scales[i]);
+                scale_selector_options->add(LambdaScaleSelector<scale_index_t>::option { (scale_index_t)i, scales[i]->label });
+            }
+        }
+
+        // create the scale_root control + add to this menu
         LambdaSelectorControl<int8_t> *scale_root = new LambdaSelectorControl<int8_t>(
             "Root key", 
             scale_root_setter_func, 
@@ -309,23 +372,11 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
             true,
             true
         );
-        if (allow_global)
-            scale_root->add_available_value(SCALE_GLOBAL_ROOT, "[use global]");
-        
-        // add all 12 notes, arranged in circle of fifths
-        // todo: make whether its circle of fifths or chromatic configurable
-        // todo: make this endlessly scrollable
-        // todo: make this able to re-use the scale_root_options list, same as ObjectScaleMenuItemBar
-        // todo: make this able to re-use a global scale_selector_options list
-        int note = 0;
-        for (size_t i = 0 ; i < 12 ; i++) {
-            scale_root->add_available_value(note, note_names[note]);
-            note += 7;
-            note %= 12;
-        }
+        scale_root->set_available_values(scale_root_options);
         scale_root->go_back_on_select = true;
         this->add(scale_root);
 
+        // create the scale_selector control + add to this menu
         LambdaScaleSelector<scale_index_t> *scale_selector = new LambdaScaleSelector<scale_index_t>(
             "Scale type", 
             scale_setter_func,
@@ -334,15 +385,10 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
             true,
             true
         );
-        if (allow_global)
-            scale_selector->add_available_value(SCALE_GLOBAL, "[use global]");
-        for (size_t i = 0 ; i < NUMBER_SCALES ; i++) {
-            Serial.printf("LambdaScaleMenuItemBar: adding scale %i: %s @ %p\n", i, scales[i]->label, scales[i]);
-            print_scale(0, *scales[i]);
-            scale_selector->add_available_value((scale_index_t)i, scales[i]->label);
-        }
+        scale_selector->set_available_values(scale_selector_options);
         scale_selector->go_back_on_select = true;
         this->add(scale_selector);
+
     }
 
     void set_scale(scale_index_t scale_number) {

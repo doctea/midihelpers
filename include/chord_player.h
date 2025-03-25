@@ -274,10 +274,12 @@ class ChordPlayer {
             inline static LinkedList<LambdaSelectorControl<int32_t>::option> *length_ticks_control_options;
             inline static LinkedList<LambdaSelectorControl<int32_t>::option> *trigger_ticks_control_options;
             inline static LinkedList<LambdaSelectorControl<int32_t>::option> *trigger_delay_ticks_control_options;
+            inline static LinkedList<LambdaSelectorControl<CHORD::Type>::option> *chord_type_control_options;
         #else
             static LinkedList<LambdaSelectorControl<int32_t>::option> *length_ticks_control_options;
             static LinkedList<LambdaSelectorControl<int32_t>::option> *trigger_ticks_control_options;
             static LinkedList<LambdaSelectorControl<int32_t>::option> *trigger_delay_ticks_control_options;
+            static LinkedList<LambdaSelectorControl<CHORD::Type>::option> *chord_type_control_options;
         #endif
 
         FLASHMEM
@@ -418,8 +420,13 @@ class ChordPlayer {
                 [=]() -> CHORD::Type { return this->get_selected_chord(); },
                 nullptr, true
             );
-            for (size_t i = 0 ; i < NUMBER_CHORDS ; i++) {
-                selected_chord_control->add_available_value(i, chords[i].label);
+            if (chord_type_control_options==nullptr) {
+                for (size_t i = 0 ; i < NUMBER_CHORDS ; i++) {
+                    selected_chord_control->add_available_value(i, chords[i].label);
+                }
+                chord_type_control_options = selected_chord_control->get_available_values();
+            } else {
+                selected_chord_control->set_available_values(chord_type_control_options);
             }
 
             bar->add(new LambdaNumberControl<int8_t>(

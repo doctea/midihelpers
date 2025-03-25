@@ -6,5 +6,6 @@
         LinkedList<LambdaSelectorControl<int32_t>::option> *ChordPlayer::length_ticks_control_options;
         LinkedList<LambdaSelectorControl<int32_t>::option> *ChordPlayer::trigger_ticks_control_options;
         LinkedList<LambdaSelectorControl<int32_t>::option> *ChordPlayer::trigger_delay_ticks_control_options;
+        LinkedList<LambdaSelectorControl<CHORD::Type>::option> *ChordPlayer::chord_type_control_options;
     #endif
 #endif
