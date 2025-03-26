@@ -319,11 +319,17 @@ void clock_continue() {
   #endif
   {
     #ifdef USE_UCLOCK
-      if (!playing)
+      if (playing) {
         uClock.pause();
+        //Serial.printf("uClock paused at %u\n", millis());
+      } else {
+        uClock.continue_playing();
+        //Serial.printf("uClock continued at %u\n", millis());
+      }
+      clock_set_playing(!playing);
+    #else
+      clock_set_playing(true);
     #endif
-
-    clock_set_playing(true);
   }
 };
 
