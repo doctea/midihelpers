@@ -355,7 +355,7 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
 
         // add all the scales to the scale_selector_options list
         if (scale_selector_options->size()==0) {
-            Serial_printf("populating scale_selector_options with %i scales\n", NUMBER_SCALES);
+            Serial.printf("populating scale_selector_options with %i scales\n", NUMBER_SCALES);
             for (size_t i = 0 ; i < NUMBER_SCALES ; i++) {
                 if (debug) Serial.printf("LambdaScaleMenuItemBar: adding scale %i: %s @ %p\n", i, scales[i]->label, scales[i]);
                 //print_scale(0, *scales[i]);
