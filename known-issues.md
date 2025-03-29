@@ -1,0 +1,1 @@
+- bass notes from progression getting stuck ON when quantise is on and scrolling through multiple keys/scales 

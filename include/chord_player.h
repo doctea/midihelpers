@@ -158,7 +158,7 @@ class ChordPlayer {
             if (is_valid_note(current_bass_note)) {
                 if (debug) Serial.printf("\t\tStopping bass note: %i\t(%s)\n", current_bass_note, get_note_name_c(current_bass_note));
                 receive_note_off_bass(channel, current_bass_note, velocity);
-                current_bass_note = -1;
+                current_bass_note = NOTE_OFF;
             } else {
                 if (debug) Serial.printf("\t\tNo bass note to stop\n");
             }
@@ -189,6 +189,7 @@ class ChordPlayer {
             uint8_t bass_note = MIDI_MAX_NOTE+1;  // for tracking lowest note so that we can send bass note separately if desired; needs to be unsigned
 
             int8_t previously_played_note = -1; // avoid duplicating notes, like what happens sometimes when playing inverted +octaved chords..!
+            uint32_t time = millis();
             for (size_t i = 0 ; i < PITCHES_PER_CHORD && ((n = get_quantise_pitch_chord_note(pitch, chord_number, i, this->get_scale_root(), this->get_scale(), inversion, this->debug)) >= 0) ; i++) {
                 this->current_chord_data.set_pitch(i, n);
                 if (debug) Serial.printf("\t\tPlaying note\t[%i/%i]: %i\t(%s)\n", i+1, PITCHES_PER_CHORD, n, get_note_name_c(n));
@@ -204,6 +205,7 @@ class ChordPlayer {
                 }
                 previously_played_note = n;
             }
+            if (debug) Serial.printf("play_chord took %i ms to generate chord notes\n", millis()-time);
 
             // play the lowest note using the receive_note_on_bass callback
             if (is_valid_note(bass_note)) {

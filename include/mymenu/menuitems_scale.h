@@ -383,7 +383,7 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
             scale_getter_func,
             nullptr,
             true,
-            false // direct -- setting to 'true' causes unacceptable lag when scrolling through the list    // TODO: fix this!!
+            true //false // direct -- setting to 'true' causes unacceptable lag when scrolling through the list    // TODO: fix this!!
         );
         scale_selector->set_available_values(scale_selector_options);
         scale_selector->go_back_on_select = true;
