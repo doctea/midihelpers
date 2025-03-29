@@ -19,16 +19,25 @@ class ChordPlayer {
 
         using setter_func_def = vl::Func<void(int8_t channel, int8_t note, int8_t velocity)>;
         setter_func_def receive_note_on, receive_note_off;
+        setter_func_def receive_note_on_bass, receive_note_off_bass;
 
-        ChordPlayer(setter_func_def receive_note_on, setter_func_def receive_note_off) {
+        ChordPlayer(
+            setter_func_def receive_note_on, 
+            setter_func_def receive_note_off, 
+            setter_func_def receive_note_on_bass = [=](int8_t channel, int8_t note, int8_t velocity) -> void {}, 
+            setter_func_def receive_note_off_bass = [=](int8_t channel, int8_t note, int8_t velocity) -> void {}
+        ) {
             this->receive_note_on = receive_note_on;
             this->receive_note_off = receive_note_off;
+            this->receive_note_on_bass = receive_note_on_bass;
+            this->receive_note_off_bass = receive_note_off_bass;
         }
         bool debug = false;
 
         bool is_playing = false;
         bool is_playing_chord = false;
         int last_note = -1, current_note = -1, current_raw_note = -1;
+        int8_t current_bass_note = NOTE_OFF;
         CHORD::Type last_chord = CHORD::NONE, current_chord = CHORD::NONE, selected_chord_number = CHORD::NONE;
         unsigned long note_started_at_tick = 0;
         int32_t note_length_ticks = PPQN;
@@ -137,13 +146,21 @@ class ChordPlayer {
         void stop_chord(int8_t pitch, CHORD::Type chord_number = CHORD::TRIAD, int8_t inversion = 0, uint8_t velocity = 0) {
             if (debug) Serial.printf("\t---\nstop_chord: Stopping chord for %i (%s) - chord type %s, inversion %i\n", pitch, get_note_name_c(pitch), chords[chord_number].label, inversion);
 
-            //int8_t n = -1;
-            //for (size_t i = 0 ; (n = get_quantise_pitch_chord_note(pitch, chord_number, i, this->scale_root, this->scale, this->current_chord_data->inversion, this->debug)) >= 0 ; i++) {
+            // loop over the playing notes in the chord and stop them
             for (size_t i = 0 ; i < PITCHES_PER_CHORD /*&& ((n = this->current_chord_data.pitches[i]) >= 0)*/ ; i++) {
                 int8_t n = this->current_chord_data.pitches[i];
                 if (debug) Serial.printf("\t\tStopping note\t[%i/%i]: %i\t(%s)\n", i+1, PITCHES_PER_CHORD, n, get_note_name_c(n));
                 if (is_valid_note(n))
                     receive_note_off(channel, n, velocity);
+            }
+
+            // stop the bass note using the receive_note_off_bass callback
+            if (is_valid_note(current_bass_note)) {
+                if (debug) Serial.printf("\t\tStopping bass note: %i\t(%s)\n", current_bass_note, get_note_name_c(current_bass_note));
+                receive_note_off_bass(channel, current_bass_note, velocity);
+                current_bass_note = -1;
+            } else {
+                if (debug) Serial.printf("\t\tNo bass note to stop\n");
             }
             
             last_chord = this->current_chord;
@@ -169,16 +186,32 @@ class ChordPlayer {
             current_chord = chord_number;
             is_playing_chord = true;
 
+            uint8_t bass_note = MIDI_MAX_NOTE+1;  // for tracking lowest note so that we can send bass note separately if desired; needs to be unsigned
+
             int8_t previously_played_note = -1; // avoid duplicating notes, like what happens sometimes when playing inverted +octaved chords..!
             for (size_t i = 0 ; i < PITCHES_PER_CHORD && ((n = get_quantise_pitch_chord_note(pitch, chord_number, i, this->get_scale_root(), this->get_scale(), inversion, this->debug)) >= 0) ; i++) {
                 this->current_chord_data.set_pitch(i, n);
                 if (debug) Serial.printf("\t\tPlaying note\t[%i/%i]: %i\t(%s)\n", i+1, PITCHES_PER_CHORD, n, get_note_name_c(n));
                 if (n!=previously_played_note) {
                     receive_note_on(channel, n, velocity);
+                    if (is_valid_note(n) && n < bass_note)
+                        bass_note = n;
+                    else if (is_valid_note(n)) {
+                        if (debug) Serial.printf("\t\tNote %i isn't less than already-known lowest bass note (%i)\n", n, bass_note);
+                    }
                 } else {
                     if (debug) Serial.printf("\t\tSkipping note\t[%i/%i]: %i\t(%s)\n", i+1, PITCHES_PER_CHORD, n, get_note_name_c(n));
                 }
                 previously_played_note = n;
+            }
+
+            // play the lowest note using the receive_note_on_bass callback
+            if (is_valid_note(bass_note)) {
+                if (debug) Serial.printf("\t\tPlaying bass note: %i\t(%s)\n", bass_note, get_note_name_c(bass_note));
+                receive_note_on_bass(channel, bass_note, velocity);
+                current_bass_note = bass_note;
+            } else {
+                if (debug) Serial.printf("\t\tNo bass note to play - got %i\n", bass_note);
             }
             if (debug) Serial.println("---");
         }
@@ -187,8 +220,10 @@ class ChordPlayer {
             // don't reset current_note so that we don't retrigger the same note again immediately
             if (is_playing_chord) //is_quantise()) 
                 this->stop_chord(this->current_chord_data);
-            else
+            else {
                 this->receive_note_off(channel, this->current_note, 0);
+                this->receive_note_off_bass(channel, this->current_bass_note, 0);
+            }
 
             is_playing = false;
             this->last_note = pitch;
@@ -197,8 +232,10 @@ class ChordPlayer {
         virtual void trigger_off_for_pitch_because_changed(int8_t pitch, uint8_t velocity = MIDI_MIN_VELOCITY) {
             if (is_playing_chord) //is_quantise())
                 this->stop_chord(this->current_chord_data);
-            else
+            else {
                 this->receive_note_off(channel, this->current_note, 0);
+                this->receive_note_off_bass(channel, this->current_bass_note, 0);
+            }
 
             this->is_playing = false;
             this->last_note = this->current_note;
@@ -213,9 +250,10 @@ class ChordPlayer {
             #ifdef DEBUG_VELOCITY
                 this->velocity = velocity;
             #endif
-            if (!is_quantise() || !is_play_chords() || this->selected_chord_number==CHORD::NONE)
+            if (!is_quantise() || !is_play_chords() || this->selected_chord_number==CHORD::NONE) {
                 this->receive_note_on(channel, this->current_note, velocity);
-            else
+                this->receive_note_on_bass(channel, this->current_note, velocity);
+            } else
                 this->play_chord(pitch, chord_number, inversion, velocity);
             this->is_playing = true;
         }
@@ -257,7 +295,7 @@ class ChordPlayer {
                     if (!(get_trigger_on_ticks()==0 || (ticks-trigger_delay_ticks) % get_trigger_on_ticks()==0)
                             //|| (get_trigger_on_ticks()==0 && (just_stopped_note!=NOTE_OFF && (new_note==just_stopped_note || new_note!=last_note)))
                                 // ^^ don't retrigger note if voltage hasn't changed.... doesn't work like wanted though?  alternates on/off if value isn't changing and note length is set to something
-                        )
+                    )
                         return;
 
                     if (this->debug) Serial.printf("ChordPlayer: Starting note %i\tat\t%u\n", new_note, ticks);
@@ -306,11 +344,11 @@ class ChordPlayer {
             SubMenuItemBar *bar = new SubMenuItemBar("Trigger/durations");
             //Serial.println(F("about to create length_ticks_control ObjectSelectorControl..")); Serial_flush();
             LambdaSelectorControl<int32_t> *length_ticks_control = new LambdaSelectorControl<int32_t>(
-                    "Note length",
-                    [=](int32_t v) -> void { this->set_note_length(v); },
-                    [=]() -> int32_t { return this->get_note_length(); },
-                    nullptr,
-                    true
+                "Note length",
+                [=](int32_t v) -> void { this->set_note_length(v); },
+                [=]() -> int32_t { return this->get_note_length(); },
+                nullptr,
+                true
             );
             //Serial.println(F("about to add values..")); Serial_flush();
             if (length_ticks_control_options==nullptr) {

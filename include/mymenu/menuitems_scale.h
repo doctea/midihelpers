@@ -355,9 +355,9 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
 
         // add all the scales to the scale_selector_options list
         if (scale_selector_options->size()==0) {
-            Serial.printf("populating scale_selector_options with %i scales\n", NUMBER_SCALES);
+            Serial_printf("populating scale_selector_options with %i scales\n", NUMBER_SCALES);
             for (size_t i = 0 ; i < NUMBER_SCALES ; i++) {
-                if (debug) Serial.printf("LambdaScaleMenuItemBar: adding scale %i: %s @ %p\n", i, scales[i]->label, scales[i]);
+                if (debug) Serial_printf("LambdaScaleMenuItemBar: adding scale %i: %s @ %p\n", i, scales[i]->label, scales[i]);
                 //print_scale(0, *scales[i]);
                 scale_selector_options->add(LambdaScaleSelector<scale_index_t>::option { (scale_index_t)i, scales[i]->label });
             }
@@ -383,12 +383,11 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
             scale_getter_func,
             nullptr,
             true,
-            true
+            false // direct -- setting to 'true' causes unacceptable lag when scrolling through the list    // TODO: fix this!!
         );
         scale_selector->set_available_values(scale_selector_options);
         scale_selector->go_back_on_select = true;
         this->add(scale_selector);
-
     }
 
     void set_scale(scale_index_t scale_number) {

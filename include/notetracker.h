@@ -2,13 +2,15 @@
 
 #include <functional-vlpp.h>
 
-// class to track notes that are currently playing
+// class to track notes that are currently playing and to transpose them for quantisation
 class NoteTracker {
 
   struct tracked_note_t {
     int8_t refcount = 0;
     int8_t transposed_note = -1;
   };
+
+  int8_t held_note_count = 0;
 
   public:
     tracked_note_t held_notes[MIDI_NUM_NOTES] = {{0, -1}};
@@ -20,6 +22,7 @@ class NoteTracker {
         held_notes[note].refcount++;
         held_notes[note].transposed_note = transposed_note;
         held_notes_transposed[transposed_note] = true;
+        held_note_count++;
         return held_notes[note].refcount > 0;
       }
       return false;
@@ -27,7 +30,8 @@ class NoteTracker {
 
     bool held_note_off(int8_t note) {
       if (is_valid_note(note)) {
-        held_notes[note].refcount = 0;
+        held_note_count--;
+        held_notes[note].refcount--;// = 0;
         /*held_notes[note]--;
         if (held_notes[note] < 0)
           held_notes[note] = 0;*/
@@ -40,13 +44,20 @@ class NoteTracker {
     }
 
     void clear_held() {
+      if (held_note_count == 0) {
+        return;
+      }
       for (int i = 0; i < MIDI_NUM_NOTES; i++) {
         held_notes[i].transposed_note = -1;
         held_notes[i].refcount = 0;
       }
+      held_note_count = 0;
     }
 
-    int count_held() {
+    inline int count_held() {
+      return held_note_count;
+    }
+    int recalculate_count_held() {
       // todo: can probably pre-calculate this when notes are held or released, instead of looping through all notes every check
       int count = 0;
       for (int i = 0; i < MIDI_NUM_NOTES; i++) {
@@ -54,24 +65,34 @@ class NoteTracker {
           count++;
         }
       }
+      held_note_count = count;
       return count;
     }
 
     int8_t get_transposed_note_for(int8_t note) {
+      if (count_held() == 0) {
+        return false;
+      }
       if (is_valid_note(note)) {
         return held_notes[note].transposed_note;
       }
       return -1;
     }
 
-    bool is_note_held(int note) {
+    inline bool is_note_held(int note) {
+      if (count_held() == 0) {
+        return false;
+      }
       if (is_valid_note(note)) {
         return held_notes[note].refcount > 0;
       }
       return false;
     }
     
-    bool is_note_held_transposed(int note) {
+    inline bool is_note_held_transposed(int note) {
+      if (count_held() == 0) {
+        return false;
+      }
       if (is_valid_note(note)) {
         //return held_notes[note].transposed_note != -1; // todo: hmm this appears to work but i'm not sure how it can do so, as it's not checking the correct transposed note..
         return held_notes_transposed[note];
@@ -79,7 +100,10 @@ class NoteTracker {
       return false;
     }
 
-    bool is_note_held_any_octave(int note) {
+    inline bool is_note_held_any_octave(int note) {
+      if (count_held() == 0) {
+        return false;
+      }
       if (is_valid_note(note)) {
         note %= 12;
         for (int i = note; i < MIDI_NUM_NOTES+12; i+=12) {
@@ -91,7 +115,10 @@ class NoteTracker {
       return false;
     }
     // check if this transposed note is held (eg for when displaying what is actually playing)
-    bool is_note_held_any_octave_transposed(int note) {
+    inline bool is_note_held_any_octave_transposed(int note) {
+      if (count_held() == 0) {
+        return false;
+      }
       if (is_valid_note(note)) {
         note %= 12;
         for (int i = note; i < MIDI_NUM_NOTES+12; i+=12) {
@@ -107,6 +134,9 @@ class NoteTracker {
 
     // run a callback function for every note that is currently held
     void foreach_note(foreach_func_def func) {
+      if (count_held() == 0) {
+        return;
+      }
       for (int i = 0; i < MIDI_NUM_NOTES; i++) {
         if (is_note_held(i)) {
           func(i, held_notes[i].transposed_note);
@@ -117,6 +147,9 @@ class NoteTracker {
     const char *get_held_notes_c() {
       static char buffer[256];
       buffer[0] = 0;
+      if (count_held() == 0) {
+        return buffer;
+      }
       for (int i = 0; i < MIDI_NUM_NOTES; i++) {
         if (is_note_held(i)) {
           sprintf(buffer + strlen(buffer), "%-3s=>%-3s", get_note_name_c(i), get_note_name_c(held_notes[i].transposed_note));
@@ -126,6 +159,9 @@ class NoteTracker {
     }
 
     int get_held_note_index(int index) {
+      if (count_held() == 0) {
+        return NOTE_OFF;
+      }
       int count = 0;
       index %= count_held();
       for (int i = 0; i < MIDI_NUM_NOTES; i++) {
