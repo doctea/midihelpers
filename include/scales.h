@@ -94,7 +94,7 @@ const chord_t chords[] = {
     { "Sus 4",       { 0, 3, 4, NOTE_OFF  } },
     { "Seven",       { 0, 2, 4,  6        } },
     { "Ninth",       { 0, 2, 6,  8        } },
-    { "Oct+1",       { 0, 7,    NOTE_OFF, NOTE_OFF } },
+    { "Oct+1",       { 0, 7, NOTE_OFF, NOTE_OFF } },
     { "Oct+2",       { 0, 7, 14, NOTE_OFF } },
     { "Oct+3",       { 0, 7, 14, 21       } },
 };
