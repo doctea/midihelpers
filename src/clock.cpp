@@ -32,8 +32,6 @@ void set_global_restart_callback(void(*global_restart_callback)()) {
     __global_restart_callback = global_restart_callback;
 }
 
-//extern int8_t shuffle_data;
-
 /// use cheapclock clock
 volatile uint32_t last_ticked_at_micros = micros();
 #ifdef USE_UCLOCK
