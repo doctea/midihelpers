@@ -1,6 +1,9 @@
-#include "midi_helpers.h"
+#pragma once
 
+#include "midi_helpers.h"
 #include <functional-vlpp.h>
+
+//#define DYNAMIC_ALLOC
 
 // class to track notes that are currently playing and to transpose them for quantisation
 class NoteTracker {
@@ -12,21 +15,26 @@ class NoteTracker {
   int8_t held_note_count = 0;
 
   public:
-    //tracked_note_t held_notes[MIDI_NUM_NOTES] = {{0, -1}};
-    //bool held_notes_transposed[MIDI_NUM_NOTES] = {false};
-    tracked_note_t *held_notes = nullptr;
-    bool *held_notes_transposed = nullptr;
+    #ifdef DYNAMIC_ALLOC
+      // tracked_note_t *held_notes = nullptr;
+      // bool *held_notes_transposed = nullptr;
+    #else
+      tracked_note_t held_notes[MIDI_NUM_NOTES] = {{0, -1}};
+      bool held_notes_transposed[MIDI_NUM_NOTES] = {false};
+    #endif
 
     bool debug = false;
 
     NoteTracker() {
-      held_notes = (tracked_note_t*)malloc(sizeof(tracked_note_t) * MIDI_NUM_NOTES);
-      held_notes_transposed = (bool*)malloc(sizeof(bool) * MIDI_NUM_NOTES);
-      for (uint_fast8_t i = 0; i < MIDI_NUM_NOTES; i++) {
-        held_notes[i].refcount = 0;
-        held_notes[i].transposed_note = -1;
-        held_notes_transposed[i] = false;
-      }
+      #ifdef DYNAMIC_ALLOC
+        held_notes = (tracked_note_t*)calloc(MIDI_NUM_NOTES, sizeof(tracked_note_t));
+        held_notes_transposed = (bool*)calloc(MIDI_NUM_NOTES, sizeof(bool));
+        for (uint_fast8_t i = 0; i < MIDI_NUM_NOTES; i++) {
+          held_notes[i].refcount = 0;
+          held_notes[i].transposed_note = -1;
+          held_notes_transposed[i] = false;
+        }
+      #endif
     }
 
     // track a note being held, with the actual incoming note ('note') and the note it was transposed to ('transposed_note')
@@ -57,7 +65,7 @@ class NoteTracker {
         
         if (held_notes[note].refcount==0) {
           held_notes_transposed[held_notes[note].transposed_note] = false;
-          held_notes[note].transposed_note = -1;
+          held_notes[note].transposed_note = NOTE_OFF;
         }
         return held_notes[note].refcount == 0;
       }
@@ -69,7 +77,7 @@ class NoteTracker {
         return;
       }
       for (uint_fast8_t i = 0; i < MIDI_NUM_NOTES; i++) {
-        held_notes[i].transposed_note = -1;
+        held_notes[i].transposed_note = NOTE_OFF;
         held_notes[i].refcount = 0;
       }
       held_note_count = 0;
@@ -158,7 +166,7 @@ class NoteTracker {
       if (count_held() == 0) {
         return 0;
       }
-      uint_fast8_t dealt_with = 0;
+      int_fast8_t dealt_with = 0;
       /*uint_fast8_t reprocessed_notes = 0;
       uint32_t time = millis();*/
       for (uint_fast8_t i = 0; i < MIDI_NUM_NOTES; i++) {
