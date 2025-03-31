@@ -135,7 +135,7 @@ class ChordPlayer {
 
 
         void stop_chord() {
-            if (this->current_chord_data.chord_root>=0) {
+            if (is_valid_note(this->current_chord_data.chord_root)) {
                 if (this->debug) Serial.printf("stop_chord(): Stopping chord degree root %i\n", this->current_chord_data.chord_root);
                 this->stop_chord(this->current_chord_data);
             }
@@ -244,6 +244,8 @@ class ChordPlayer {
                 if (debug) Serial.printf("\t\tNo topline note to play - got %i\n", top_note);
             }
             if (debug) Serial.println("---");
+
+            this->is_playing = true;
         }
 
         virtual void trigger_off_for_pitch_because_length(int8_t pitch, uint8_t velocity = MIDI_MIN_VELOCITY) {
