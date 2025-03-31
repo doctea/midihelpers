@@ -154,7 +154,7 @@ class ChordPlayer {
             // loop over the playing notes in the chord and stop them
             for (size_t i = 0 ; i < PITCHES_PER_CHORD /*&& ((n = this->current_chord_data.pitches[i]) >= 0)*/ ; i++) {
                 int8_t n = this->current_chord_data.pitches[i];
-                if (debug) Serial.printf("\t\tStopping note\t[%i/%i]: %i\t(%s)\n", i+1, PITCHES_PER_CHORD, n, get_note_name_c(n));
+                if (debug) Serial.printf("\t\tStopping chord note\t[%i/%i]: %i\t(%s)\n", i+1, PITCHES_PER_CHORD, n, get_note_name_c(n));
                 if (is_valid_note(n))
                     receive_note_off(channel, n, velocity);
             }
