@@ -195,6 +195,7 @@ int8_t quantise_get_root_pitch_for_degree(int8_t degree, int8_t scale_root, scal
   return result;
 }
 
+PROGMEM
 int8_t quantise_pitch_to_scale(int8_t pitch, int8_t scale_root, scale_index_t scale_number, bool debug) {
   if (!is_valid_note(pitch))
     return NOTE_OFF;
@@ -247,6 +248,7 @@ int8_t quantise_pitch_to_scale(int8_t pitch, int8_t scale_root, scale_index_t sc
   return return_value;
 }
 
+PROGMEM
 int8_t quantise_pitch_to_chord(int8_t pitch, int8_t quantised_to_nearest_tolerance, int8_t scale_root, scale_index_t scale_number, chord_identity_t chord_identity, bool debug) {
   if (!is_valid_note(pitch))
     return NOTE_OFF;

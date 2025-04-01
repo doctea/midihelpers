@@ -3,7 +3,10 @@
 #include "midi_helpers.h"
 #include <functional-vlpp.h>
 
-//#define DYNAMIC_ALLOC
+#include <util/atomic.h>
+
+#define DYNAMIC_ALLOC
+
 
 // class to track notes that are currently playing and to transpose them for quantisation
 class NoteTracker {
@@ -16,8 +19,8 @@ class NoteTracker {
 
   public:
     #ifdef DYNAMIC_ALLOC
-      // tracked_note_t *held_notes = nullptr;
-      // bool *held_notes_transposed = nullptr;
+      tracked_note_t *held_notes = nullptr;
+      bool *held_notes_transposed = nullptr;
     #else
       tracked_note_t held_notes[MIDI_NUM_NOTES] = {{0, -1}};
       bool held_notes_transposed[MIDI_NUM_NOTES] = {false};
@@ -38,6 +41,7 @@ class NoteTracker {
     }
 
     // track a note being held, with the actual incoming note ('note') and the note it was transposed to ('transposed_note')
+    PROGMEM
     bool held_note_on(int8_t note, int8_t transposed_note) {
       if (is_valid_note(note)) {
         held_notes[note].refcount++;
@@ -48,6 +52,7 @@ class NoteTracker {
       }
       return false;
     }
+
 
     bool held_note_off(int8_t note) {
       if (is_valid_note(note)) {
@@ -83,7 +88,7 @@ class NoteTracker {
       held_note_count = 0;
     }
 
-    inline int count_held() {
+    inline uint8_t count_held() {
       return held_note_count;
     }
     int recalculate_count_held() {
@@ -98,6 +103,7 @@ class NoteTracker {
       return count;
     }
 
+    PROGMEM
     int8_t get_transposed_note_for(int8_t note) {
       if (count_held() == 0) {
         return NOTE_OFF;
@@ -108,6 +114,7 @@ class NoteTracker {
       return NOTE_OFF;
     }
 
+    //PROGMEM
     inline bool is_note_held(int note) {
       if (count_held() == 0) {
         return false;
@@ -118,6 +125,7 @@ class NoteTracker {
       return false;
     }
     
+    //PROGMEM
     inline bool is_note_held_transposed(int note) {
       if (count_held() == 0) {
         return false;
@@ -162,21 +170,32 @@ class NoteTracker {
     using foreach_func_def = vl::Func<void(int8_t note, int8_t transposed_note)>;
 
     // run a callback function for every note that is currently held
+    //PROGMEM // never seem to get any notes out if this is enabled!?
     int foreach_note(foreach_func_def func) {
       if (count_held() == 0) {
         return 0;
       }
+      //return 0;
       int_fast8_t dealt_with = 0;
       /*uint_fast8_t reprocessed_notes = 0;
       uint32_t time = millis();*/
+
+      int count = count_held();
       for (uint_fast8_t i = 0; i < MIDI_NUM_NOTES; i++) {
         if (is_note_held(i)) {
+          //ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { // hmmmm... never seem to get any notes out if this is enabled!
+          uint32_t time = micros();
           func(i, held_notes[i].transposed_note);
           dealt_with++;
-          if (dealt_with >= count_held())
+          //if (debug) {
+            Serial.printf("foreach_note: dealt with %i notes (expected %) in %i us\n", dealt_with, count, micros()-time);
+          //}
+          if (dealt_with >= count)
             break;
+          //}
         }
       }
+
       //if (debug) Serial.printf("foreach_note: dealt with %i notes (expected %i) in %ums\n", dealt_with, count_held(), millis()-time);
       return dealt_with;
     }
@@ -199,6 +218,7 @@ class NoteTracker {
       return buffer;
     }
 
+    PROGMEM
     int get_held_note_index(int index) {
       if (count_held() == 0) {
         return NOTE_OFF;
