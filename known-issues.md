@@ -1,1 +1,2 @@
 - bass notes from progression getting stuck ON when quantise is on and scrolling through multiple keys/scales 
+	- believed fixed as of 2025-04-03?
