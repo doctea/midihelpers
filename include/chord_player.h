@@ -133,6 +133,49 @@ class ChordPlayer {
             return this->trigger_delay_ticks;
         }
 
+        void play_bass_note(int8_t pitch, uint8_t velocity = MIDI_MAX_VELOCITY) {
+            if (is_valid_note(pitch)) {
+                if (this->debug) Serial.printf("play_bass_note: Playing bass note %i (%s)\n", pitch, get_note_name_c(pitch));
+                this->receive_note_on_bass(channel, pitch, velocity);
+                this->current_bass_note = pitch;
+            }
+        }
+        void play_topline_note(int8_t pitch, uint8_t velocity = MIDI_MAX_VELOCITY) {
+            if (is_valid_note(pitch)) {
+                if (this->debug) Serial.printf("play_topline_note: Playing topline note %i (%s)\n", pitch, get_note_name_c(pitch));
+                this->receive_note_on_topline(channel, pitch, velocity);
+                this->current_topline_note = pitch;
+            }
+        }
+        void stop_bass_note() {
+            if (is_valid_note(this->current_bass_note)) {
+                if (this->debug) Serial.printf("stop_bass_note: Stopping bass note %i (%s)\n", this->current_bass_note, get_note_name_c(this->current_bass_note));
+                this->receive_note_off_bass(channel, this->current_bass_note, 0);
+                this->current_bass_note = NOTE_OFF;
+            }
+        }
+        void stop_topline_note() {
+            if (is_valid_note(this->current_topline_note)) {
+                if (this->debug) Serial.printf("stop_topline_note: Stopping topline note %i (%s)\n", this->current_topline_note, get_note_name_c(this->current_topline_note));
+                this->receive_note_off_topline(channel, this->current_topline_note, 0);
+                this->current_topline_note = NOTE_OFF;
+            }
+        }
+
+        void change_bass_note(int8_t new_note, uint8_t new_velocity) {
+            if (is_valid_note(this->current_bass_note)) {
+                if (this->debug) Serial.printf("change_bass_note: Changing bass note %i (%s) to %i (%s)\n", this->current_bass_note, get_note_name_c(this->current_bass_note), new_note, get_note_name_c(new_note));
+                this->stop_bass_note();
+                this->play_bass_note(new_note, new_velocity);
+            }
+        }
+        void change_topline_note(int8_t new_note, uint8_t new_velocity) {
+            if (is_valid_note(this->current_topline_note)) {
+                if (this->debug) Serial.printf("change_topline_note: Changing topline note %i (%s) to %i (%s)\n", this->current_topline_note, get_note_name_c(this->current_topline_note), new_note, get_note_name_c(new_note));
+                this->stop_topline_note();
+                this->play_topline_note(new_note, new_velocity);
+            }
+        }
 
         void stop_chord() {
             if (is_valid_note(this->current_chord_data.chord_root)) {
@@ -161,18 +204,14 @@ class ChordPlayer {
 
             // stop the bass note using the receive_note_off_bass callback
             if (is_valid_note(current_bass_note)) {
-                if (debug) Serial.printf("\t\tStopping bass note: %i\t(%s)\n", current_bass_note, get_note_name_c(current_bass_note));
-                receive_note_off_bass(channel, current_bass_note, velocity);
-                current_bass_note = NOTE_OFF;
+                stop_bass_note();
             } else {
                 if (debug) Serial.printf("\t\tNo bass note to stop\n");
             }
 
             // stop the topline note using the receive_note_off_topline callback
             if (is_valid_note(current_topline_note)) {
-                if (debug) Serial.printf("\t\tStopping topline note: %i\t(%s)\n", current_topline_note, get_note_name_c(current_topline_note));
-                receive_note_off_topline(channel, current_topline_note, velocity);
-                current_topline_note = NOTE_OFF;
+                stop_topline_note();
             } else {
                 if (debug) Serial.printf("\t\tNo topline note to stop\n");
             }
@@ -229,17 +268,13 @@ class ChordPlayer {
 
             // play the lowest note using the receive_note_on_bass callback
             if (is_valid_note(bass_note)) {
-                if (debug) Serial.printf("\t\tPlaying bass note: %i\t(%s)\n", bass_note, get_note_name_c(bass_note));
-                receive_note_on_bass(channel, bass_note, velocity);
-                current_bass_note = bass_note;
+                play_bass_note(bass_note, velocity);
             } else {
                 if (debug) Serial.printf("\t\tNo bass note to play - got %i\n", bass_note);
             }
             // play the highest note using the receive_note_on_topline callback
             if (is_valid_note(top_note)) {
-                if (debug) Serial.printf("\t\tPlaying topline note: %i\t(%s)\n", top_note, get_note_name_c(top_note));
-                receive_note_on_topline(channel, top_note, velocity);
-                current_topline_note = top_note;
+                play_topline_note(top_note, velocity);
             } else {
                 if (debug) Serial.printf("\t\tNo topline note to play - got %i\n", top_note);
             }
@@ -256,9 +291,9 @@ class ChordPlayer {
                 if (is_valid_note(this->current_note))
                     this->receive_note_off(channel, this->current_note, 0);
                 if (is_valid_note(this->current_bass_note))
-                    this->receive_note_off_bass(channel, this->current_bass_note, 0);
+                    stop_bass_note();
                 if (is_valid_note(this->current_topline_note))
-                    this->receive_note_off_topline(channel, this->current_topline_note, 0);
+                    stop_topline_note();
             }
 
             is_playing = false;
@@ -272,9 +307,9 @@ class ChordPlayer {
                 if (is_valid_note(this->current_note))
                     this->receive_note_off(channel, this->current_note, 0);
                 if (is_valid_note(this->current_bass_note)) 
-                    this->receive_note_off_bass(channel, this->current_bass_note, 0);
+                    stop_bass_note();
                 if (is_valid_note(this->current_topline_note))
-                    this->receive_note_off_topline(channel, this->current_topline_note, 0);
+                    stop_topline_note();
             }
 
             this->is_playing = false;
@@ -295,8 +330,8 @@ class ChordPlayer {
             #endif
             if (!is_quantise() || !is_play_chords() || this->selected_chord_number==CHORD::NONE) {
                 this->receive_note_on(channel, this->current_note, velocity);
-                this->receive_note_on_bass(channel, this->current_note, velocity);
-                this->receive_note_on_topline(channel, this->current_note, velocity);
+                stop_bass_note();
+                stop_topline_note();
             } else
                 this->play_chord(pitch, chord_number, inversion, velocity);
             this->is_playing = true;
