@@ -187,9 +187,7 @@ class NoteTracker {
           uint32_t time = micros();
           func(i, held_notes[i].transposed_note);
           dealt_with++;
-          //if (debug) {
-            Serial.printf("foreach_note: dealt with %i notes (expected %) in %i us\n", dealt_with, count, micros()-time);
-          //}
+          if (debug) Serial.printf("foreach_note: dealt with %i notes (expected %) in %i us\n", dealt_with, count, micros()-time);
           if (dealt_with >= count)
             break;
           //}
