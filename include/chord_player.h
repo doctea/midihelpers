@@ -25,10 +25,10 @@ class ChordPlayer {
         ChordPlayer(
             setter_func_def receive_note_on, 
             setter_func_def receive_note_off, 
-            setter_func_def receive_note_on_bass = [=](int8_t channel, int8_t note, int8_t velocity) -> void {}, 
-            setter_func_def receive_note_off_bass = [=](int8_t channel, int8_t note, int8_t velocity) -> void {},
-            setter_func_def receive_note_on_topline = [=](int8_t channel, int8_t note, int8_t velocity) -> void {},
-            setter_func_def receive_note_off_topline = [=](int8_t channel, int8_t note, int8_t velocity) -> void {}
+            setter_func_def receive_note_on_bass = [](int8_t channel, int8_t note, int8_t velocity) -> void {}, 
+            setter_func_def receive_note_off_bass = [](int8_t channel, int8_t note, int8_t velocity) -> void {},
+            setter_func_def receive_note_on_topline = [](int8_t channel, int8_t note, int8_t velocity) -> void {},
+            setter_func_def receive_note_off_topline = [](int8_t channel, int8_t note, int8_t velocity) -> void {}
         ) {
             this->receive_note_on = receive_note_on;
             this->receive_note_off = receive_note_off;
