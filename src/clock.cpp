@@ -41,8 +41,9 @@ volatile uint32_t last_ticked_at_micros = micros();
     uClock.setClock96PPQNOutput(do_tick);
     uClock.setTempo(bpm_current);*/
     //uClock 2.0.0 version
-    uClock.setPPQN(uclock_internal_ppqn);
+    uClock.setOutputPPQN(uclock_internal_ppqn);
     uClock.init();
+    //uClock.setInputPPQN(uClock.PPQN_4);  // TODO: set this to the input clock resolution
     //uClock.setPPQN(uClock.PPQN_96);
     uClock.setOnSync24(do_tick);  // tick at PPQN // TODO: tick faster than this rate and then clock divide in do_tick so that we can implement clock multiplying!
     uClock.setTempo(bpm_current);
@@ -199,6 +200,7 @@ void set_clock_mode_changed_callback(void(*callback)(ClockMode old_mode, ClockMo
     if (check_cv_clock_ticked_callback==nullptr)
       return false;
 
+    Serial.printf("check_and_unset_cv_clock_ticked() about to call check_cv_clock_ticked_callback()\n");
     // use a callback to do the actual check on whether input is high
     bool v = check_cv_clock_ticked_callback();
     if (v)
@@ -223,6 +225,12 @@ bool update_clock_ticks() {
   if (!playing) 
     return false;
 
+  Serial.printf("update_clock_ticks has clock_mode=%i (%s)\n", clock_mode, 
+    clock_mode==CLOCK_EXTERNAL_CV ? "CLOCK_EXTERNAL_CV" : 
+    clock_mode==CLOCK_EXTERNAL_USB_HOST ? "CLOCK_EXTERNAL_USB_HOST" : 
+    clock_mode==CLOCK_EXTERNAL_MIDI_DIN ? "CLOCK_EXTERNAL_MIDI_DIN" : "CLOCK_INTERNAL"
+  );
+
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST && /*playing && */check_and_unset_pc_usb_midi_clock_ticked()) {
     #ifdef USE_UCLOCK
       // don't do anything -- ticks is set by uClock's callback
@@ -235,13 +243,22 @@ bool update_clock_ticks() {
   }
   #ifdef ENABLE_CLOCK_INPUT_MIDI_DIN
     else if (clock_mode==CLOCK_EXTERNAL_MIDI_DIN && check_and_unset_din_midi_clock_ticked()) {
-      ticks++;
+      #ifdef USE_UCLOCK
+        uClock.clockMe();
+      #else
+        ticks++;
+      #endif
       return true;
     }
   #endif
   #ifdef ENABLE_CLOCK_INPUT_CV
     else if (clock_mode==CLOCK_EXTERNAL_CV && check_and_unset_cv_clock_ticked()) {
-      ticks += external_cv_ticks_per_pulse;
+      //ticks += external_cv_ticks_per_pulse;
+      #ifdef USE_UCLOCK
+        uClock.clockMe();
+      #else
+        ticks++;
+      #endif
       return true;
     }
   #endif
@@ -357,11 +374,18 @@ void change_clock_mode(ClockMode new_mode) {
         bool was_playing = playing;
         uClock.stop();
         if (new_mode==ClockMode::CLOCK_INTERNAL) {
-          uClock.setMode(uClock.SyncMode::INTERNAL_CLOCK);
+          uClock.setClockMode(uClock.ClockMode::INTERNAL_CLOCK);
           //if(playing) uClock.start();
           //uClock.start();
         } else {
-          uClock.setMode(uClock.SyncMode::EXTERNAL_CLOCK);
+          if (new_mode==ClockMode::CLOCK_EXTERNAL_USB_HOST) {
+            uClock.setInputPPQN(uClock.PPQN_24);            
+          } else if (new_mode==ClockMode::CLOCK_EXTERNAL_MIDI_DIN) {
+            uClock.setInputPPQN(uClock.PPQN_24);            
+          } else if (new_mode==ClockMode::CLOCK_EXTERNAL_CV) {
+            uClock.setInputPPQN(uClock.PPQN_4);            
+          }
+          uClock.setClockMode(uClock.ClockMode::EXTERNAL_CLOCK);
           //uClock.stop();
         }
         if (was_playing) uClock.start();
