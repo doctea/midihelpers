@@ -226,7 +226,9 @@ bool update_clock_ticks() {
     return false;
 
   Serial.printf("update_clock_ticks has clock_mode=%i (%s)\n", clock_mode, 
-    clock_mode==CLOCK_EXTERNAL_CV ? "CLOCK_EXTERNAL_CV" : 
+    #ifdef ENABLE_CLOCK_INPUT_CV
+      clock_mode==CLOCK_EXTERNAL_CV ? "CLOCK_EXTERNAL_CV" : 
+    #endif
     clock_mode==CLOCK_EXTERNAL_USB_HOST ? "CLOCK_EXTERNAL_USB_HOST" : 
     clock_mode==CLOCK_EXTERNAL_MIDI_DIN ? "CLOCK_EXTERNAL_MIDI_DIN" : "CLOCK_INTERNAL"
   );
@@ -382,8 +384,10 @@ void change_clock_mode(ClockMode new_mode) {
             uClock.setInputPPQN(uClock.PPQN_24);            
           } else if (new_mode==ClockMode::CLOCK_EXTERNAL_MIDI_DIN) {
             uClock.setInputPPQN(uClock.PPQN_24);            
-          } else if (new_mode==ClockMode::CLOCK_EXTERNAL_CV) {
-            uClock.setInputPPQN(uClock.PPQN_4);            
+            #ifdef ENABLE_CLOCK_INPUT_CV
+              } else if (new_mode==ClockMode::CLOCK_EXTERNAL_CV) {
+                uClock.setInputPPQN(uClock.PPQN_4);            
+            #endif
           }
           uClock.setClockMode(uClock.ClockMode::EXTERNAL_CLOCK);
           //uClock.stop();
