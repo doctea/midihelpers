@@ -40,7 +40,7 @@ volatile uint32_t last_ticked_at_micros = micros();
     uClock.init();
     uClock.setClock96PPQNOutput(do_tick);
     uClock.setTempo(bpm_current);*/
-    //uClock 2.0.0 version
+    //uClock <=2.2.0 version
     uClock.setPPQN(uclock_internal_ppqn);
     uClock.init();
     //uClock.setPPQN(uClock.PPQN_96);
