@@ -194,13 +194,13 @@ void set_clock_mode_changed_callback(void(*callback)(ClockMode old_mode, ClockMo
 
 #ifdef ENABLE_CLOCK_INPUT_CV
   bool(*check_cv_clock_ticked_callback)(void) = nullptr;
-  bool cv_clock_ticked = false;
+  volatile bool cv_clock_ticked = false;
   uint32_t external_cv_ticks_per_pulse = PPQN;
   bool check_and_unset_cv_clock_ticked() {
     if (check_cv_clock_ticked_callback==nullptr)
       return false;
 
-    Serial.printf("check_and_unset_cv_clock_ticked() about to call check_cv_clock_ticked_callback()\n");
+    //Serial.printf("check_and_unset_cv_clock_ticked() about to call check_cv_clock_ticked_callback()\n");
     // use a callback to do the actual check on whether input is high
     bool v = check_cv_clock_ticked_callback();
     if (v)
@@ -225,13 +225,13 @@ bool update_clock_ticks() {
   if (!playing) 
     return false;
 
-  Serial.printf("update_clock_ticks has clock_mode=%i (%s)\n", clock_mode, 
+  /*Serial.printf("update_clock_ticks has clock_mode=%i (%s)\n", clock_mode, 
     #ifdef ENABLE_CLOCK_INPUT_CV
       clock_mode==CLOCK_EXTERNAL_CV ? "CLOCK_EXTERNAL_CV" : 
     #endif
     clock_mode==CLOCK_EXTERNAL_USB_HOST ? "CLOCK_EXTERNAL_USB_HOST" : 
     clock_mode==CLOCK_EXTERNAL_MIDI_DIN ? "CLOCK_EXTERNAL_MIDI_DIN" : "CLOCK_INTERNAL"
-  );
+  );*/
 
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST && /*playing && */check_and_unset_pc_usb_midi_clock_ticked()) {
     #ifdef USE_UCLOCK
@@ -377,8 +377,8 @@ void change_clock_mode(ClockMode new_mode) {
         uClock.stop();
         if (new_mode==ClockMode::CLOCK_INTERNAL) {
           uClock.setClockMode(uClock.ClockMode::INTERNAL_CLOCK);
-          //if(playing) uClock.start();
-          //uClock.start();
+          uClock.setInputPPQN(uClock.PPQN_24);
+          uClock.setOutputPPQN(uClock.PPQN_96);
         } else {
           if (new_mode==ClockMode::CLOCK_EXTERNAL_USB_HOST) {
             uClock.setInputPPQN(uClock.PPQN_24);            
@@ -386,7 +386,7 @@ void change_clock_mode(ClockMode new_mode) {
             uClock.setInputPPQN(uClock.PPQN_24);            
             #ifdef ENABLE_CLOCK_INPUT_CV
               } else if (new_mode==ClockMode::CLOCK_EXTERNAL_CV) {
-                uClock.setInputPPQN(uClock.PPQN_4);            
+                uClock.setInputPPQN(uClock.PPQN_1);            
             #endif
           }
           uClock.setClockMode(uClock.ClockMode::EXTERNAL_CLOCK);
