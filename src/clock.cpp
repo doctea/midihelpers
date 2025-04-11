@@ -36,11 +36,7 @@ void set_global_restart_callback(void(*global_restart_callback)()) {
 volatile uint32_t last_ticked_at_micros = micros();
 #ifdef USE_UCLOCK
   FLASHMEM void setup_uclock(void(*do_tick)(uint32_t), umodular::clock::uClockClass::PPQNResolution uclock_internal_ppqn) {
-    /*//uClock 1.5.1 version
-    uClock.init();
-    uClock.setClock96PPQNOutput(do_tick);
-    uClock.setTempo(bpm_current);*/
-    //uClock 2.0.0 version
+    //uClock >2.2.1 version (currently develop branch 2025-04-11)
     uClock.setOutputPPQN(uclock_internal_ppqn);
     uClock.init();
     //uClock.setInputPPQN(uClock.PPQN_4);  // TODO: set this to the input clock resolution
