@@ -7,6 +7,8 @@
 //#include "Config.h"
 #include "midi_usb/midi_usb_rp2040.h"
 
+extern RP2040DualMIDIOutputWrapper *output_wrapper;
+
 //#include "debug.h"
 
 // midihelpers library clock handling
