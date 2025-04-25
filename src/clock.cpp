@@ -66,7 +66,9 @@ void pc_usb_midi_handle_clock() {
 
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST && usb_midi_clock_ticked) {
       if (Serial) Serial.printf("WARNING: received a usb midi clock tick at %u, but last one from %u was not yet processed (didn't process within gap of %u)!\n", millis(), last_usb_midi_clock_ticked_at, millis()-last_usb_midi_clock_ticked_at);
-      messages_log_add("WARNING: received a usb midi clock tick, but last one was not yet processed!");
+      #if defined(ENABLE_SCREEN) && __has_include("menu_messages.h")
+        messages_log_add("WARNING: received a usb midi clock tick, but last one was not yet processed!");
+      #endif
   }
   /*if (CLOCK_EXTERNAL_USB_HOST) {  // TODO: figure out why tempo estimation isn't working and fix
       tap_tempo_tracker.push_beat();
@@ -81,7 +83,9 @@ void pc_usb_midi_handle_clock() {
 }
 
 void pc_usb_midi_handle_start() {
-  messages_log_add("pc_usb_midi_handle_start()!");
+  #if defined(ENABLE_SCREEN) && __has_include("menu_messages.h")
+    messages_log_add("pc_usb_midi_handle_start()!");
+  #endif
   // see function "auto_handle_start" when you wanna make this automatically change clock mode when receiving a start message
 
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
@@ -99,7 +103,9 @@ void pc_usb_midi_handle_start() {
   }
 }
 void pc_usb_midi_handle_stop() {
-  messages_log_add("pc_usb_midi_handle_stop()!");
+  #if defined(ENABLE_SCREEN) && __has_include("menu_messages.h")
+    messages_log_add("pc_usb_midi_handle_stop()!");
+  #endif
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
     if (!playing) {
       clock_reset();
@@ -111,7 +117,9 @@ void pc_usb_midi_handle_stop() {
   }
 }
 void pc_usb_midi_handle_continue() {
-  messages_log_add("pc_usb_midi_handle_continue()!");
+  #if defined(ENABLE_SCREEN) && __has_include("menu_messages.h")
+    messages_log_add("pc_usb_midi_handle_continue()!");
+  #endif
 
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
     if (!playing)

@@ -63,13 +63,13 @@ class TapTempoTracker {
       clock_tempo_history_pos = 0;
       clock_tempo_tracking = true;
       clock_last_tap = now; 
-      #if __has_include("menu_messages.h")
+      #if defined(ENABLE_SCREEN) && __has_include("menu_messages.h")
         messages_log_add("started tempo tracking");
       #endif
     } else if (clock_tempo_tracking) {
       clock_tempo_history[(clock_tempo_history_pos++) % max_sample_size] = now - clock_last_tap;
       clock_last_tap = now;
-      #if __has_include("menu_messages.h")
+      #if defined(ENABLE_SCREEN) && __has_include("menu_messages.h")
         messages_log_add("added tempo value");
       #endif
     }

@@ -43,7 +43,7 @@ extern RP2040DualMIDIOutputWrapper *output_wrapper;
 
 #endif
 
-
+#ifdef USE_TINYUSB
 void setup_usb() {
     #if defined(ARDUINO_ARCH_MBED) && defined(ARDUINO_ARCH_RP2040)
         // Manual begin() is required on core without built-in support for TinyUSB such as mbed rp2040
@@ -56,11 +56,14 @@ void setup_usb() {
 
     //while( !TinyUSBDevice.mounted() ) delay(1);
 }
+#endif
 
 void messages_log_add(String);
 
 void auto_handle_start() {
-    messages_log_add("auto_handle_start()!");
+    #if defined(ENABLE_SCREEN) && __has_include("menu_messages.h")
+        messages_log_add("auto_handle_start()!");
+    #endif
 
     if(clock_mode != CLOCK_EXTERNAL_USB_HOST) {
         // automatically switch to using external USB clock if we receive a START message from the usb host
