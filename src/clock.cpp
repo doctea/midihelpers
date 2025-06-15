@@ -3,11 +3,11 @@
 #include <Arduino.h>
 
 #if defined(USE_UCLOCK) 
+    #include "uClock.h"
     #if defined(CORE_TEENSY)
         #include <util/atomic.h>
         #define USE_ATOMIC
     #elif defined(ARDUINO_ARCH_RP2040) || defined(ARDUINO_ARCH_RP2350)
-        #include "uClock.h"
         #include "SimplyAtomic.h"
         #define ATOMIC_BLOCK(X) ATOMIC()
       #define USE_ATOMIC
@@ -22,7 +22,7 @@
     #define FLASHMEM
 #endif
 
-int missed_micros; // for tracking how many microseconds late we are processing a tick
+volatile int missed_micros; // for tracking how many microseconds late we are processing a tick
 
 volatile ClockMode clock_mode = DEFAULT_CLOCK_MODE;
 
@@ -41,7 +41,7 @@ volatile uint32_t last_ticked_at_micros = micros();
     uClock.setClock96PPQNOutput(do_tick);
     uClock.setTempo(bpm_current);*/
     //uClock <=2.2.0 version
-    uClock.setPPQN(uclock_internal_ppqn);
+    uClock.setInputPPQN(uclock_internal_ppqn);
     uClock.init();
     //uClock.setPPQN(uClock.PPQN_96);
     uClock.setOnSync24(do_tick);  // tick at PPQN // TODO: tick faster than this rate and then clock divide in do_tick so that we can implement clock multiplying!
@@ -365,12 +365,9 @@ void change_clock_mode(ClockMode new_mode) {
         bool was_playing = playing;
         uClock.stop();
         if (new_mode==ClockMode::CLOCK_INTERNAL) {
-          uClock.setMode(uClock.SyncMode::INTERNAL_CLOCK);
-          //if(playing) uClock.start();
-          //uClock.start();
+          uClock.setClockMode(uClock.ClockMode::INTERNAL_CLOCK);
         } else {
-          uClock.setMode(uClock.SyncMode::EXTERNAL_CLOCK);
-          //uClock.stop();
+          uClock.setClockMode(uClock.ClockMode::EXTERNAL_CLOCK);
         }
         if (was_playing) uClock.start();
       }
