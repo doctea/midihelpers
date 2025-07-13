@@ -94,7 +94,7 @@ void pc_usb_midi_handle_start() {
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
     #endif
     {
-      clock_reset();
+      //clock_reset();
       if (!playing)
         clock_start();
       if (__global_restart_callback!=nullptr)
@@ -363,13 +363,13 @@ void change_clock_mode(ClockMode new_mode) {
       #endif
       {
         bool was_playing = playing;
-        uClock.stop();
+        //uClock.stop();
         if (new_mode==ClockMode::CLOCK_INTERNAL) {
           uClock.setClockMode(uClock.ClockMode::INTERNAL_CLOCK);
         } else {
           uClock.setClockMode(uClock.ClockMode::EXTERNAL_CLOCK);
         }
-        if (was_playing) uClock.start();
+        //if (was_playing) uClock.start();
       }
     #endif 
 
