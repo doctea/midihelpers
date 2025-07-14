@@ -310,10 +310,10 @@ void clock_stop() {
       uClock.stop();
     #endif
 
-    /*if (should_reset_clock) {
+    if (should_reset_clock) {
       //Serial.println("not playing - calling clock_reset()"); Serial.flush();
       clock_reset();
-    }*/
+    }
     //Serial.println("about to call clock_set_playing()"); Serial.flush();
     //clock_set_playing(false);
     //Serial.println("called clock_set_playing()"); Serial.flush();
@@ -345,7 +345,7 @@ void clock_reset() {
   #endif
   {
     #ifdef USE_UCLOCK
-      //uClock.resetCounters();
+      uClock.resetCounters();
     #endif
     
     ticks = 0;
