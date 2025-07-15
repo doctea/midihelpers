@@ -61,6 +61,7 @@ void setup_usb() {
 void messages_log_add(String);
 
 void auto_handle_start() {
+    //if (Serial) Serial.println("auto_handle_start()"); Serial.flush();
     #if defined(ENABLE_SCREEN) && __has_include("menu_messages.h")
         messages_log_add("auto_handle_start()!");
     #endif

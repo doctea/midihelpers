@@ -103,6 +103,7 @@ void pc_usb_midi_handle_start() {
   }
 }
 void pc_usb_midi_handle_stop() {
+  //if (Serial) Serial.println("pc_usb_midi_handle_stop()"); Serial.flush();
   #if defined(ENABLE_SCREEN) && __has_include("menu_messages.h")
     messages_log_add("pc_usb_midi_handle_stop()!");
   #endif
@@ -117,13 +118,14 @@ void pc_usb_midi_handle_stop() {
   }
 }
 void pc_usb_midi_handle_continue() {
+  //if (Serial) Serial.println("pc_usb_midi_handle_continue()"); Serial.flush();
   #if defined(ENABLE_SCREEN) && __has_include("menu_messages.h")
     messages_log_add("pc_usb_midi_handle_continue()!");
   #endif
 
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
     if (!playing)
-      clock_start();
+      clock_continue();
   }
 }
 
@@ -284,6 +286,8 @@ void clock_set_playing(bool p = true) {
 }
 
 void clock_start() {
+  //if (Serial) Serial.println("clock_start()"); Serial.flush();
+
   #ifdef USE_ATOMIC
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) 
   #endif
@@ -297,6 +301,8 @@ void clock_start() {
   }
 }
 void clock_stop() {
+  //if (Serial) Serial.println("clock_stop()"); Serial.flush();
+
   #ifdef USE_ATOMIC
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) 
   #endif
@@ -307,7 +313,7 @@ void clock_stop() {
     clock_set_playing(false);
 
     #ifdef USE_UCLOCK
-      uClock.stop();
+      uClock.pause();
     #endif
 
     if (should_reset_clock) {
@@ -320,6 +326,7 @@ void clock_stop() {
   }
 }
 void clock_continue() {
+  //if (Serial) Serial.println("clock_continue()"); Serial.flush();
   #ifdef USE_ATOMIC
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) 
   #endif
@@ -340,6 +347,7 @@ void clock_continue() {
 };
 
 void clock_reset() {
+  //if (Serial) { Serial.println("clock_reset()"); Serial.flush(); }
   #ifdef USE_ATOMIC
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) 
   #endif
@@ -370,7 +378,7 @@ void change_clock_mode(ClockMode new_mode) {
           bool was_started = playing;
           if (was_started) uClock.stop();
           uClock.setClockMode(uClock.ClockMode::EXTERNAL_CLOCK);
-          if (was_started) uClock.start();
+          if (was_started) uClock.continue_playing();
         }
         //if (was_playing) uClock.start();
       }
