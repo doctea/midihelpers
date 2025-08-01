@@ -42,9 +42,13 @@ volatile uint32_t last_ticked_at_micros = micros();
     uClock.setTempo(bpm_current);*/
     //uClock <=2.2.0 version
     uClock.setInputPPQN(uclock_internal_ppqn);
+    //uClock.setOutputPPQN(uclock_internal_ppqn);
+    //uClock.setOutputPPQN(umodular::clock::uClockClass::PPQNResolution::PPQN_4);
+    //uClock.setOutputPPQN(umodular::clock::uClockClass::PPQN_24);
+    //uClock.setStrictExternalMode(true); // set strict external mode to true by default
+    uClock.setExtIntervalBuffer(128); // 16 is the default size
+    uClock.setOnSync24(do_tick); 
     uClock.init();
-    //uClock.setPPQN(uClock.PPQN_96);
-    uClock.setOnSync24(do_tick);  // tick at PPQN // TODO: tick faster than this rate and then clock divide in do_tick so that we can implement clock multiplying!
     uClock.setTempo(bpm_current);
     
     clock_reset();
@@ -88,6 +92,11 @@ void pc_usb_midi_handle_start() {
   #endif
   // see function "auto_handle_start" when you wanna make this automatically change clock mode when receiving a start message
 
+  if (clock_mode!=CLOCK_EXTERNAL_USB_HOST) {
+    // automatically switch to using external USB clock if we receive a START message from the usb host
+    change_clock_mode(CLOCK_EXTERNAL_USB_HOST);
+  }
+
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
     //tap_tempo_tracker.reset();
     #ifdef USE_ATOMIC
@@ -122,6 +131,11 @@ void pc_usb_midi_handle_continue() {
   #if defined(ENABLE_SCREEN) && __has_include("menu_messages.h")
     messages_log_add("pc_usb_midi_handle_continue()!");
   #endif
+
+  if (clock_mode!=CLOCK_EXTERNAL_USB_HOST) {
+    // automatically switch to using external USB clock if we receive a START message from the usb host
+    change_clock_mode(CLOCK_EXTERNAL_USB_HOST);
+  }
 
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
     if (!playing)
@@ -332,13 +346,7 @@ void clock_continue() {
   #endif
   {
     #ifdef USE_UCLOCK
-      if (playing) {
-        uClock.pause();
-        //Serial.printf("uClock paused at %u\n", millis());
-      } else {
-        uClock.continue_playing();
-        //Serial.printf("uClock continued at %u\n", millis());
-      }
+      uClock.pause();
       clock_set_playing(!playing);
     #else
       clock_set_playing(true);
@@ -373,12 +381,13 @@ void change_clock_mode(ClockMode new_mode) {
         bool was_playing = playing;
         //uClock.stop();
         if (new_mode==ClockMode::CLOCK_INTERNAL) {
+          uClock.setTempo(bpm_current);
           uClock.setClockMode(uClock.ClockMode::INTERNAL_CLOCK);
         } else {
           bool was_started = playing;
-          if (was_started) uClock.stop();
+          //if (was_started) uClock.stop();
           uClock.setClockMode(uClock.ClockMode::EXTERNAL_CLOCK);
-          if (was_started) uClock.continue_playing();
+          //if (was_started) uClock.pause();
         }
         //if (was_playing) uClock.start();
       }
