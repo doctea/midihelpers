@@ -45,7 +45,7 @@ volatile uint32_t last_ticked_at_micros = micros();
     //uClock.setOutputPPQN(uclock_internal_ppqn);
     //uClock.setOutputPPQN(umodular::clock::uClockClass::PPQNResolution::PPQN_4);
     //uClock.setOutputPPQN(umodular::clock::uClockClass::PPQN_24);
-    //uClock.setStrictExternalMode(true); // set strict external mode to true by default
+    uClock.setStrictExternalMode(true); // set strict external mode to true by default
     uClock.setExtIntervalBuffer(128); // 16 is the default size
     uClock.setOnSync24(do_tick); 
     uClock.init();
@@ -381,7 +381,6 @@ void change_clock_mode(ClockMode new_mode) {
         bool was_playing = playing;
         //uClock.stop();
         if (new_mode==ClockMode::CLOCK_INTERNAL) {
-          uClock.setTempo(bpm_current);
           uClock.setClockMode(uClock.ClockMode::INTERNAL_CLOCK);
         } else {
           bool was_started = playing;
@@ -394,6 +393,8 @@ void change_clock_mode(ClockMode new_mode) {
     #endif 
 
     clock_mode = new_mode;
+    if (clock_mode==CLOCK_INTERNAL) 
+      uClock.setTempo(bpm_current);
   }
 }
 
