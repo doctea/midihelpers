@@ -85,7 +85,7 @@ void setup_midi() {
 
         // callbacks for messages received from USB MIDI host
         USBMIDI.setHandleClock(pc_usb_midi_handle_clock);
-        USBMIDI.setHandleStart(auto_handle_start); //pc_usb_midi_handle_start);
+        USBMIDI.setHandleStart(pc_usb_midi_handle_start);
         //USBMIDI.setHandleStart(auto_handle_start_wrapper);
         USBMIDI.setHandleStop(pc_usb_midi_handle_stop);
         USBMIDI.setHandleContinue(pc_usb_midi_handle_continue);
