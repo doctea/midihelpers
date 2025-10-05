@@ -36,16 +36,12 @@ void set_global_restart_callback(void(*global_restart_callback)()) {
 volatile uint32_t last_ticked_at_micros = micros();
 #ifdef USE_UCLOCK
   FLASHMEM void setup_uclock(void(*do_tick)(uint32_t), umodular::clock::uClockClass::PPQNResolution uclock_internal_ppqn) {
-    /*//uClock 1.5.1 version
-    uClock.init();
-    uClock.setClock96PPQNOutput(do_tick);
-    uClock.setTempo(bpm_current);*/
-    //uClock <=2.2.0 version
+
+    #ifdef UCLOCK_HAS_STRICT_EXTERNAL_MODE
+      uClock.setStrictExternalMode(true); // set strict external mode to true by default
+    #endif
+
     uClock.setInputPPQN(uclock_internal_ppqn);
-    //uClock.setOutputPPQN(uclock_internal_ppqn);
-    //uClock.setOutputPPQN(umodular::clock::uClockClass::PPQNResolution::PPQN_4);
-    //uClock.setOutputPPQN(umodular::clock::uClockClass::PPQN_24);
-    uClock.setStrictExternalMode(true); // set strict external mode to true by default
     uClock.setExtIntervalBuffer(128); // 16 is the default size
     uClock.setOnSync24(do_tick); 
     uClock.init();
@@ -265,7 +261,10 @@ bool update_clock_ticks() {
   #endif
   #ifdef ENABLE_CLOCK_INPUT_CV
     else if (clock_mode==CLOCK_EXTERNAL_CV && check_and_unset_cv_clock_ticked()) {
-      ticks += external_cv_ticks_per_pulse;
+      //ticks += external_cv_ticks_per_pulse;
+      Serial.println("CV clock ticked!");
+      //uClock.clockMe();
+
       return true;
     }
   #endif
@@ -381,13 +380,17 @@ void change_clock_mode(ClockMode new_mode) {
         bool was_playing = playing;
         //uClock.stop();
         if (new_mode==ClockMode::CLOCK_INTERNAL) {
+          uClock.setInputPPQN(umodular::clock::uClockClass::PPQNResolution::PPQN_24);
           uClock.setClockMode(uClock.ClockMode::INTERNAL_CLOCK);
         } else {
           bool was_started = playing;
           //if (was_started) uClock.stop();
+          if (new_mode==ClockMode::CLOCK_EXTERNAL_CV) {
+            uClock.setInputPPQN(umodular::clock::uClockClass::PPQNResolution::PPQN_1);
+          }
           uClock.setClockMode(uClock.ClockMode::EXTERNAL_CLOCK);
           //if (was_started) uClock.pause();
-        }
+        } 
         //if (was_playing) uClock.start();
       }
     #endif 
