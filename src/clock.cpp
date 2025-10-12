@@ -378,17 +378,19 @@ void change_clock_mode(ClockMode new_mode) {
       #endif
       {
         bool was_playing = playing;
-        //uClock.stop();
+
         if (new_mode==ClockMode::CLOCK_INTERNAL) {
           uClock.setInputPPQN(umodular::clock::uClockClass::PPQNResolution::PPQN_24);
           uClock.setClockMode(uClock.ClockMode::INTERNAL_CLOCK);
         } else {
           bool was_started = playing;
           //if (was_started) uClock.stop();
-          if (new_mode==ClockMode::CLOCK_EXTERNAL_CV) {
-            uClock.setInputPPQN(umodular::clock::uClockClass::PPQNResolution::PPQN_1);
-          }
-          uClock.setClockMode(uClock.ClockMode::EXTERNAL_CLOCK);
+          #ifdef ENABLE_CLOCK_INPUT_CV
+            if (new_mode==ClockMode::CLOCK_EXTERNAL_CV) {
+              uClock.setInputPPQN(umodular::clock::uClockClass::PPQNResolution::PPQN_1);
+            }
+          #endif
+          uClock.setClockMode(umodular::clock::uClockClass::ClockMode::EXTERNAL_CLOCK);
           //if (was_started) uClock.pause();
         } 
         //if (was_playing) uClock.start();
