@@ -14,7 +14,7 @@
 class TapTempoControl : public MenuItem {
     public:
         TapTempoTracker *taptempotracker = nullptr;
-        TapTempoControl(char *label, TapTempoTracker *taptempotracker) : MenuItem(label) {
+        TapTempoControl(const char *label, TapTempoTracker *taptempotracker) : MenuItem(label) {
             this->taptempotracker = taptempotracker;
         };
 
