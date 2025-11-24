@@ -98,6 +98,77 @@ class ClockSourceSelectorControl : public SelectorControl<int_least8_t> {
 
 };
 
-#endif
 
+#ifdef USE_UCLOCK
+
+#include <uClock.h>
+
+const int available_ppqn_values[] = {
+    umodular::clock::uClockClass::PPQN_1,
+    umodular::clock::uClockClass::PPQN_2,
+    umodular::clock::uClockClass::PPQN_4,
+    umodular::clock::uClockClass::PPQN_8,
+    umodular::clock::uClockClass::PPQN_12,
+    umodular::clock::uClockClass::PPQN_24,
+    umodular::clock::uClockClass::PPQN_48,
+    umodular::clock::uClockClass::PPQN_96,
+    umodular::clock::uClockClass::PPQN_384,
+    umodular::clock::uClockClass::PPQN_480,
+    umodular::clock::uClockClass::PPQN_960
+};
+class ExternalPPQNSelectorControl : public SelectorControl<int> {
+    public:
+    ExternalPPQNSelectorControl(const char *label, int initial_value) 
+        : SelectorControl(label, initial_value) {
+            this->available_values = available_ppqn_values;
+            this->num_values = 11;
+        };
+    virtual const char* get_label_for_index(int index) {
+        switch(index) {
+            case umodular::clock::uClockClass::PPQN_1:   return "1 PPQN";
+            case umodular::clock::uClockClass::PPQN_2:   return "2 PPQN";
+            case umodular::clock::uClockClass::PPQN_4:   return "4 PPQN";
+            case umodular::clock::uClockClass::PPQN_8:   return "8 PPQN";
+            case umodular::clock::uClockClass::PPQN_12:  return "12 PPQN";
+            case umodular::clock::uClockClass::PPQN_24:  return "24 PPQN";
+            case umodular::clock::uClockClass::PPQN_48:  return "48 PPQN";
+            case umodular::clock::uClockClass::PPQN_96:  return "96 PPQN";
+            case umodular::clock::uClockClass::PPQN_384: return "384 PPQN";
+            case umodular::clock::uClockClass::PPQN_480: return "480 PPQN";
+            case umodular::clock::uClockClass::PPQN_960: return "960 PPQN";
+            default: return "??";
+        }
+    }
+    virtual void setter (int new_value) {
+        Serial.printf("ExternalPPQNSelectorControl::setter(%i)\n", new_value);
+        #ifdef ENABLE_CLOCK_INPUT_CV
+        if (clock_mode==CLOCK_EXTERNAL_CV) {
+            external_cv_ppqn = (umodular::clock::uClockClass::PPQNResolution) new_value;
+            messages_log_add("Set external CV PPQN");
+            uClock.setInputPPQN(external_cv_ppqn);
+        } else 
+        #endif
+        if (clock_mode==CLOCK_INTERNAL) {
+            internal_ppqn = (umodular::clock::uClockClass::PPQNResolution) new_value;
+            messages_log_add("Set internal PPQN");
+            uClock.setInputPPQN(internal_ppqn);
+        } else {
+            messages_log_add("Cannot set PPQN unless clock mode is internal or external CV");
+        }
+    }
+    virtual int getter () {
+        #ifdef ENABLE_CLOCK_INPUT_CV
+        if (clock_mode==CLOCK_EXTERNAL_CV) {
+            return external_cv_ppqn;
+        } else 
+        #endif
+        if (clock_mode==CLOCK_INTERNAL) {
+            return internal_ppqn;
+        }
+        return DEFAULT_CV_PPQN;
+    }
+};
+#endif // USE_UCLOCK
+
+#endif
 #endif

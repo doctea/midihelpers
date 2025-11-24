@@ -43,7 +43,7 @@ volatile uint32_t last_ticked_at_micros = micros();
 
     uClock.setInputPPQN(uclock_internal_ppqn);
     uClock.setExtIntervalBuffer(128); // 16 is the default size
-    uClock.setOnSync24(do_tick); 
+    uClock.setOnSync(umodular::clock::uClockClass::PPQNResolution::PPQN_24, do_tick); 
     uClock.init();
     uClock.setTempo(bpm_current);
     
@@ -367,6 +367,9 @@ void clock_reset() {
   }
 }
 
+umodular::clock::uClockClass::PPQNResolution external_cv_ppqn = DEFAULT_CV_PPQN;
+umodular::clock::uClockClass::PPQNResolution internal_ppqn    = DEFAULT_INTERNAL_PPQN;
+
 void change_clock_mode(ClockMode new_mode) {
   if(clock_mode!=new_mode) {
     if(__clock_mode_changed_callback!=nullptr)
@@ -380,14 +383,16 @@ void change_clock_mode(ClockMode new_mode) {
         bool was_playing = playing;
 
         if (new_mode==ClockMode::CLOCK_INTERNAL) {
-          uClock.setInputPPQN(umodular::clock::uClockClass::PPQNResolution::PPQN_24);
+          internal_ppqn = DEFAULT_INTERNAL_PPQN;
+          uClock.setInputPPQN(internal_ppqn); //umodular::clock::uClockClass::PPQNResolution::PPQN_24);
           uClock.setClockMode(uClock.ClockMode::INTERNAL_CLOCK);
         } else {
           bool was_started = playing;
           //if (was_started) uClock.stop();
           #ifdef ENABLE_CLOCK_INPUT_CV
             if (new_mode==ClockMode::CLOCK_EXTERNAL_CV) {
-              uClock.setInputPPQN(umodular::clock::uClockClass::PPQNResolution::PPQN_1);
+              external_cv_ppqn = DEFAULT_CV_PPQN;
+              uClock.setInputPPQN(external_cv_ppqn);
             }
           #endif
           uClock.setClockMode(umodular::clock::uClockClass::ClockMode::EXTERNAL_CLOCK);

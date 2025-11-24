@@ -33,6 +33,11 @@ volatile extern uint32_t last_ticked_at_micros;
 #ifdef USE_UCLOCK
   #include <uClock.h>
   void setup_uclock(void(*do_tick)(uint32_t), umodular::clock::uClockClass::PPQNResolution uclock_internal_ppqn = uClock.PPQN_24);
+
+  #define DEFAULT_CV_PPQN umodular::clock::uClockClass::PPQNResolution::PPQN_1
+  #define DEFAULT_INTERNAL_PPQN umodular::clock::uClockClass::PPQNResolution::PPQN_24
+  extern umodular::clock::uClockClass::PPQNResolution external_cv_ppqn;
+  extern umodular::clock::uClockClass::PPQNResolution internal_ppqn;
 #else 
   /// use cheapclock clock
   void setup_cheapclock();
