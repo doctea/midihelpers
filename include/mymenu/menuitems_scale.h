@@ -469,6 +469,75 @@ class LambdaChordSubMenuItemBar : public SubMenuItemBar {
     }
 };
 
+class LambdaChordSubMenuItemBarWithIndicator : public LambdaChordSubMenuItemBar {
+    public:
+
+    int8_t my_section, my_bar;
+    int8_t *current_section, *current_bar;
+
+    LambdaChordSubMenuItemBarWithIndicator(
+        const char *label,
+        vl::Func<void(int8_t)> chord_degree_setter_func,
+        vl::Func<int8_t(void)> chord_degree_getter_func,
+        vl::Func<void(CHORD::Type)> chord_setter_func,
+        vl::Func<CHORD::Type(void)> chord_getter_func,
+        vl::Func<void(int8_t)> inversion_setter_func,
+        vl::Func<int8_t(void)> inversion_getter_func,
+        int8_t my_section,
+        int8_t my_bar,
+        int8_t *current_section,
+        int8_t *current_bar,
+        bool allow_global = true,
+        bool show_sub_headers = true,
+        bool show_header = true
+    ) : LambdaChordSubMenuItemBar (
+            label,
+            chord_degree_setter_func,
+            chord_degree_getter_func,
+            chord_setter_func,
+            chord_getter_func,
+            inversion_setter_func,
+            inversion_getter_func,
+            allow_global,
+            show_sub_headers,
+            show_header
+        ),
+        current_section(current_section),
+        current_bar(current_bar)
+    {
+        this->my_section = my_section;
+        this->my_bar = my_bar;
+
+        // todo: show the chord root note too
+        // todo: attempt to show if chord is major, minor, dim, etc?
+
+        // indicate if this is the currently-playing bar
+        this->add(new CallbackMenuItem(
+            "current?",
+            [=]() -> const char* {
+                if (this->my_section == *this->current_section && this->my_bar == *this->current_bar) {
+                    return "*";
+                } else {
+                    return " ";
+                }
+            },
+            false
+        ));
+    }
+
+    virtual int get_max_pixel_width(int item_number) override {
+        // leave 1 character at the end for the indicator
+        return item_number < this->items->size() -1 ? 
+            (tft->width() - tft->characterWidth()) / 3 :
+            tft->characterWidth()
+            ;
+    }
+
+    virtual int display(Coord pos, bool selected, bool opened) override {
+        return LambdaChordSubMenuItemBar::display(pos, selected, opened);
+    }
+};
+
 class ChordMenuItem : public MenuItem {
     public:
     chord_instance_t *chord_data = nullptr;
