@@ -475,6 +475,10 @@ class LambdaChordSubMenuItemBarWithIndicator : public LambdaChordSubMenuItemBar 
     int8_t my_section, my_bar;
     int8_t *current_section, *current_bar;
 
+    bool is_on_current_section_bar() {
+        return this->my_section == *this->current_section && this->my_bar == *this->current_bar;
+    }
+
     LambdaChordSubMenuItemBarWithIndicator(
         const char *label,
         vl::Func<void(int8_t)> chord_degree_setter_func,
@@ -515,19 +519,20 @@ class LambdaChordSubMenuItemBarWithIndicator : public LambdaChordSubMenuItemBar 
         this->add(new CallbackMenuItem(
             "current?",
             [=]() -> const char* {
-                if (this->my_section == *this->current_section && this->my_bar == *this->current_bar) {
+                if (is_on_current_section_bar()) {
                     return "*";
                 } else {
                     return " ";
                 }
             },
+            [=]() -> uint16_t { return is_on_current_section_bar() ? GREEN : C_WHITE; },
             false
         ));
     }
 
     virtual int get_max_pixel_width(int item_number) override {
         // leave 1 character at the end for the indicator
-        return item_number < this->items->size() -1 ? 
+        return (unsigned int)item_number < this->items->size() -1 ? 
             (tft->width() - tft->characterWidth()) / 3 :
             tft->characterWidth()
             ;
@@ -535,6 +540,88 @@ class LambdaChordSubMenuItemBarWithIndicator : public LambdaChordSubMenuItemBar 
 
     virtual int display(Coord pos, bool selected, bool opened) override {
         return LambdaChordSubMenuItemBar::display(pos, selected, opened);
+    }
+};
+
+class LambdaPlaylistSubMenuItemBarWithIndicator : public SubMenuItemBar {
+    public:
+
+    int8_t my_playlist_index;
+    int8_t *current_playlist_index;
+
+    vl::Func<void(int8_t)> section_setter_func;
+    vl::Func<int8_t(void)> section_getter_func;
+    vl::Func<void(int8_t)> repeats_setter_func;
+    vl::Func<int8_t(void)> repeats_getter_func;
+
+    bool is_current_playlist() {
+        return this->my_playlist_index == *this->current_playlist_index;
+    }
+
+    LambdaPlaylistSubMenuItemBarWithIndicator(
+        const char *label,
+        vl::Func<void(int8_t)> section_setter_func,
+        vl::Func<int8_t(void)> section_getter_func,
+        vl::Func<void(int8_t)> repeats_setter_func,
+        vl::Func<int8_t(void)> repeats_getter_func,
+        int8_t my_playlist_index,
+        int8_t *current_playlist_index,
+        int8_t NUM_SONG_SECTIONS,
+        int8_t MAX_REPEATS,
+        bool show_sub_headers = true,
+        bool show_header = true
+    ) : SubMenuItemBar (label, show_sub_headers, show_header),
+        current_playlist_index(current_playlist_index)
+    {
+        this->my_playlist_index = my_playlist_index;
+
+        this->section_setter_func = section_setter_func;
+        this->section_getter_func = section_getter_func;
+        this->repeats_setter_func = repeats_setter_func;
+        this->repeats_getter_func = repeats_getter_func;
+
+        this->add(new LambdaNumberControl<int8_t>(
+            "Section", 
+            section_setter_func, 
+            section_getter_func,
+            nullptr, 
+            (int8_t)0, NUM_SONG_SECTIONS - 1,
+            true, true
+        ));
+        this->add(new LambdaNumberControl<int8_t>(
+            "Repeats", 
+            repeats_setter_func, 
+            repeats_getter_func,
+            nullptr,            
+            (int8_t)0, MAX_REPEATS,
+            true, true
+        ));
+
+        // indicate if this is the currently-playing playlist
+        this->add(new CallbackMenuItem(
+            "current?",
+            [=]() -> const char* {
+                if (this->is_current_playlist()) {
+                    return "*";
+                } else {
+                    return " ";
+                }
+            },
+            [=]() -> uint16_t { return this->is_current_playlist() ? GREEN : C_WHITE; },
+            false
+        ));
+    }
+
+    virtual int get_max_pixel_width(int item_number) override {
+        // leave 1 character at the end for the indicator
+        return ((unsigned int)item_number) < this->items->size() -1 ? 
+            (tft->width() - tft->characterWidth()) / 3 :
+            tft->characterWidth()
+            ;
+    }
+
+    virtual int display(Coord pos, bool selected, bool opened) override {
+        return SubMenuItemBar::display(pos, selected, opened);
     }
 };
 

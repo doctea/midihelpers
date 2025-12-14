@@ -1,6 +1,5 @@
 #pragma once
 
-
 #ifndef RP2040OutputWrapperClass
     #define RP2040OutputWrapperClass RP2040DualMIDIOutputWrapper
 #endif
@@ -10,6 +9,7 @@
 // MIDI + USB
 #ifdef USE_TINYUSB
     #include <Adafruit_TinyUSB.h>
+    #include <atomic>
 #endif
 #include <MIDI.h>
 
@@ -38,7 +38,9 @@ void setup_midi();
 void setup_usb();
 
 #if __has_include("outputs/output.h")
-    #include "outputs/output.h"
+#define USE_SEQLIB_OUTPUTS  // use outputs from seqlib https://github.com/doctea/seqlib
+#include "outputs/output.h"
+#endif
 
 // todo: port usb_midi_clocker's OutputWrapper to work here?
 // wrapper class to wrap different MIDI output types; handles both USB MIDI and DIN MIDI outputs
@@ -51,14 +53,16 @@ class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget {
         midi::MidiInterface<midi::SerialMIDI<SerialPIO>> *dinmidi = &DINMIDI;
     #endif
 
-    OUTPUT_TYPE output_mode = DEFAULT_OUTPUT_TYPE;
-    void set_output_mode(int m) {
-        this->output_mode = (OUTPUT_TYPE)m;
-        // todo: if changed then we need to kill all the playing notes to avoid them getting stuck
-    }
-    OUTPUT_TYPE get_output_mode() {
-        return this->output_mode;
-    }
+    #ifdef USE_SEQLIB_OUTPUTS
+        OUTPUT_TYPE output_mode = DEFAULT_OUTPUT_TYPE;
+        void set_output_mode(int m) {
+            this->output_mode = (OUTPUT_TYPE)m;
+            // todo: if changed then we need to kill all the playing notes to avoid them getting stuck
+        }
+        OUTPUT_TYPE get_output_mode() {
+            return this->output_mode;
+        }
+    #endif
 
     uint32_t din_midi_clock_output_divider = 24;
     void set_din_midi_clock_output_divider(uint32_t new_value) {
@@ -230,4 +234,3 @@ class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget {
 void set_din_midi_clock_output_divider(uint32_t v);
 uint32_t get_din_midi_clock_output_divider();
 
-#endif

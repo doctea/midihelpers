@@ -120,7 +120,7 @@ class ExternalPPQNSelectorControl : public SelectorControl<int> {
     public:
     ExternalPPQNSelectorControl(const char *label, int initial_value) 
         : SelectorControl(label, initial_value) {
-            this->available_values = available_ppqn_values;
+            this->available_values = (int*)available_ppqn_values;
             this->num_values = 11;
         };
     virtual const char* get_label_for_index(int index) {

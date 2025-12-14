@@ -7,8 +7,6 @@
 //#include "Config.h"
 #include "midi_usb/midi_usb_rp2040.h"
 
-extern RP2040DualMIDIOutputWrapper *output_wrapper;
-
 //#include "debug.h"
 
 // midihelpers library clock handling
@@ -21,6 +19,9 @@ extern RP2040DualMIDIOutputWrapper *output_wrapper;
 #endif
 
 #ifdef USE_DINMIDI
+
+    extern RP2040OutputWrapperClass *output_wrapper;
+
     #ifdef MIDI_SERIAL_SOFTWARE
         #include <SoftwareSerial.h>
         SoftwareSerial SoftSerial(MIDI_SERIAL_OUT_PIN, -1, false);

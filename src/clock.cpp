@@ -367,8 +367,11 @@ void clock_reset() {
   }
 }
 
-umodular::clock::uClockClass::PPQNResolution external_cv_ppqn = DEFAULT_CV_PPQN;
-umodular::clock::uClockClass::PPQNResolution internal_ppqn    = DEFAULT_INTERNAL_PPQN;
+
+#if defined(USE_UCLOCK) 
+  umodular::clock::uClockClass::PPQNResolution external_cv_ppqn = DEFAULT_CV_PPQN;
+  umodular::clock::uClockClass::PPQNResolution internal_ppqn    = DEFAULT_INTERNAL_PPQN;
+#endif
 
 void change_clock_mode(ClockMode new_mode) {
   if(clock_mode!=new_mode) {
@@ -403,8 +406,11 @@ void change_clock_mode(ClockMode new_mode) {
     #endif 
 
     clock_mode = new_mode;
-    if (clock_mode==CLOCK_INTERNAL) 
-      uClock.setTempo(bpm_current);
+    
+    #ifdef USE_UCLOCK
+      if (clock_mode==CLOCK_INTERNAL) 
+        uClock.setTempo(bpm_current);
+    #endif
   }
 }
 
