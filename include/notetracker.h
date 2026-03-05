@@ -53,7 +53,6 @@ class NoteTracker {
       return false;
     }
 
-
     bool held_note_off(int8_t note) {
       if (is_valid_note(note)) {
         held_note_count--;
@@ -104,6 +103,7 @@ class NoteTracker {
     }
 
     PROGMEM
+    // if this note is held, return the note that it was transposed to (or NOTE_OFF if not held)
     int8_t get_transposed_note_for(int8_t note) {
       if (count_held() == 0) {
         return NOTE_OFF;
@@ -115,6 +115,7 @@ class NoteTracker {
     }
 
     //PROGMEM
+    // is this actual note held?
     inline bool is_note_held(int note) {
       if (count_held() == 0) {
         return false;
@@ -126,6 +127,7 @@ class NoteTracker {
     }
     
     //PROGMEM
+    // if this note is held, was it transposed to a different note?
     inline bool is_note_held_transposed(int note) {
       if (count_held() == 0) {
         return false;
@@ -137,6 +139,7 @@ class NoteTracker {
       return false;
     }
 
+    // if this note is held in any octave
     inline bool is_note_held_any_octave(int note) {
       if (count_held() == 0) {
         return false;
@@ -151,7 +154,8 @@ class NoteTracker {
       }
       return false;
     }
-    // check if this transposed note is held (eg for when displaying what is actually playing)
+
+    // check if this transposed note is held (eg for when displaying what is actually playing) in any octave
     inline bool is_note_held_any_octave_transposed(int note) {
       if (count_held() == 0) {
         return false;
@@ -170,6 +174,8 @@ class NoteTracker {
     using foreach_func_def = vl::Func<void(int8_t note, int8_t transposed_note)>;
 
     // run a callback function for every note that is currently held
+    // passes the transposted note as well as the original note, for use in display or 
+    //when needing to know what the note was transposed to for when releasing notes or re-quantising them
     //PROGMEM // never seem to get any notes out if this is enabled!?
     int foreach_note(foreach_func_def func) {
       if (count_held() == 0) {
@@ -198,6 +204,7 @@ class NoteTracker {
       return dealt_with;
     }
 
+    // get a string of all held notes and their transposed notes for display or debugging
     const char *get_held_notes_c() {
       static char buffer[256];
       buffer[0] = 0;
@@ -217,6 +224,7 @@ class NoteTracker {
     }
 
     PROGMEM
+    // get the original note for a given index of held notes (eg for when displaying what is actually playing)
     int get_held_note_index(int index) {
       if (count_held() == 0) {
         return NOTE_OFF;

@@ -1,4 +1,4 @@
-#if defined(USE_TINYUSB) && defined(ARDUINO_ARCH_RP2040)
+#if defined(USE_TINYUSB) && (defined(ARDUINO_ARCH_RP2040) || defined(ARDUINO_ARCH_RP2350))
 
 #if !defined(USB_MIDI_VID) || !defined(USB_MIDI_PID) || !defined(USB_MIDI_MANUFACTURER) || !defined(USB_MIDI_PRODUCT)
 	#error "USB_TINYUSB and ARDUINO_ARCH_RP2040 defined, but missing one or more of USB_MIDI_VID, USB_MIDI_PID, USB_MIDI_MANUFACTURER or USB_MIDI_PRODUCT"
@@ -28,7 +28,7 @@
         MIDI_CREATE_INSTANCE(SoftwareSerial, SoftSerial, DINMIDI);
     #endif
     #ifdef MIDI_SERIAL_SPIO
-        SerialPIO spio(MIDI_SERIAL_OUT_PIN, SerialPIO::NOPIN);
+        SerialPIO spio(MIDI_SERIAL_OUT_PIN, NOPIN);
         MIDI_CREATE_INSTANCE(SerialPIO, spio, DINMIDI);
     #endif
     #ifdef MIDI_SERIAL_HARDWARE
@@ -46,7 +46,7 @@
 
 #ifdef USE_TINYUSB
 void setup_usb() {
-    #if defined(ARDUINO_ARCH_MBED) && defined(ARDUINO_ARCH_RP2040)
+    #if defined(ARDUINO_ARCH_MBED) && (defined(ARDUINO_ARCH_RP2040) || defined(ARDUINO_ARCH_RP2350))
         // Manual begin() is required on core without built-in support for TinyUSB such as mbed rp2040
         TinyUSB_Device_Init(0);
     #endif
