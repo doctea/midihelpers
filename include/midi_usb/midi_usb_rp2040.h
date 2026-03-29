@@ -38,8 +38,16 @@ void setup_midi();
 void setup_usb();
 
 #if __has_include("outputs/output.h")
-#define USE_SEQLIB_OUTPUTS  // use outputs from seqlib https://github.com/doctea/seqlib
-#include "outputs/output.h"
+    #define USE_SEQLIB_OUTPUTS  // use outputs from seqlib https://github.com/doctea/seqlib
+    #include "outputs/output.h"
+#endif
+
+
+#ifdef ENABLE_CLOCK_INPUT_CV
+    // todo: not convinced this should be handled by this library; maybe something that should be part of midihelpers instead?
+    // since its really to be used by Microlidian only, in the RP2040DualMIDIOutputWrapper...
+    void set_external_cv_ticks_per_pulse_values(uint32_t new_value);
+    uint32_t get_external_cv_ticks_per_pulse_values();
 #endif
 
 // todo: port usb_midi_clocker's OutputWrapper to work here?
@@ -64,7 +72,7 @@ class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget {
         }
     #endif
 
-    uint32_t din_midi_clock_output_divider = 24;
+    uint32_t din_midi_clock_output_divider = 1; //PPQN; // by default, send a clock message for every internal clock tick; but allow this to be changed via the menu, to make the clock output more useful for midi->cv output situations
     void set_din_midi_clock_output_divider(uint32_t new_value) {
         din_midi_clock_output_divider = new_value;
     }
@@ -158,6 +166,8 @@ class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget {
     #endif
 
     virtual void sendControlChange(uint8_t number, uint8_t value, uint8_t channel) override {
+        if (!this->is_cc_output_enabled())
+            return;
         if (!is_valid_note(number))
             return;
         #ifdef USE_TINYUSB
@@ -180,7 +190,6 @@ class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget {
             cc_locked.unlock();
         #endif
         #ifdef USE_DINMIDI
-            //if (is_bpm_on_beat(ticks))  // todo: make clock tick sends to din MIDI use custom divisor value
             if (ticks % this->get_din_midi_clock_output_divider() == 0)
                 dinmidi->sendClock();   // send divisions of clock to muso, to make the clock output more useful
         #endif
@@ -212,9 +221,15 @@ class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget {
     #endif
 
     #ifdef ENABLE_STORAGE
+        // todo: port this to the ISaveableParameterHost interface
         LinkedList<String> *add_all_save_lines(LinkedList<String> *lines) {
             //if (Serial) Serial.println("MIDIOutputWrapper#add_all_save_lines()!");
             lines->add(String("dinmidi_output_type=") + String(this->get_output_mode()));
+            lines->add(String("dinmidi_clock_output_divider=") + String(this->get_din_midi_clock_output_divider()));
+            #ifdef ENABLE_CLOCK_INPUT_CV
+                lines->add(String("cv_pulses_per_tick=") + String(get_external_cv_ticks_per_pulse_values()));
+            #endif
+            lines->add(String("dinmidi_cc_output_enabled=") + String(this->is_cc_output_enabled()));
 
             return lines;
         }

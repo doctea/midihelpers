@@ -19,7 +19,6 @@
 #endif
 
 #ifdef USE_DINMIDI
-
     extern RP2040OutputWrapperClass *output_wrapper;
 
     #ifdef MIDI_SERIAL_SOFTWARE
@@ -40,7 +39,20 @@
     }
     uint32_t get_din_midi_clock_output_divider() {
         return output_wrapper->get_din_midi_clock_output_divider();
-} 
+    } 
+
+    uint32_t external_cv_ticks_per_pulse_values[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24 };
+    #define NUM_EXTERNAL_CV_TICKS_VALUES (sizeof(external_cv_ticks_per_pulse_values)/sizeof(uint32_t))
+    #ifdef ENABLE_CLOCK_INPUT_CV
+        void set_external_cv_ticks_per_pulse_values(uint32_t new_value) {
+            external_cv_ticks_per_pulse = new_value;
+            //reset_clock();
+            ticks = 0;
+        }
+        uint32_t get_external_cv_ticks_per_pulse_values() {
+            return external_cv_ticks_per_pulse;
+        }
+    #endif
 
 #endif
 
@@ -107,14 +119,12 @@ void setup_midi() {
     extern uint32_t external_cv_ticks_per_pulse_values[9];
     #define NUM_EXTERNAL_CV_TICKS_VALUES (sizeof(external_cv_ticks_per_pulse_values)/sizeof(uint32_t))
 
-    void set_external_cv_ticks_per_pulse_values(uint32_t new_value);
-    uint32_t get_external_cv_ticks_per_pulse_values();
-
     void RP2040DualMIDIOutputWrapper::create_menu_items() {
         // controls for cv-to-midi outputs..
 
         // todo: probably move this to another more generic 'settings' page
         menu->add_page("MIDI Output");
+        
         LambdaSelectorControl<OUTPUT_TYPE> *output_mode_selector = new LambdaSelectorControl<OUTPUT_TYPE>(
             "DIN output mode", 
             [=](OUTPUT_TYPE a) -> void { this->set_output_mode(a); },
@@ -126,6 +136,13 @@ void setup_midi() {
             output_mode_selector->add_available_value(available_output_types[i].type_id, available_output_types[i].label);
         }
         menu->add(output_mode_selector);
+
+        LambdaToggleControl *cc_output_toggle = new LambdaToggleControl(
+            "CC Output", 
+            [=](bool v) -> void { this->set_cc_output_enabled(v); },
+            [=]() -> bool { return this->is_cc_output_enabled(); }
+        );
+        menu->add(cc_output_toggle);
 
         #ifdef ENABLE_CLOCK_INPUT_CV
             SelectorControl<uint32_t> *external_cv_ticks_per_pulse_selector = new SelectorControl<uint32_t>("External CV clock: Pulses per tick");
@@ -152,7 +169,7 @@ void setup_midi() {
                 (new String(external_cv_ticks_per_pulse_values[i]))->c_str()
             );
         }*/
-        SelectorControl<uint32_t> *din_midi_clock_output_divider = new SelectorControl<uint32_t>("DIN MIDI: send clock every X pulses");
+        SelectorControl<uint32_t> *din_midi_clock_output_divider = new SelectorControl<uint32_t>("DIN MIDI: clock divider");
         din_midi_clock_output_divider->available_values = external_cv_ticks_per_pulse_values;
         din_midi_clock_output_divider->num_values = NUM_EXTERNAL_CV_TICKS_VALUES;
         din_midi_clock_output_divider->f_setter = ::set_din_midi_clock_output_divider;

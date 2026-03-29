@@ -41,8 +41,15 @@ class IMIDINoteTarget {
 
 // interface for classes that can receive MIDI CC data
 class IMIDICCTarget {
+    bool enable_cc_output = true;
     public:
-        virtual void sendControlChange(uint8_t cc_number, uint8_t value, uint8_t channel) {};
+      virtual bool is_cc_output_enabled() {
+          return enable_cc_output;
+      }
+      virtual void set_cc_output_enabled(bool enabled) {
+          enable_cc_output = enabled;
+      }
+      virtual void sendControlChange(uint8_t cc_number, uint8_t value, uint8_t channel) {};
 };
 
 class IMIDIProxiedCCTarget : virtual public IMIDICCTarget {
