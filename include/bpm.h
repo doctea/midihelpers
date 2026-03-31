@@ -9,6 +9,7 @@
 #ifndef PPQN
   #define PPQN  24
 #endif
+
 #define BEATS_PER_BAR   4
 #define BARS_PER_PHRASE 4
 #define BEATS_PER_PHRASE  (BEATS_PER_BAR * BARS_PER_PHRASE)

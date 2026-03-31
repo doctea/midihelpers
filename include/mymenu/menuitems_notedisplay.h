@@ -43,7 +43,7 @@ class NoteHarmonyDisplay : public MenuItem {
     public:
 
     scale_index_t *scale_number;
-    int8_t *scale_root;
+    int_fast8_t *scale_root;
     //int_fast8_t *current_note;
     bool *quantise_enabled;
     NoteTracker *note_tracker = nullptr;
@@ -51,7 +51,7 @@ class NoteHarmonyDisplay : public MenuItem {
     NoteHarmonyDisplay(
         const char *label, 
         scale_index_t *scale_number, 
-        int8_t *scale_root, 
+        int_fast8_t *scale_root, 
         NoteTracker *note_tracker, 
         bool *quantise_enabled
     ) : MenuItem(label, false) {

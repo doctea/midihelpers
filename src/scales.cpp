@@ -107,6 +107,10 @@ scale_index_t get_global_scale_type() {
   return SCALE_GLOBAL;
 }
 
+scale_identity_t *get_global_scale_identity() {
+  return global_scale_identity;
+}
+
 void set_global_chord_identity_target(chord_identity_t *chord_identity) {
   global_chord_identity = chord_identity;
 }

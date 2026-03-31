@@ -119,7 +119,7 @@ namespace CHORD {
 class scale_identity_t {
     public:
     scale_index_t scale_number = 0;
-    int8_t root_note = SCALE_ROOT_C;
+    int_fast8_t root_note = SCALE_ROOT_C;
 };
 
 class chord_identity_t {
