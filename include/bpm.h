@@ -13,11 +13,18 @@
 #define BPM_MINIMUM   60.0
 #define BPM_MAXIMUM   180.0
 
-#define TIME_NUMERATOR      4   // e.g. 7 for 7/8
-#define TIME_DENOMINATOR    4   // e.g. 8 for 7/8
+uint8_t get_time_signature_numerator(void);
+uint8_t get_time_signature_denominator(void);
+void set_time_signature_numerator(uint8_t v);
+void set_time_signature_denominator(uint8_t v);
+
+#define DEFAULT_TIME_SIGNATURE_NUMERATOR 4
+#define DEFAULT_TIME_SIGNATURE_DENOMINATOR 4
+
+#define TIME_NUMERATOR      (get_time_signature_numerator())   // e.g. 7 for 7/8
+#define TIME_DENOMINATOR    (get_time_signature_denominator())   // e.g. 8 for 7/8
 
 #define BARS_PER_PHRASE     4
-
 // Grid resolution (e.g. 4 = 16th notes)
 #define STEPS_PER_BEAT      4
 
@@ -28,7 +35,7 @@
 #define STEPS_PER_PHRASE    (STEPS_PER_BAR * BARS_PER_PHRASE)
 
 // Tick math
-#define TICKS_PER_BEAT      (PPQN * 4 / TIME_DENOMINATOR)
+#define TICKS_PER_BEAT      (PPQN * STEPS_PER_BEAT / TIME_DENOMINATOR)
 #define TICKS_PER_STEP      (TICKS_PER_BEAT / STEPS_PER_BEAT)
 #define TICKS_PER_BAR       (TICKS_PER_BEAT * BEATS_PER_BAR)
 #define TICKS_PER_PHRASE    (TICKS_PER_BAR * BARS_PER_PHRASE)

@@ -9,24 +9,27 @@
 
 class LoopMarkerPanel : public PinnedPanelMenuItem {
     unsigned long loop_length;
-    int beats_per_bar = BEATS_PER_BAR;
-    int bars_per_phrase = BEATS_PER_BAR * BARS_PER_PHRASE;
+    //int beats_per_bar = BEATS_PER_BAR;
+    //int bars_per_phrase = BEATS_PER_BAR * BARS_PER_PHRASE;
     int ppqn;
 
     public:
-        LoopMarkerPanel(int loop_length, int ppqn, int beats_per_bar = BEATS_PER_BAR, int bars_per_phrase = BARS_PER_PHRASE) : PinnedPanelMenuItem("Loop Position Header") {
+        LoopMarkerPanel(int loop_length, int ppqn/*, int beats_per_bar = BEATS_PER_BAR, int bars_per_phrase = BARS_PER_PHRASE*/) : PinnedPanelMenuItem("Loop Position Header") {
             this->loop_length = loop_length;
-            this->beats_per_bar = beats_per_bar;
-            this->bars_per_phrase = bars_per_phrase;
+            // this->beats_per_bar = beats_per_bar;
+            // this->bars_per_phrase = bars_per_phrase;
             this->ppqn = ppqn;
         };
 
         void set_loop_length(unsigned long loop_length) {
             this->loop_length = loop_length;
         }
-        void set_beats_per_bar(unsigned long beats_per_bar) {
-            this->beats_per_bar = beats_per_bar;
-        }        
+        // void set_beats_per_bar(unsigned long beats_per_bar) {
+        //     this->beats_per_bar = beats_per_bar;
+        // }
+        int get_beats_per_bar() {
+            return BEATS_PER_BAR;
+        }
 
         virtual int display(Coord pos, bool selected = false, bool opened = false) override {
             //Serial.printf("PinnedPanel display colour RED is %4x, WHITE is %4x\n", RED, C_WHITE);
@@ -49,8 +52,8 @@ class LoopMarkerPanel : public PinnedPanelMenuItem {
 
             // save some float maths by only recalculating if tick is different from last time
             if (last_serviced_tick != ticks) {
-                tick_of_loop = ticks % loop_length;
-                float percent = float(tick_of_loop) / (float)loop_length;
+                tick_of_loop = ticks % TICKS_PER_PHRASE; //loop_length;
+                float percent = float(tick_of_loop) / (float)TICKS_PER_PHRASE;
                 new_position_width = (percent*(float)tft_width);
                 //Serial.printf("ticks %i: ticks%loop_length = %i: ", ticks, ticks%loop_length);
                 //if (ticks%loop_length==0)   // if we're at the start of loop then blank out the display 
@@ -63,14 +66,18 @@ class LoopMarkerPanel : public PinnedPanelMenuItem {
             tft->fillRect(0, y, last_position_width, bar_height, playing ? DARK_BLUE : RED);
 
             // draw 'step' markers
-            static const uint_fast16_t step_size_beats = tft_width / (beats_per_bar*bars_per_phrase);  // safe to make static so long as beats_per_bar/bars_per_phrase is not configurable!
+            //static const uint_fast16_t step_size_beats = tft_width / (beats_per_bar*bars_per_phrase);  // safe to make static so long as beats_per_bar/bars_per_phrase is not configurable!
+            // @@TODO: we should probably make these static (again) but recalculate if the time signature changes
+            const uint_fast16_t step_size_beats = tft_width / (BEATS_PER_PHRASE);  // safe to make static so long as beats_per_bar/bars_per_phrase is not configurable!
             for (uint_fast16_t i = 0 ; i < tft_width ; i += step_size_beats) {
                 //tft->drawLine(i, y, i, y+(bar_height_third), i > new_position_width ? C_WHITE : BLACK);
                 tft->drawLine(i, y, i, y+(bar_height_third), C_WHITE);
             }
 
             // draw 'bar' markers
-            static const uint_fast16_t step_size_bars = tft_width / bars_per_phrase;
+            //static const uint_fast16_t step_size_bars = tft_width / bars_per_phrase;
+            // @@TODO: we should probably make these static (again) but recalculate if the time signature changes
+            const uint_fast16_t step_size_bars = tft_width / (BARS_PER_PHRASE);  // safe to make static so long as beats_per_bar/bars_per_phrase is not configurable!
             for (uint_fast16_t i = 0 ; i < tft_width ; i += step_size_bars) {
                 //tft->fillRect(i, y+1, bar_height_third, bar_height-1, i > new_position_width ? C_WHITE : BLACK);
                 tft->fillRect(i, y+1, bar_height_third, bar_height-1, C_WHITE);
@@ -152,6 +159,47 @@ class BPMPositionIndicator : public MenuItem {
                 set_bpm(bpm_current+1);
             return true;
         }
+
+};
+
+#include <functional-vlpp.h>
+class TimeSignatureIndicator : public SubMenuItemBar {
+    
+    // look at the other subclasses of SubMenuItemBar in the project
+    // and add the necessary virtual methods here to add suitable menuitems to use the get_time_signature_numerator() and get_time_signature_denominator() functions from bpm.h
+    // and set_time_signature_numerator() and set_time_signature_denominator() functions from bpm.h
+    
+    public:
+        TimeSignatureIndicator() : SubMenuItemBar("Time signature", true, true) {
+
+            LambdaSelectorControl<uint8_t> *timesig_numerator_control = new LambdaSelectorControl<uint8_t>(
+                "Numerator",
+                [](uint8_t new_numerator) { set_time_signature_numerator(new_numerator); },
+                []() { return get_time_signature_numerator(); },
+                nullptr,
+                false,
+                true
+            );
+            for (int i = 1 ; i < 21 ; i++) {
+                timesig_numerator_control->add_available_value(i, (new String(i))->c_str());
+            }
+            this->add(timesig_numerator_control);
+
+            // add denominator control
+            LambdaSelectorControl<uint8_t> *timesig_denominator_control = new LambdaSelectorControl<uint8_t>(
+                "Denominator",
+                [](uint8_t new_denominator) { set_time_signature_denominator(new_denominator); },
+                []() { return get_time_signature_denominator(); },
+                nullptr,
+                false,
+                true
+            );
+            for (int i = 2 ; i < 16 ; i+=2) {
+                timesig_denominator_control->add_available_value(i, (new String(i))->c_str());
+            }
+            this->add(timesig_denominator_control);
+
+        };
 
 };
 
