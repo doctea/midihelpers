@@ -177,8 +177,8 @@ class TimeSignatureIndicator : public SubMenuItemBar {
                 [](uint8_t new_numerator) { set_time_signature_numerator(new_numerator); },
                 []() { return get_time_signature_numerator(); },
                 nullptr,
-                false,
-                true
+                true,
+                false
             );
             for (int i = 1 ; i < 21 ; i++) {
                 timesig_numerator_control->add_available_value(i, (new String(i))->c_str());
@@ -191,8 +191,8 @@ class TimeSignatureIndicator : public SubMenuItemBar {
                 [](uint8_t new_denominator) { set_time_signature_denominator(new_denominator); },
                 []() { return get_time_signature_denominator(); },
                 nullptr,
-                false,
-                true
+                true,
+                false
             );
             for (int i = 2 ; i < 16 ; i+=2) {
                 timesig_denominator_control->add_available_value(i, (new String(i))->c_str());

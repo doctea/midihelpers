@@ -18,6 +18,8 @@ uint8_t get_time_signature_denominator(void);
 void set_time_signature_numerator(uint8_t v);
 void set_time_signature_denominator(uint8_t v);
 
+#define TIME_SIG_MAX_STEPS_PER_BAR 64 // TODO: assess whether this value should be increased; used by CircleDisplays and pattern parameter limits?
+
 #define DEFAULT_TIME_SIGNATURE_NUMERATOR 4
 #define DEFAULT_TIME_SIGNATURE_DENOMINATOR 4
 
