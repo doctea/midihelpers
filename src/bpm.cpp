@@ -17,7 +17,7 @@ bool single_step = false;
 bool restart_on_next_bar = false;
 
 
-bool is_bpm_on_phrase(uint32_t ticks,      unsigned long offset) { return ticks==offset || ticks%(PPQN*TICKS_PER_PHRASE) == offset; }
+bool is_bpm_on_phrase(uint32_t ticks,      unsigned long offset) { return ticks==offset || ticks%(TICKS_PER_PHRASE) == offset; }
 bool is_bpm_on_half_phrase(uint32_t ticks, unsigned long offset) { return ticks==offset || ticks%(TICKS_PER_PHRASE / 2) == offset; }
 bool is_bpm_on_bar(uint32_t    ticks,      unsigned long offset) { return ticks==offset || ticks%(TICKS_PER_BAR) == offset; }
 bool is_bpm_on_half_bar(uint32_t  ticks,   unsigned long offset) { return ticks==offset || ticks%(TICKS_PER_BAR/2) == offset; }
