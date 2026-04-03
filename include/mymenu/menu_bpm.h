@@ -1,5 +1,4 @@
-//#include "Config.h"
-#ifdef ENABLE_SCREEN
+#pragma once
 
 #include "menu.h"
 #include "menuitems.h"
@@ -162,45 +161,46 @@ class BPMPositionIndicator : public MenuItem {
 
 };
 
-#include <functional-vlpp.h>
-class TimeSignatureIndicator : public SubMenuItemBar {
-    
-    // look at the other subclasses of SubMenuItemBar in the project
-    // and add the necessary virtual methods here to add suitable menuitems to use the get_time_signature_numerator() and get_time_signature_denominator() functions from bpm.h
-    // and set_time_signature_numerator() and set_time_signature_denominator() functions from bpm.h
-    
-    public:
-        TimeSignatureIndicator() : SubMenuItemBar("Time signature", true, true) {
+#ifdef ENABLE_TIME_SIGNATURE
+    #include <functional-vlpp.h>
+    class TimeSignatureIndicator : public SubMenuItemBar {
+        
+        // look at the other subclasses of SubMenuItemBar in the project
+        // and add the necessary virtual methods here to add suitable menuitems to use the get_time_signature_numerator() and get_time_signature_denominator() functions from bpm.h
+        // and set_time_signature_numerator() and set_time_signature_denominator() functions from bpm.h
+        
+        public:
+            TimeSignatureIndicator() : SubMenuItemBar("Time signature", true, true) {
 
-            LambdaSelectorControl<uint8_t> *timesig_numerator_control = new LambdaSelectorControl<uint8_t>(
-                "Numerator",
-                [](uint8_t new_numerator) { set_time_signature_numerator(new_numerator); },
-                []() { return get_time_signature_numerator(); },
-                nullptr,
-                true,
-                false
-            );
-            for (int i = 1 ; i < 21 ; i++) {
-                timesig_numerator_control->add_available_value(i, (new String(i))->c_str());
-            }
-            this->add(timesig_numerator_control);
+                LambdaSelectorControl<uint8_t> *timesig_numerator_control = new LambdaSelectorControl<uint8_t>(
+                    "Numerator",
+                    [](uint8_t new_numerator) { set_time_signature_numerator(new_numerator); },
+                    []() { return get_time_signature_numerator(); },
+                    nullptr,
+                    true,
+                    false
+                );
+                for (int i = 1 ; i < 21 ; i++) {
+                    timesig_numerator_control->add_available_value(i, (new String(i))->c_str());
+                }
+                this->add(timesig_numerator_control);
 
-            // add denominator control
-            LambdaSelectorControl<uint8_t> *timesig_denominator_control = new LambdaSelectorControl<uint8_t>(
-                "Denominator",
-                [](uint8_t new_denominator) { set_time_signature_denominator(new_denominator); },
-                []() { return get_time_signature_denominator(); },
-                nullptr,
-                true,
-                false
-            );
-            for (int i = 2 ; i < 16 ; i+=2) {
-                timesig_denominator_control->add_available_value(i, (new String(i))->c_str());
-            }
-            this->add(timesig_denominator_control);
+                // add denominator control
+                LambdaSelectorControl<uint8_t> *timesig_denominator_control = new LambdaSelectorControl<uint8_t>(
+                    "Denominator",
+                    [](uint8_t new_denominator) { set_time_signature_denominator(new_denominator); },
+                    []() { return get_time_signature_denominator(); },
+                    nullptr,
+                    true,
+                    false
+                );
+                for (int i = 2 ; i < 16 ; i+=2) {
+                    timesig_denominator_control->add_available_value(i, (new String(i))->c_str());
+                }
+                this->add(timesig_denominator_control);
 
-        };
+            };
 
-};
-
+    };
 #endif
+

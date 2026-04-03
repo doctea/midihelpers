@@ -99,27 +99,29 @@ int step_number_from_ticks(signed long ticks) {
     return (ticks / TICKS_PER_STEP) % STEPS_PER_BAR;
 }
 
-// time signature stuff..
-// first/top number ie how many beats in a bar, second/bottom number is what kind of note gets the beat (e.g. 4 for quarter note, 8 for eighth note etc)
-uint8_t time_signature_numerator = DEFAULT_TIME_SIGNATURE_NUMERATOR;
-uint8_t get_time_signature_numerator() {
-    return time_signature_numerator;
-}
-void set_time_signature_numerator(uint8_t v) {
-    time_signature_numerator = v;
-}
+#ifdef ENABLE_TIME_SIGNATURE
+  // time signature stuff..
+  // first/top number ie how many beats in a bar, second/bottom number is what kind of note gets the beat (e.g. 4 for quarter note, 8 for eighth note etc)
+  uint8_t time_signature_numerator = DEFAULT_TIME_SIGNATURE_NUMERATOR;
+  uint8_t get_time_signature_numerator() {
+      return time_signature_numerator;
+  }
+  void set_time_signature_numerator(uint8_t v) {
+      time_signature_numerator = v;
+  }
 
-// denominator
-uint8_t time_signature_denominator = DEFAULT_TIME_SIGNATURE_DENOMINATOR;
-uint8_t get_time_signature_denominator() {
-    return time_signature_denominator;
-}
-void set_time_signature_denominator(uint8_t v) {
-  if (v == 0) {
-      time_signature_denominator = 2; // prevent divide-by-zero
+  // denominator
+  uint8_t time_signature_denominator = DEFAULT_TIME_SIGNATURE_DENOMINATOR;
+  uint8_t get_time_signature_denominator() {
+      return time_signature_denominator;
   }
-  if (v % 2 != 0) {
-      time_signature_denominator = 4; // prevent weird denominators that would mess up tick math
+  void set_time_signature_denominator(uint8_t v) {
+    if (v == 0) {
+        time_signature_denominator = 2; // prevent divide-by-zero
+    }
+    if (v % 2 != 0) {
+        time_signature_denominator = 4; // prevent weird denominators that would mess up tick math
+    }
+    time_signature_denominator = v;
   }
-  time_signature_denominator = v;
-}
+#endif
