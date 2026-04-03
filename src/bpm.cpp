@@ -91,12 +91,14 @@ bool is_restart_on_next_bar() {
   return restart_on_next_bar;
 }
 
+// beat number of bar, counting from 0, for given tick number
 int beat_number_from_ticks(signed long ticks) {
-    return (ticks / TICKS_PER_BEAT) % BEATS_PER_BAR;
+    return BPM_GLOBAL_BEAT_FROM_TICKS(ticks) % BEATS_PER_BAR;
 }
 
+// step number of bar, counting from 0, for given tick number
 int step_number_from_ticks(signed long ticks) {
-    return (ticks / TICKS_PER_STEP) % STEPS_PER_BAR;
+    return BPM_GLOBAL_STEP_FROM_TICKS(ticks) % STEPS_PER_BAR;
 }
 
 #ifdef ENABLE_TIME_SIGNATURE
