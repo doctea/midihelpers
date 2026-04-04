@@ -4,7 +4,9 @@
     #define RP2040OutputWrapperClass RP2040DualMIDIOutputWrapper
 #endif
 
-//#include "Config.h"
+#ifdef ENABLE_STORAGE
+    #include "saveload_settings.h"
+#endif
 
 // MIDI + USB
 #ifdef USE_TINYUSB
@@ -52,7 +54,7 @@ void setup_usb();
 
 // todo: port usb_midi_clocker's OutputWrapper to work here?
 // wrapper class to wrap different MIDI output types; handles both USB MIDI and DIN MIDI outputs
-class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget {
+class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget, virtual public ISaveableSettingHost {
     public:
     #ifdef USE_TINYUSB
         midi::MidiInterface<midi::SerialMIDI<Adafruit_USBD_MIDI>> *usbmidi = &USBMIDI;
@@ -221,25 +223,67 @@ class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget {
     #endif
 
     #ifdef ENABLE_STORAGE
-        // todo: port this to the ISaveableParameterHost interface
-        LinkedList<String> *add_all_save_lines(LinkedList<String> *lines) {
-            //if (Serial) Serial.println("MIDIOutputWrapper#add_all_save_lines()!");
-            lines->add(String("dinmidi_output_type=") + String(this->get_output_mode()));
-            lines->add(String("dinmidi_clock_output_divider=") + String(this->get_din_midi_clock_output_divider()));
-            #ifdef ENABLE_CLOCK_INPUT_CV
-                lines->add(String("cv_pulses_per_tick=") + String(get_external_cv_ticks_per_pulse_values()));
-            #endif
-            lines->add(String("dinmidi_cc_output_enabled=") + String(this->is_cc_output_enabled()));
+        virtual void setup_saveable_settings() override {
+            //Serial.println("MIDIOutputWrapper#setup_saveable_settings()!");
+            ISaveableSettingHost::setup_saveable_settings();
 
-            return lines;
-        }
-        bool load_parse_key_value(String key, String value) {
-            //if (Serial) Serial.printf("MIDIOutputWrapper#load_parse_key_value('%s','%s')\n", key.c_str(), value.c_str());
-            if (key.equals("dinmidi_output_type")) {                
-                this->set_output_mode((OUTPUT_TYPE)(uint8_t)value.toInt());
-                return true;
-            }
-            return false;
+            // add settings for this class
+            register_setting(
+                new LSaveableSetting<OUTPUT_TYPE>(
+                    "DIN MIDI Output Type",
+                    "HW MIDI Settings",
+                    &this->output_mode,
+                    [=](OUTPUT_TYPE value) -> void {
+                        this->set_output_mode(value);
+                    },
+                    [=](void) -> OUTPUT_TYPE {
+                        return this->get_output_mode();
+                    }
+                )
+            );
+            register_setting(
+                new LSaveableSetting<uint32_t>(
+                    "DIN MIDI Clock Output Divider",
+                    "HW MIDI Settings",
+                    &this->din_midi_clock_output_divider,
+                    [=](uint32_t value) -> void {
+                        this->set_din_midi_clock_output_divider(value);
+                    },
+                    [=](void) -> uint32_t {
+                        return this->get_din_midi_clock_output_divider();
+                    }
+                )
+            );
+            // todo: potentially move this up into IMIDINoteAndCCTarget, if we want to be able to enable/disable CC output for all MIDI outputs, not just the DIN MIDI output on the RP2040DualMIDIOutputWrapper
+            register_setting(
+                new LSaveableSetting<bool>(
+                    "DIN MIDI CC Output Enabled",
+                    "HW MIDI Settings",
+                    &this->enable_cc_output,
+                    [=](bool value) -> void {
+                        this->set_cc_output_enabled(value);
+                    },
+                    [=](void) -> bool {
+                        return this->is_cc_output_enabled();
+                    }
+                )
+            );
+            #ifdef ENABLE_CLOCK_INPUT_CV
+                register_setting(
+                    new LSaveableSetting<uint32_t>(
+                        "CV Pulses Per Tick",
+                        "HW MIDI Settings",
+                        nullptr,
+                        [=](uint32_t value) -> void {
+                            set_external_cv_ticks_per_pulse_values(value);
+                        },
+                        [=](void) -> uint32_t {
+                            return get_external_cv_ticks_per_pulse_values();
+                        }
+                    )
+                );
+            #endif
+
         }
     #endif
 };
