@@ -100,6 +100,7 @@ const chord_t chords[] = {
 };
 
 namespace CHORD {
+    // @@TODO: make this an enum class and update code accordingly
     typedef int Type;
     const int 
         GLOBAL = -1,
@@ -112,6 +113,18 @@ namespace CHORD {
         OCTAVE_2 = 6,
         OCTAVE_3 = 7,
         NONE = 8;
+    // enum Type : int {
+    //     GLOBAL = -1,
+    //     TRIAD = 0,
+    //     SUS2 = 1,
+    //     SUS4 = 2,
+    //     SEVENTH = 3,
+    //     NINTH = 4,
+    //     OCTAVE_1 = 5,
+    //     OCTAVE_2 = 6,
+    //     OCTAVE_3 = 7,
+    //     NONE = 8,
+    // };
 };
 
 #define NUMBER_CHORDS (sizeof(chords)/sizeof(chord_t))

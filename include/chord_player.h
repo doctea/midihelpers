@@ -14,7 +14,11 @@
     #include "mymenu/menuitems_scale.h"
     #include "mymenu/menuitems_harmony.h"
 #endif
-class ChordPlayer {
+
+#ifdef ENABLE_STORAGE
+    #include "saveload_settings.h"
+#endif
+class ChordPlayer : public ISaveableSettingHost {
     public:
 
         using setter_func_def = vl::Func<void(int8_t channel, int8_t note, int8_t velocity)>;
@@ -45,6 +49,7 @@ class ChordPlayer {
         int8_t current_bass_note = NOTE_OFF, current_topline_note = NOTE_OFF;
         CHORD::Type last_chord = CHORD::NONE, current_chord = CHORD::NONE, selected_chord_number = CHORD::NONE;
         unsigned long note_started_at_tick = 0;
+
         int32_t note_length_ticks = PPQN;
         int32_t trigger_on_ticks = 0;   // 0 = on change
         int32_t trigger_delay_ticks = 0;
@@ -539,7 +544,7 @@ class ChordPlayer {
             );
             if (chord_type_control_options==nullptr) {
                 for (size_t i = 0 ; i < NUMBER_CHORDS ; i++) {
-                    selected_chord_control->add_available_value(i, chords[i].label);
+                    selected_chord_control->add_available_value(static_cast<CHORD::Type>(i), chords[i].label);
                 }
                 chord_type_control_options = selected_chord_control->get_available_values();
             } else {
@@ -565,6 +570,96 @@ class ChordPlayer {
         }
 
     #endif
+
+    #ifdef ENABLE_STORAGE
+        virtual void setup_saveable_settings() override {
+            ISaveableSettingHost::setup_saveable_settings();
+
+            register_setting(new LSaveableSetting<int32_t>(
+                    "note_length_ticks",
+                    "ChordPlayer",
+                    &this->note_length_ticks,
+                    [=]() -> int32_t { return this->get_note_length(); }, 
+                    [=](int32_t v) -> void { this->set_note_length(v); }
+            ));
+
+            register_setting(new LSaveableSetting<int32_t>(
+                    "trigger_on_ticks",
+                    "ChordPlayer",
+                    &this->trigger_on_ticks,
+                    [=]() -> int32_t { return this->get_trigger_on_ticks(); }, 
+                    [=](int32_t v) -> void { this->set_trigger_on_ticks(v); }
+            ));
+
+            register_setting(new LSaveableSetting<int32_t>(
+                    "trigger_delay_ticks", 
+                    "ChordPlayer",
+                    &this->trigger_delay_ticks,
+                    [=]() -> int32_t { return this->get_trigger_delay_ticks(); }, 
+                    [=](int32_t v) -> void { this->set_trigger_delay_ticks(v); }
+            ));
+
+            register_setting(new LSaveableSetting<bool>(
+                    "quantise", 
+                    "ChordPlayer",
+                    &this->quantise,
+                    [=]() -> bool { return this->is_quantise(); }, 
+                    [=](bool v) -> void { this->set_quantise(v); }
+            ));
+
+            register_setting(new LSaveableSetting<bool>(
+                    "play_chords", 
+                    "ChordPlayer",
+                    &this->play_chords,
+                    [=]() -> bool { return this->is_play_chords(); }, 
+                    [=](bool v) -> void { this->set_play_chords(v); }
+            ));
+
+            register_setting(new LSaveableSetting<scale_index_t>(
+                    "scale", 
+                    "ChordPlayer",
+                    &this->scale,
+                    [=]() -> scale_index_t { return this->get_scale(); }, 
+                    [=](scale_index_t v) -> void { this->set_scale(v); }
+            ));
+
+            register_setting(new LSaveableSetting<int8_t>(
+                    "scale_root", 
+                    "ChordPlayer",
+                    &this->scale_root,
+                    [=]() -> int8_t { return this->get_scale_root(); }, 
+                    [=](int8_t v) -> void { this->set_scale_root(v); }
+            ));
+
+            register_setting(new LSaveableSetting<int8_t>(
+                    "inversion", 
+                    "ChordPlayer",
+                    &this->inversion,
+                    [=]() -> int8_t { return this->get_inversion(); }, 
+                    [=](int8_t v) -> void { this->set_inversion(v); }
+            ));
+
+            register_setting(new LSaveableSetting<int>(
+                    "selected_chord_number", 
+                    "ChordPlayer",
+                    nullptr,
+                    [=]() -> int { return (int)this->get_selected_chord(); }, 
+                    [=](int v) -> void { this->set_selected_chord((CHORD::Type)v); }
+            ));
+
+            #ifdef CVINPUT_CONFIGURABLE_CHANNEL
+                register_setting(new LSaveableSetting<uint8_t>(
+                        "channel", 
+                        "ChordPlayer",
+                        &this->channel,
+                        [=]() -> uint8_t { return this->get_channel(); }, 
+                        [=](uint8_t v) -> void { this->set_channel(v); }
+                ));
+            #endif
+        }
+
+    #endif
+
 };
 
 #endif

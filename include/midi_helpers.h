@@ -41,8 +41,10 @@ class IMIDINoteTarget {
 
 // interface for classes that can receive MIDI CC data
 class IMIDICCTarget {
+  protected:
     bool enable_cc_output = true;
-    public:
+
+  public:
       virtual bool is_cc_output_enabled() {
           return enable_cc_output;
       }
