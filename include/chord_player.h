@@ -18,7 +18,7 @@
 #ifdef ENABLE_STORAGE
     #include "saveload_settings.h"
 #endif
-class ChordPlayer : public ISaveableSettingHost {
+class ChordPlayer : public SHStorage<0, 12> {  // no children; selected_chord + channel settings
     public:
 
         using setter_func_def = vl::Func<void(int8_t channel, int8_t note, int8_t velocity)>;
@@ -40,6 +40,8 @@ class ChordPlayer : public ISaveableSettingHost {
             this->receive_note_off_bass = receive_note_off_bass;
             this->receive_note_on_topline = receive_note_on_topline;
             this->receive_note_off_topline = receive_note_off_topline;
+
+            this->set_path_segment("ChordPlayer");
         }
         bool debug = false;
 
