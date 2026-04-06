@@ -244,7 +244,7 @@ class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget, public 
                     [=](void) -> OUTPUT_TYPE {
                         return this->get_output_mode();
                     }
-                )
+                ), SL_SCOPE_SYSTEM
             );
             register_setting(
                 new LSaveableSetting<uint32_t>(
@@ -257,7 +257,7 @@ class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget, public 
                     [=](void) -> uint32_t {
                         return this->get_din_midi_clock_output_divider();
                     }
-                )
+                ), SL_SCOPE_SYSTEM
             );
             // todo: potentially move this up into IMIDINoteAndCCTarget, if we want to be able to enable/disable CC output for all MIDI outputs, not just the DIN MIDI output on the RP2040DualMIDIOutputWrapper
             register_setting(
@@ -271,7 +271,7 @@ class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget, public 
                     [=](void) -> bool {
                         return this->is_cc_output_enabled();
                     }
-                )
+                ), SL_SCOPE_SYSTEM
             );
             #ifdef ENABLE_CLOCK_INPUT_CV
                 register_setting(
@@ -285,7 +285,7 @@ class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget, public 
                         [=](void) -> uint32_t {
                             return get_external_cv_ticks_per_pulse_values();
                         }
-                    )
+                    ), SL_SCOPE_SYSTEM
                 );
             #endif
 

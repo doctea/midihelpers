@@ -583,7 +583,7 @@ class ChordPlayer : public SHStorage<0, 12> {  // no children; selected_chord + 
                     &this->note_length_ticks,
                     [=](int32_t v) -> void { this->set_note_length(v); },
                     [=]() -> int32_t { return this->get_note_length(); }
-            ));
+            ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT);  // allow note length to be saved at scene or project level, since it's more of a performance setting than a preference setting
 
             register_setting(new LSaveableSetting<int32_t>(
                     "trigger_on_ticks",
@@ -591,7 +591,7 @@ class ChordPlayer : public SHStorage<0, 12> {  // no children; selected_chord + 
                     &this->trigger_on_ticks,
                     [=](int32_t v) -> void { this->set_trigger_on_ticks(v); },
                     [=]() -> int32_t { return this->get_trigger_on_ticks(); } 
-            ));
+            ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT);  // allow trigger_on_ticks to be saved at scene or project level, since it's more of a performance setting than a preference setting
 
             register_setting(new LSaveableSetting<int32_t>(
                     "trigger_delay_ticks", 
@@ -599,7 +599,7 @@ class ChordPlayer : public SHStorage<0, 12> {  // no children; selected_chord + 
                     &this->trigger_delay_ticks,
                     [=](int32_t v) -> void { this->set_trigger_delay_ticks(v); },
                     [=]() -> int32_t { return this->get_trigger_delay_ticks(); } 
-            ));
+            ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT);  // allow trigger_delay_ticks to be saved at scene or project level, since it's more of a performance setting than a preference setting
 
             register_setting(new LSaveableSetting<bool>(
                     "quantise", 
@@ -607,7 +607,7 @@ class ChordPlayer : public SHStorage<0, 12> {  // no children; selected_chord + 
                     &this->quantise,
                     [=](bool v) -> void { this->set_quantise(v); },
                     [=]() -> bool { return this->is_quantise(); }
-            ));
+            ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT);  // allow quantise to be saved at scene or project level, since it's more of a performance setting than a preference setting
 
             register_setting(new LSaveableSetting<bool>(
                     "play_chords", 
@@ -615,7 +615,7 @@ class ChordPlayer : public SHStorage<0, 12> {  // no children; selected_chord + 
                     &this->play_chords,
                     [=](bool v) -> void { this->set_play_chords(v); },
                     [=]() -> bool { return this->is_play_chords(); }
-            ));
+            ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT);  // allow play_chords to be saved at scene or project level, since it's more of a performance setting than a preference setting
 
             register_setting(new LSaveableSetting<scale_index_t>(
                     "scale", 
@@ -623,7 +623,7 @@ class ChordPlayer : public SHStorage<0, 12> {  // no children; selected_chord + 
                     &this->scale,
                     [=](scale_index_t v) -> void { this->set_scale(v); },
                     [=]() -> scale_index_t { return this->get_scale(); }
-            ));
+            ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT);  // allow scale to be saved at scene or project level, since it's more of a performance setting than a preference setting
 
             register_setting(new LSaveableSetting<int8_t>(
                     "scale_root", 
@@ -631,7 +631,7 @@ class ChordPlayer : public SHStorage<0, 12> {  // no children; selected_chord + 
                     &this->scale_root,
                     [=](int8_t v) -> void { this->set_scale_root(v); },
                     [=]() -> int8_t { return this->get_scale_root(); }
-            ));
+            ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT);  // allow scale_root to be saved at scene or project level, since it's more of a performance setting than a preference setting
 
             register_setting(new LSaveableSetting<int8_t>(
                     "inversion", 
@@ -639,7 +639,7 @@ class ChordPlayer : public SHStorage<0, 12> {  // no children; selected_chord + 
                     &this->inversion,
                     [=](int8_t v) -> void { this->set_inversion(v); },
                     [=]() -> int8_t { return this->get_inversion(); } 
-            ));
+            ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT);  // allow inversion to be saved at scene or project level, since it's more of a performance setting than a preference setting
 
             register_setting(new LSaveableSetting<int>(
                     "selected_chord_number", 
@@ -647,7 +647,7 @@ class ChordPlayer : public SHStorage<0, 12> {  // no children; selected_chord + 
                     nullptr,
                     [=](int v) -> void { this->set_selected_chord((CHORD::Type)v); },
                     [=]() -> int { return (int)this->get_selected_chord(); }
-            ));
+            ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT);  // allow selected_chord_number to be saved at scene or project level, since it's more of a performance setting than a preference setting
 
             #ifdef CVINPUT_CONFIGURABLE_CHANNEL
                 register_setting(new LSaveableSetting<uint8_t>(
@@ -656,7 +656,7 @@ class ChordPlayer : public SHStorage<0, 12> {  // no children; selected_chord + 
                         &this->channel,
                         [=](uint8_t v) -> void { this->set_channel(v); },
                         [=]() -> uint8_t { return this->get_channel(); }
-                ));
+                ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT);  // allow channel to be saved at scene or project level, since it's more of a performance setting than a preference setting
             #endif
         }
 
