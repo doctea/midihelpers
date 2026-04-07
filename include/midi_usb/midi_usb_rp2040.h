@@ -54,11 +54,17 @@ void setup_usb();
 
 // todo: port usb_midi_clocker's OutputWrapper to work here?
 // wrapper class to wrap different MIDI output types; handles both USB MIDI and DIN MIDI outputs
-class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget, public SHStorage<0, 8> {  // no children; 4 settings
+class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget 
+    #ifdef ENABLE_STORAGE
+        , public SHStorage<0, 8> // no children; 4 settings
+    #endif
+    {
     public:
 
     RP2040DualMIDIOutputWrapper() {
-        this->set_path_segment("MIDIWrapper");
+        #ifdef ENABLE_STORAGE
+             this->set_path_segment("MIDIWrapper");
+        #endif
     }
 
     #ifdef USE_TINYUSB
