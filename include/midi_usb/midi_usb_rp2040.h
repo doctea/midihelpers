@@ -56,7 +56,7 @@ void setup_usb();
 // wrapper class to wrap different MIDI output types; handles both USB MIDI and DIN MIDI outputs
 class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget 
     #ifdef ENABLE_STORAGE
-        , public SHStorage<0, 8> // no children; 4 settings
+        , public SHDynamic<0, 8> // no children; 4 settings
     #endif
     {
     public:

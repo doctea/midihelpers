@@ -20,7 +20,7 @@
 #endif
 class ChordPlayer 
 #ifdef ENABLE_STORAGE
-    : public SHStorage<0, 12> // no children; selected_chord + channel settings
+    : public SHDynamic<0, 12> // no children; selected_chord + channel settings
 #endif
     {  // no children; selected_chord + channel settings
     public:
