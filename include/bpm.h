@@ -14,8 +14,12 @@
 #define BPM_MAXIMUM   180.0
 
 #ifdef ENABLE_TIME_SIGNATURE
-  uint8_t get_time_signature_numerator(void);
-  uint8_t get_time_signature_denominator(void);
+  // storage in bpm.cpp, inline accessors here so the compiler can cache these
+  // across multiple is_bpm_on_* calls in BaseSequencer::on_tick
+  extern uint8_t time_signature_numerator;
+  extern uint8_t time_signature_denominator;
+  inline uint8_t get_time_signature_numerator(void) { return time_signature_numerator; }
+  inline uint8_t get_time_signature_denominator(void) { return time_signature_denominator; }
   void set_time_signature_numerator(uint8_t v);
   void set_time_signature_denominator(uint8_t v);
 
@@ -121,14 +125,16 @@ volatile extern float bpm_current; //BPM_MINIMUM; //60.0f;
 int beat_number_from_ticks(signed long ticks);
 int step_number_from_ticks(signed long ticks);
 
-bool is_bpm_on_phrase(uint32_t ticks,      unsigned long offset = 0);
-bool is_bpm_on_half_phrase(uint32_t ticks, unsigned long offset = 0);
-bool is_bpm_on_bar(uint32_t    ticks,      unsigned long offset = 0);
-bool is_bpm_on_half_bar(uint32_t  ticks,   unsigned long offset = 0);
-bool is_bpm_on_beat(uint32_t  ticks,       unsigned long offset = 0);
-bool is_bpm_on_eighth(uint32_t  ticks,     unsigned long offset = 0);
-bool is_bpm_on_sixteenth(uint32_t  ticks,  unsigned long offset = 0);
-bool is_bpm_on_thirtysecond(uint32_t  ticks,  unsigned long offset = 0);
+// inline so the compiler sees through the macro constants and eliminates
+// per-call function overhead — 10 of these fire per ISR tick in MultiSequencer
+inline bool is_bpm_on_phrase(uint32_t ticks,        unsigned long offset = 0) { return ticks==offset || ticks%(TICKS_PER_PHRASE) == offset; }
+inline bool is_bpm_on_half_phrase(uint32_t ticks,   unsigned long offset = 0) { return ticks==offset || ticks%(TICKS_PER_PHRASE/2) == offset; }
+inline bool is_bpm_on_bar(uint32_t ticks,           unsigned long offset = 0) { return ticks==offset || ticks%(TICKS_PER_BAR) == offset; }
+inline bool is_bpm_on_half_bar(uint32_t ticks,      unsigned long offset = 0) { return ticks==offset || ticks%(TICKS_PER_BAR/2) == offset; }
+inline bool is_bpm_on_beat(uint32_t ticks,          unsigned long offset = 0) { return ticks==offset || ticks%(TICKS_PER_BEAT) == offset; }
+inline bool is_bpm_on_eighth(uint32_t ticks,        unsigned long offset = 0) { return ticks==offset || ticks%(TICKS_PER_BEAT/2) == offset; }
+inline bool is_bpm_on_sixteenth(uint32_t ticks,     unsigned long offset = 0) { return ticks==offset || ticks%(TICKS_PER_STEP) == offset; }
+inline bool is_bpm_on_thirtysecond(uint32_t ticks,  unsigned long offset = 0) { return ticks==offset || ticks%(TICKS_PER_STEP/2) == offset; }
 
 bool is_bpm_on_multiplier(unsigned long ticks, float multiplier, unsigned long offset = 0);
 
