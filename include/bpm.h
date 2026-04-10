@@ -50,6 +50,7 @@
   // old style of fixed 4/4 time signature, with PPQN=24 and 16 steps per bar (i.e. 16th notes)
 
   #define TIME_SIG_MAX_STEPS_PER_BAR 32 // think this should be enough for the old style 4/4, allowing up to 32 steps per pattern essentially
+  #define TIME_SIG_MAX_STEPS_PER_PHRASE (TIME_SIG_MAX_STEPS_PER_BAR * BARS_PER_PHRASE)
 
   // #define STEPS_PER_BEAT  4
   // #define BEATS_PER_BAR   4
