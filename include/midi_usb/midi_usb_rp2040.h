@@ -35,6 +35,7 @@
 #endif
 
 #include "midi_helpers.h"
+#include "midi_usb/midi_ring_buffer.h"   // non-blocking MIDI queue: enqueue from ISR/ATOMIC, drain from main loop
 
 void setup_midi();
 void setup_usb();
@@ -93,139 +94,175 @@ class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget
         return din_midi_clock_output_divider;
     }
 
+    // Enqueues note-on for deferred send from drain().
+    // DIN converter_func is applied in drain() at send time.
     virtual void sendNoteOn(uint8_t pitch, uint8_t velocity, uint8_t channel) override {
-        //Serial.printf("MIDIOutputWrapper#sendNoteOn(%i, %i, %i)\n", pitch, velocity, channel);
-        if (!is_valid_note(pitch)) 
-            return;
-
+        if (!is_valid_note(pitch)) return;
+        uint8_t dest = 0;
         #ifdef USE_TINYUSB
-            cc_locked.lock();
-            usbmidi->sendNoteOn(pitch, velocity, channel);
-            cc_locked.unlock();
+            dest |= MIDI_DEST_USB;
         #endif
         #ifdef USE_DINMIDI
-            int8_t pitch_to_send = pitch;
-            int8_t velocity_to_send = velocity;
-            int8_t channel_to_send = channel;
-
-            if (available_output_types[output_mode].converter_func!=nullptr) {
-                note_message_t r = available_output_types[output_mode].converter_func(pitch_to_send, velocity_to_send, channel_to_send);
-                pitch_to_send = r.pitch;
-                velocity_to_send = r.velocity;
-                channel_to_send = r.channel;
-            }
-
-            if (is_valid_note(pitch_to_send)) {
-                dinmidi->sendNoteOn(
-                    pitch_to_send,
-                    velocity_to_send, 
-                    channel_to_send
-                );
-            }
+            dest |= MIDI_DEST_DIN;
         #endif
+        midi_queue.enqueue({ MIDI_MSG_NOTE_ON, dest, channel, pitch, velocity });
     }
+    // Enqueues note-off for deferred send from drain().
+    // DIN converter_func is applied in drain() at send time.
     virtual void sendNoteOff(uint8_t pitch, uint8_t velocity, uint8_t channel) override {
-        if (!is_valid_note(pitch)) 
-            return;
-            
+        if (!is_valid_note(pitch)) return;
+        uint8_t dest = 0;
         #ifdef USE_TINYUSB
-            cc_locked.lock();
-            usbmidi->sendNoteOff(pitch, velocity, channel);
-            cc_locked.unlock();
+            dest |= MIDI_DEST_USB;
         #endif
         #ifdef USE_DINMIDI
-            int8_t pitch_to_send = pitch;
-            int8_t velocity_to_send = velocity;
-            int8_t channel_to_send = channel;
-
-            if (available_output_types[output_mode].converter_func!=nullptr) {
-                note_message_t r = available_output_types[output_mode].converter_func(pitch_to_send, velocity_to_send, channel_to_send);
-                pitch_to_send = r.pitch;
-                velocity_to_send = r.velocity;
-                channel_to_send = r.channel;
-            }
-
-            if (is_valid_note(pitch_to_send)) {
-                dinmidi->sendNoteOff(
-                    pitch_to_send,
-                    velocity_to_send, 
-                    channel_to_send
-                );
-            }
+            dest |= MIDI_DEST_DIN;
         #endif
+        midi_queue.enqueue({ MIDI_MSG_NOTE_OFF, dest, channel, pitch, velocity });
     }
 
-    #if defined(USE_TINYUSB) && defined(ARDUINO_ARCH_RP2040)
-        struct Mutex {
-            mutex_t mutex;
-            std::atomic<bool> locked = false;
-            Mutex() {
-                mutex_init(&mutex);
-            }
-            public:
-            void lock() {
-                mutex_enter_blocking(&mutex);
-                locked = true;
-            }
-            void unlock() {
-                mutex_exit(&mutex);
-                locked = false;
-            }
-            bool is_locked() {
-                return locked;
-            }
-        };
-        Mutex cc_locked;
-    #endif
+    // Non-blocking MIDI output queue.
+    // Producers (ISR, ATOMIC regions on Core 0) call enqueue() — fast, never blocks.
+    // drain() (main loop, outside ATOMIC) does the actual USB/DIN sends.
+    MidiRingBuffer midi_queue;
 
     virtual void sendControlChange(uint8_t number, uint8_t value, uint8_t channel) override {
-        if (!this->is_cc_output_enabled())
-            return;
-        if (!is_valid_note(number))
-            return;
+        if (!this->is_cc_output_enabled()) return;
+        if (!is_valid_note(number)) return;
+        uint8_t dest = 0;
         #ifdef USE_TINYUSB
-            cc_locked.lock();
-            if (number < 0 || number > 127 || value < 0 || value > 127 || channel < 1 || channel > 16) {
-                Serial.printf("RP2040DualMIDIOutputWrapper#sendControlChange got an CC message: cc=%i,\t value=%i,\t channel=%i\n", number, value, channel);
-            }
-            usbmidi->sendControlChange(number, value, channel);
-            cc_locked.unlock();
+            dest |= MIDI_DEST_USB;
         #endif
         #ifdef USE_DINMIDI
-            dinmidi->sendControlChange(number, value, channel);
-        #endif        
+            dest |= MIDI_DEST_DIN;
+        #endif
+        midi_queue.enqueue({ MIDI_MSG_CONTROL_CHANGE, dest, channel, number, value });
     }
 
     virtual void sendClock() {
+        // Destination is resolved now while `ticks` is current (DIN clock divider check).
+        uint8_t dest = 0;
         #ifdef USE_TINYUSB
-            cc_locked.lock();
-            usbmidi->sendClock();
-            cc_locked.unlock();
+            dest |= MIDI_DEST_USB;
         #endif
         #ifdef USE_DINMIDI
             if (ticks % this->get_din_midi_clock_output_divider() == 0)
-                dinmidi->sendClock();   // send divisions of clock to muso, to make the clock output more useful
+                dest |= MIDI_DEST_DIN;
         #endif
+        if (dest) midi_queue.enqueue({ MIDI_MSG_CLOCK, dest, 0, 0, 0 });
     }
     virtual void sendStart() {
+        uint8_t dest = 0;
         #ifdef USE_TINYUSB
-            cc_locked.lock();
-            usbmidi->sendStart();
-            cc_locked.unlock();
+            dest |= MIDI_DEST_USB;
         #endif
         #ifdef USE_DINMIDI
-            dinmidi->sendStart();
+            dest |= MIDI_DEST_DIN;
         #endif
+        if (dest) midi_queue.enqueue({ MIDI_MSG_START, dest, 0, 0, 0 });
     }
     virtual void sendStop() {
+        uint8_t dest = 0;
         #ifdef USE_TINYUSB
-            cc_locked.lock();
-            usbmidi->sendStop();
-            cc_locked.unlock();
+            dest |= MIDI_DEST_USB;
         #endif
         #ifdef USE_DINMIDI
-            dinmidi->sendStop();
+            dest |= MIDI_DEST_DIN;
         #endif
+        if (dest) midi_queue.enqueue({ MIDI_MSG_STOP, dest, 0, 0, 0 });
+    }
+
+    // ── MIDI drain ───────────────────────────────────────────────────────────
+    // Call from main loop() before any ATOMIC() blocks so the USB TX FIFO drain
+    // ISR (USBCTRL_IRQ) can preempt freely.
+    // This is the ONLY site where actual USB/DIN hardware sends happen.
+    //
+    // max_micros bounds the worst-case time spent per loop() call.  If a send
+    // blocks (USB SOF wait), drain() stops after the budget expires and remaining
+    // messages stay in the ring buffer for the next iteration.
+    //
+    // Returns number of messages processed this call.
+    int drain(uint32_t max_micros = 800) {
+        uint32_t start = micros();
+        int count = 0;
+        MidiMessage msg;
+        while (midi_queue.dequeue(msg)) {
+            count++;
+
+            #ifdef USE_TINYUSB
+            if (msg.destinations & MIDI_DEST_USB) {
+                switch (msg.type) {
+                    case MIDI_MSG_NOTE_ON:
+                        usbmidi->sendNoteOn(msg.data1, msg.data2, msg.channel);
+                        break;
+                    case MIDI_MSG_NOTE_OFF:
+                        usbmidi->sendNoteOff(msg.data1, msg.data2, msg.channel);
+                        break;
+                    case MIDI_MSG_CONTROL_CHANGE:
+                        usbmidi->sendControlChange(msg.data1, msg.data2, msg.channel);
+                        break;
+                    case MIDI_MSG_CLOCK:
+                        usbmidi->sendClock();
+                        break;
+                    case MIDI_MSG_START:
+                        usbmidi->sendStart();
+                        break;
+                    case MIDI_MSG_STOP:
+                        usbmidi->sendStop();
+                        break;
+                    default:
+                        break;
+                }
+            }
+            #endif  // USE_TINYUSB
+
+            #ifdef USE_DINMIDI
+            if (msg.destinations & MIDI_DEST_DIN) {
+                switch (msg.type) {
+                    case MIDI_MSG_NOTE_ON: {
+                        int8_t p = msg.data1, v = msg.data2, c = msg.channel;
+                        #ifdef USE_SEQLIB_OUTPUTS
+                        if (available_output_types[output_mode].converter_func != nullptr) {
+                            note_message_t r = available_output_types[output_mode].converter_func(p, v, c);
+                            p = r.pitch; v = r.velocity; c = r.channel;
+                        }
+                        #endif
+                        if (is_valid_note(p)) dinmidi->sendNoteOn(p, v, c);
+                        break;
+                    }
+                    case MIDI_MSG_NOTE_OFF: {
+                        int8_t p = msg.data1, v = msg.data2, c = msg.channel;
+                        #ifdef USE_SEQLIB_OUTPUTS
+                        if (available_output_types[output_mode].converter_func != nullptr) {
+                            note_message_t r = available_output_types[output_mode].converter_func(p, v, c);
+                            p = r.pitch; v = r.velocity; c = r.channel;
+                        }
+                        #endif
+                        if (is_valid_note(p)) dinmidi->sendNoteOff(p, v, c);
+                        break;
+                    }
+                    case MIDI_MSG_CONTROL_CHANGE:
+                        dinmidi->sendControlChange(msg.data1, msg.data2, msg.channel);
+                        break;
+                    case MIDI_MSG_CLOCK:
+                        dinmidi->sendClock();
+                        break;
+                    case MIDI_MSG_START:
+                        dinmidi->sendStart();
+                        break;
+                    case MIDI_MSG_STOP:
+                        dinmidi->sendStop();
+                        break;
+                    default:
+                        break;
+                }
+            }
+            #endif  // USE_DINMIDI
+
+            // Stop after budget expires; remaining messages drain next loop iteration.
+            if ((micros() - start) >= max_micros) break;
+        }
+        return count;
     }
 
     #ifdef ENABLE_SCREEN
