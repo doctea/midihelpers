@@ -18,9 +18,9 @@
 
 class TapTempoTracker {
   uint32_t *clock_tempo_history = nullptr;
-  uint32_t clock_last_tap;
+  uint32_t clock_last_tap = 0;
   int max_sample_size = DEFAULT_CLOCK_TEMPO_HISTORY_MAX;
-  int clock_tempo_history_pos;
+  int clock_tempo_history_pos = 0;
   bool clock_tempo_tracking = false;
   bool tempo_setter = true;
 

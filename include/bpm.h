@@ -50,6 +50,16 @@
   #define LOOP_LENGTH_TICKS (TICKS_PER_PHRASE)    // how many ticks does the loop last?
   #define LOOP_LENGTH_STEP_SIZE 1         // resolution of loop TODO: problems when this is set >1; reloaded sequences (or maybe its converted-from-bitmap stage?) are missing note-offs
   #define LOOP_LENGTH_STEPS (LOOP_LENGTH_TICKS/LOOP_LENGTH_STEP_SIZE) // how many steps are recorded per loop
+
+  // MAX_LOOP_LENGTH_STEPS must be the maximum possible value of LOOP_LENGTH_STEPS (= TICKS_PER_PHRASE / LOOP_LENGTH_STEP_SIZE).
+  // LOOP_LENGTH_STEP_SIZE=1 means each slot is 1 tick, so the slot count equals TICKS_PER_PHRASE.
+  // At standard denominator (DEFAULT_TIME_SIGNATURE_DENOMINATOR) and maximum numerator
+  //   (TIME_SIG_MAX_STEPS_PER_BAR / STEPS_PER_BEAT beats/bar):
+  //   MAX = PPQN * (TIME_SIG_MAX_STEPS_PER_BAR / STEPS_PER_BEAT) * BARS_PER_PHRASE / LOOP_LENGTH_STEP_SIZE
+  //       = 24 * 16 * 4 / 1 = 1536
+  // (Old incorrect definition was just TIME_SIG_MAX_STEPS_PER_BAR * BARS_PER_PHRASE = 256,
+  //  which was in musical steps not ticks, causing frames[] out-of-bounds access in 4/4.)
+  #define MAX_LOOP_LENGTH_STEPS ((PPQN * (TIME_SIG_MAX_STEPS_PER_BAR / STEPS_PER_BEAT) * BARS_PER_PHRASE) / LOOP_LENGTH_STEP_SIZE)  // maximum possible steps per loop given time signature limits
 #else
   // old style of fixed 4/4 time signature, with PPQN=24 and 16 steps per bar (i.e. 16th notes)
 
