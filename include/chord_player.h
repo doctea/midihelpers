@@ -136,6 +136,7 @@ class ChordPlayer
         virtual void set_trigger_on_ticks(int32_t length_ticks) {
             this->trigger_on_ticks = length_ticks;
         }
+        // 0 = trigger on change
         virtual int32_t get_trigger_on_ticks () {
             return this->trigger_on_ticks;
         }
@@ -383,17 +384,25 @@ class ChordPlayer
                     if (this->debug) Serial.printf("ChordPlayer: Stopping note\t%i because of new_note\t%i\n", this->current_note, new_note);
                     trigger_off_for_pitch_because_changed(this->current_note);
                 }
-                if (this->get_note_length()>0) { // && (get_trigger_on_ticks()==0 || (ticks-trigger_delay_ticks) % get_trigger_on_ticks()==0)) {
-                    if (!(get_trigger_on_ticks()==0 || (ticks-trigger_delay_ticks) % get_trigger_on_ticks()==0)
-                            //|| (get_trigger_on_ticks()==0 && (just_stopped_note!=NOTE_OFF && (new_note==just_stopped_note || new_note!=last_note)))
-                                // ^^ don't retrigger note if voltage hasn't changed.... doesn't work like wanted though?  alternates on/off if value isn't changing and note length is set to something
-                    )
-                        return;
 
-                    if (this->debug) Serial.printf("ChordPlayer: Starting note %i\tat\t%u\n", new_note, ticks);
+                if (this->get_note_length()==0)
+                    return;
 
-                    trigger_on_for_pitch(new_note, velocity, selected_chord_number, this->inversion);
+                if (get_trigger_on_ticks()==0 && (new_note==this->current_note || new_note==this->last_note)) {
+                    // don't retrigger if we are triggering on 'change' but note hasn't changed
+                    if (this->debug) Serial.printf("ChordPlayer: Not retriggering note %i because new_note is the same as current_note and trigger_on_ticks is 0\n", new_note);
+                    return;
                 }
+
+                if (!(get_trigger_on_ticks()==0 || (ticks-trigger_delay_ticks) % get_trigger_on_ticks()==0)
+                        //|| (get_trigger_on_ticks()==0 && (just_stopped_note!=NOTE_OFF && (new_note==just_stopped_note || new_note!=last_note)))
+                            // ^^ don't retrigger note if voltage hasn't changed.... doesn't work like wanted though?  alternates on/off if value isn't changing and note length is set to something
+                )
+                    return;
+
+                if (this->debug) Serial.printf("ChordPlayer: Starting note %i\tat\t%u\n", new_note, ticks);
+
+                trigger_on_for_pitch(new_note, velocity, selected_chord_number, this->inversion);
             }
             if (this->debug) Serial.println("----");
         }
