@@ -27,7 +27,7 @@
         MIDI_CREATE_INSTANCE(SoftwareSerial, SoftSerial, DINMIDI);
     #endif
     #ifdef MIDI_SERIAL_SPIO
-        SerialPIO spio(MIDI_SERIAL_OUT_PIN, NOPIN);
+        SerialPIO spio(MIDI_SERIAL_OUT_PIN, NOPIN); // was SerialPIO::NOPIN for other versions of the framework?
         MIDI_CREATE_INSTANCE(SerialPIO, spio, DINMIDI);
     #endif
     #ifdef MIDI_SERIAL_HARDWARE
