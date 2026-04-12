@@ -297,6 +297,20 @@ class ChordPlayer
             this->is_playing = true;
         }
 
+        void stop_all() {
+            if (is_playing_chord)
+                this->stop_chord(this->current_chord_data);
+            if (is_playing && is_valid_note(this->current_note)) {
+                this->last_note = this->current_note;
+                this->is_playing = false;
+                this->receive_note_off(channel, this->current_note, 0);
+            }
+            if (is_valid_note(this->current_bass_note)) 
+                stop_bass_note();
+            if (is_valid_note(this->current_topline_note))
+                stop_topline_note();
+        }
+
         virtual void trigger_off_for_pitch_because_length(int8_t pitch, uint8_t velocity = MIDI_MIN_VELOCITY) {
             // don't reset current_note so that we don't retrigger the same note again immediately
             if (is_playing_chord) //is_quantise()) 

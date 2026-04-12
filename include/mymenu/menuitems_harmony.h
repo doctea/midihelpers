@@ -100,7 +100,9 @@ class HarmonyDisplay : public MenuItem {
     int8_t *current_note;
     bool *quantise_enabled;
 
-    HarmonyDisplay(const char *label, scale_index_t *scale_number, int_fast8_t *scale_root, int8_t *current_note, bool *quantise_enabled) : MenuItem(label, false) {
+    HarmonyDisplay(const char *label, scale_index_t *scale_number, int_fast8_t *scale_root, int8_t *current_note, bool *quantise_enabled, bool show_header = true) 
+        : MenuItem(label, false, show_header) 
+    {
         this->scale_number = scale_number;
         this->scale_root = scale_root;
         this->current_note = current_note;
