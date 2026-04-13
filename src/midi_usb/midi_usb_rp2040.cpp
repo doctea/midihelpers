@@ -123,7 +123,7 @@ void setup_midi() {
         // controls for cv-to-midi outputs..
 
         // todo: probably move this to another more generic 'settings' page
-        menu->add_page("MIDI Output");
+        menu->add_page("MIDI Settings");
         
         LambdaSelectorControl<OUTPUT_TYPE> *output_mode_selector = new LambdaSelectorControl<OUTPUT_TYPE>(
             "DIN output mode", 
