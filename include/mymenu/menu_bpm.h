@@ -2,9 +2,11 @@
 
 #include "menu.h"
 #include "menuitems.h"
-#include "../bpm.h"
+#include "submenuitem_bar.h"
 
+#include "../bpm.h"
 #include "../clock.h"
+
 
 class LoopMarkerPanel : public PinnedPanelMenuItem {
     unsigned long loop_length;
@@ -51,6 +53,7 @@ class LoopMarkerPanel : public PinnedPanelMenuItem {
 
             // save some float maths by only recalculating if tick is different from last time
             if (last_serviced_tick != ticks) {
+                last_serviced_tick = ticks;     // must update HERE so reset-to-0 is detected next call
                 tick_of_loop = ticks % TICKS_PER_PHRASE; //loop_length;
                 float percent = float(tick_of_loop) / (float)TICKS_PER_PHRASE;
                 new_position_width = (percent*(float)tft_width);
@@ -163,6 +166,7 @@ class BPMPositionIndicator : public MenuItem {
 
 #ifdef ENABLE_TIME_SIGNATURE
     #include <functional-vlpp.h>
+    #include "menuitems_lambda_selector.h"
     class TimeSignatureIndicator : public SubMenuItemBar {
         
         // look at the other subclasses of SubMenuItemBar in the project

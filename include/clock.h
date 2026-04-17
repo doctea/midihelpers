@@ -72,6 +72,7 @@ void set_clock_mode_changed_callback(void(*)(ClockMode old_mode, ClockMode new_m
 bool update_clock_ticks();
 
 void set_global_restart_callback(void(*global_restart_callback)());
+void set_global_stop_callback(void(*global_stop_callback)());
 
 void clock_reset();
 void clock_start();

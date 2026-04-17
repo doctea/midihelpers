@@ -136,6 +136,8 @@ class HarmonyDisplay : public MenuItem {
         int8_t scale_root_to_use = get_effective_scale_root(*scale_root);
         scale_index_t scale_number_to_use = get_effective_scale_type(*scale_number);
 
+        bool obey_quantise = quantise_enabled==nullptr || *quantise_enabled;
+
         // draw all white notes first
         for (int_fast8_t r = 0 ; r < NUM_CHROMATIC_NOTES ; r++) {
             x_pos = c * key_width;
@@ -147,8 +149,7 @@ class HarmonyDisplay : public MenuItem {
                 uint16_t colour = playing ? YELLOW : (white_key?C_WHITE:tft->halfbright_565(C_WHITE));
                 
                 const bool valid = 
-                            (quantise_enabled!=nullptr && !*quantise_enabled) || 
-                            ((quantise_enabled==nullptr || *quantise_enabled) && quantise_pitch_to_scale(r, scale_root_to_use, scale_number_to_use)==r);
+                            !obey_quantise || quantise_pitch_to_scale(r, scale_root_to_use, scale_number_to_use)==r;
                 if (!valid) colour = tft->halfbright_565(colour);
 
                 if (valid)
@@ -172,8 +173,7 @@ class HarmonyDisplay : public MenuItem {
             } else {    // black key
                 uint16_t colour = playing ? YELLOW : (white_key?C_WHITE:tft->halfbright_565(C_WHITE));
                 const bool valid = 
-                            (quantise_enabled!=nullptr && !*quantise_enabled) || 
-                            ((quantise_enabled==nullptr || *quantise_enabled) && quantise_pitch_to_scale(r, scale_root_to_use, scale_number_to_use)==r);
+                            !obey_quantise || quantise_pitch_to_scale(r, scale_root_to_use, scale_number_to_use)==r;
                 if (!valid) colour = tft->halfbright_565(colour);
 
                 x_pos -= (key_width/2);

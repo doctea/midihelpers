@@ -8,6 +8,8 @@
 
 #include "menuitems.h"
 
+#include "menu_messages.h"
+
 class ClockSourceSelectorControl : public SelectorControl<int_least8_t> {
     int_least16_t actual_value_index;
     //void (*setter_func)(MIDIOutputWrapper *midi_output);
@@ -24,12 +26,12 @@ class ClockSourceSelectorControl : public SelectorControl<int_least8_t> {
         else if (index==CLOCK_EXTERNAL_USB_HOST)
             return "External USB-MIDI";
         #ifdef ENABLE_CLOCK_INPUT_MIDI_DIN
-        else if (index==CLOCK_EXTERNAL_MIDI_DIN)
-            return "External DIN-MIDI";
+            else if (index==CLOCK_EXTERNAL_MIDI_DIN)
+                return "External DIN-MIDI";
         #endif
         #ifdef ENABLE_CLOCK_INPUT_CV
-        else if (index==CLOCK_EXTERNAL_CV)
-            return "External CV";
+            else if (index==CLOCK_EXTERNAL_CV)
+                return "External CV";
         #endif
         else if (index==CLOCK_NONE)
             return "None";
@@ -40,11 +42,17 @@ class ClockSourceSelectorControl : public SelectorControl<int_least8_t> {
         #ifdef USE_UCLOCK
             if (clock_mode==CLOCK_INTERNAL && new_value!=clock_mode) {
                 uClock.stop();
-            } else if (new_value==CLOCK_INTERNAL && playing) {
+            }
+        #endif
+        // Change mode first so uClock.clock_mode is updated before we call uClock.start().
+        // If uClock.start() were called while still in EXTERNAL_CLOCK mode it would set
+        // clock_state=STARTING instead of STARTED, which blocks the internal clock timer.
+        change_clock_mode((ClockMode) new_value);
+        #ifdef USE_UCLOCK
+            if (new_value==CLOCK_INTERNAL && playing) {
                 uClock.start();
             }
         #endif
-        change_clock_mode((ClockMode) new_value);
         actual_value_index = clock_mode;
         //selected_value_index = clock_mode;
     }
@@ -140,7 +148,7 @@ class ExternalPPQNSelectorControl : public SelectorControl<int> {
         }
     }
     virtual void setter (int new_value) {
-        Serial.printf("ExternalPPQNSelectorControl::setter(%i)\n", new_value);
+        // Serial.printf("ExternalPPQNSelectorControl::setter(%i)\n", new_value);
         #ifdef ENABLE_CLOCK_INPUT_CV
         if (clock_mode==CLOCK_EXTERNAL_CV) {
             external_cv_ppqn = (umodular::clock::uClockClass::PPQNResolution) new_value;

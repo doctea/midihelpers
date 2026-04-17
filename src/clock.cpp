@@ -114,6 +114,10 @@ void pc_usb_midi_handle_stop() {
   #if defined(ENABLE_SCREEN) && __has_include("menu_messages.h")
     messages_log_add("pc_usb_midi_handle_stop()!");
   #endif
+  if (clock_mode!=CLOCK_EXTERNAL_USB_HOST) {
+    // automatically switch to using external USB clock if we receive a STOP message from the usb host
+    change_clock_mode(CLOCK_EXTERNAL_USB_HOST);
+  }
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
     if (playing) {
       // MIDI spec: STOP freezes at current position; do not reset.
@@ -196,6 +200,7 @@ bool check_and_unset_pc_usb_midi_clock_ticked() {
       } else {
         // Already stopped: optionally rewind to position 0.
         #ifdef STOP_WHILE_STOPPED_REWINDS
+          uClock.stop();
           clock_reset();
           // Notify UI so panels like LoopMarkerPanel redraw at the new (zero) position.
           if (__global_stop_callback!=nullptr)
@@ -341,6 +346,11 @@ void clock_stop() {
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) 
   #endif
   {
+    #ifdef STOP_WHILE_STOPPED_REWINDS
+      if (!playing) {
+        clock_reset();
+      }
+    #endif
     clock_set_playing(false);
 
     #ifdef USE_UCLOCK
