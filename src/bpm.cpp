@@ -52,36 +52,7 @@ void set_bpm(float new_bpm) {
   if (bpm_current!=new_bpm) {
     bpm_current = new_bpm;
     #ifdef USE_UCLOCK
-      // Two effects cause the output BPM to run slow:
-      //
-      // 1. Per-tick ISR scheduling latency: uClock reschedules its next alarm from
-      //    inside the ISR, so each tick accumulates ~OVERHEAD_US of extra latency.
-      //    This is constant regardless of BPM (confirmed empirically at 60/120/180bpm),
-      //    giving a fixed OVERHEAD_MS_PER_BEAT additive offset.
-      //    OVERHEAD_US ≈ p_dotick average (shown by profiling); reduce it as ISR is optimised.
-      //
-      // 2. There is NO meaningful PLL_SYS/USB clock skew on this hardware — K ≈ 1.000178.
-      //    The old 1.01575 multiplier was a red herring: it accidentally cancelled the
-      //    overhead at exactly 60 BPM (1000/1.01575 + 15.5 ≈ 1000) but over-corrected
-      //    at all other BPMs.
-      //
-      // Correct formula: uClock_bpm = 60000 / (target_beat_ms - OVERHEAD_MS_PER_BEAT)
-      //   - PLL_CORRECTION removed (= 1.0, no skew)
-      //   - OVERHEAD calibrated empirically from beat-interval logs at 60/120/180bpm
-      //
-      // Re-measure OVERHEAD_MS_PER_BEAT if ISR overhead changes (e.g. after optimisations).
-      // TODO: i wonder if we can measure this and adjust dynamically.
-      #if defined(ARDUINO_ARCH_RP2040) || defined(ARDUINO_ARCH_RP2350)
-        #ifndef OVERHEAD_MS_PER_BEAT
-          static constexpr float OVERHEAD_MS_PER_BEAT = 15.56f;  // accumulated ISR latency/beat
-        #endif
-    
-        float target_beat_ms = 60000.0f / bpm_current;
-        float corrected_bpm  = 60000.0f / (target_beat_ms - OVERHEAD_MS_PER_BEAT);
-      #else
-        float corrected_bpm = bpm_current;  // no correction needed on other platforms (todo: or there is and we need to implement it)
-      #endif
-      uClock.setTempo(corrected_bpm);
+      uClock.setTempo(bpm_current);
       micros_per_tick = (float)1000000.0f * ((float)60.0f / (float)(bpm_current * (float)PPQN));
     #else
       //ms_per_tick = 1000.0f * (60.0f / (double)(bpm_current * (double)PPQN));

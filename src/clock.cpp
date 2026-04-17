@@ -27,9 +27,13 @@ volatile int missed_micros; // for tracking how many microseconds late we are pr
 volatile ClockMode clock_mode = DEFAULT_CLOCK_MODE;
 
 void (*__global_restart_callback)();
+void (*__global_stop_callback)();
 
 void set_global_restart_callback(void(*global_restart_callback)()) {
     __global_restart_callback = global_restart_callback;
+}
+void set_global_stop_callback(void(*global_stop_callback)()) {
+    __global_stop_callback = global_stop_callback;
 }
 
 /// use cheapclock clock
@@ -42,7 +46,7 @@ volatile uint32_t last_ticked_at_micros = micros();
     #endif
 
     uClock.setInputPPQN(uclock_internal_ppqn);
-    uClock.setExtIntervalBuffer(128); // 16 is the default size
+    uClock.setExtIntervalBuffer(16); // 16 is the default size
     uClock.setOnSync(umodular::clock::uClockClass::PPQNResolution::PPQN_24, do_tick); 
     uClock.init();
     uClock.setTempo(bpm_current);
@@ -77,7 +81,9 @@ void pc_usb_midi_handle_clock() {
     last_usb_midi_clock_ticked_at = millis();
     usb_midi_clock_ticked = true;
     #ifdef USE_UCLOCK
-      uClock.clockMe();
+      ATOMIC() {
+        uClock.clockMe();
+      }
     #endif
   }
 }
@@ -94,17 +100,13 @@ void pc_usb_midi_handle_start() {
   }
 
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
-    //tap_tempo_tracker.reset();
-    #ifdef USE_ATOMIC
-    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-    #endif
-    {
-      //clock_reset();
-      if (!playing)
-        clock_start();
-      if (__global_restart_callback!=nullptr)
-          __global_restart_callback();
-    }
+    // MIDI spec: START always means "go to position 0 and play", even if already playing.
+    // Stop cleanly first, then reset position, then start.
+    clock_stop();
+    clock_reset();
+    clock_start();
+    if (__global_restart_callback!=nullptr)
+        __global_restart_callback();
   }
 }
 void pc_usb_midi_handle_stop() {
@@ -113,13 +115,23 @@ void pc_usb_midi_handle_stop() {
     messages_log_add("pc_usb_midi_handle_stop()!");
   #endif
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
-    if (!playing) {
-      clock_reset();
-      //if (__global_restart_callback!=nullptr)
-      //  __global_restart_callback();
-    }
-    //if (playing)
+    if (playing) {
+      // MIDI spec: STOP freezes at current position; do not reset.
       clock_stop();
+      if (__global_stop_callback!=nullptr)
+          __global_stop_callback();
+    } else {
+      // Already stopped: optionally rewind to position 0.
+      // This mirrors the behaviour of Ableton Live / hardware sequencers where a
+      // second STOP press rewinds to bar 1.
+      #ifdef STOP_WHILE_STOPPED_REWINDS
+        uClock.stop();
+        clock_reset();
+        // Notify UI so panels like LoopMarkerPanel redraw at the new (zero) position.
+        if (__global_stop_callback!=nullptr)
+            __global_stop_callback();
+      #endif
+    }
   }
 }
 void pc_usb_midi_handle_continue() {
@@ -178,17 +190,24 @@ bool check_and_unset_pc_usb_midi_clock_ticked() {
   }
   void din_midi_handle_stop() {
     if (clock_mode==CLOCK_EXTERNAL_MIDI_DIN) {
-      if (!playing) {
-        clock_reset();
-        if (__global_restart_callback!=nullptr)
-          __global_restart_callback();
+      if (playing) {
+        // MIDI spec: STOP freezes at current position; do not reset.
+        clock_stop();
+      } else {
+        // Already stopped: optionally rewind to position 0.
+        #ifdef STOP_WHILE_STOPPED_REWINDS
+          clock_reset();
+          // Notify UI so panels like LoopMarkerPanel redraw at the new (zero) position.
+          if (__global_stop_callback!=nullptr)
+              __global_stop_callback();
+        #endif
       }
-      clock_stop();
     }
   }
   void din_midi_handle_continue() {
     if (clock_mode==CLOCK_EXTERNAL_MIDI_DIN) {
-      clock_start();
+      // MIDI spec: CONTINUE resumes from current position; do not reset.
+      clock_continue();
     }
   }
 
@@ -306,8 +325,10 @@ void clock_start() {
   #endif
   {
     #ifdef USE_UCLOCK
-      if (!playing)
-        uClock.start();
+      // Always call uClock.start() -- it resets counters and puts the clock into
+      // STARTING state (for external) or STARTED (for internal), which is exactly
+      // what a MIDI START requires.
+      uClock.start();
     #endif
 
     clock_set_playing(true);
@@ -319,23 +340,15 @@ void clock_stop() {
   #ifdef USE_ATOMIC
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) 
   #endif
-  //Serial.println("clock_stop()"); Serial.flush();
   {
-    bool should_reset_clock = !playing;
-
     clock_set_playing(false);
 
     #ifdef USE_UCLOCK
+      // Pause uClock (STARTED -> PAUSED), preserving song position.
+      // This leaves uClock in PAUSED state so that clock_continue() can
+      // cleanly un-pause via the same toggle without needing a full restart.
       uClock.pause();
     #endif
-
-    if (should_reset_clock) {
-      //Serial.println("not playing - calling clock_reset()"); Serial.flush();
-      clock_reset();
-    }
-    //Serial.println("about to call clock_set_playing()"); Serial.flush();
-    //clock_set_playing(false);
-    //Serial.println("called clock_set_playing()"); Serial.flush();
   }
 }
 void clock_continue() {
@@ -345,8 +358,20 @@ void clock_continue() {
   #endif
   {
     #ifdef USE_UCLOCK
-      uClock.pause();
-      clock_set_playing(!playing);
+      // uClock.pause() is a STARTED<->PAUSED toggle.
+      // After clock_stop() the state should be PAUSED, so calling pause() again
+      // will un-pause correctly (to STARTED for internal, STARTING for external).
+      // If somehow in STOPED state (e.g. never played), force STARTING so that
+      // incoming external clock pulses will bring us to life without resetting.
+      if (uClock.clock_state == umodular::clock::uClockClass::ClockState::PAUSED) {
+        uClock.pause(); // un-pause: PAUSED -> STARTED/STARTING
+      } else if (uClock.clock_state == umodular::clock::uClockClass::ClockState::STOPED) {
+        // Never been started (e.g. CONTINUE received before first START).
+        // Counters are already at zero, so start() is safe and correct here.
+        uClock.start();
+      }
+      // If already STARTED/STARTING/SYNCING: nothing to do.
+      clock_set_playing(true);
     #else
       clock_set_playing(true);
     #endif
