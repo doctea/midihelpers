@@ -14,12 +14,23 @@
 #define BPM_MAXIMUM   180.0
 
 #ifdef ENABLE_TIME_SIGNATURE
+
+  typedef struct {
+    uint8_t numerator;
+    uint8_t denominator;
+  } time_sig_t;
+
   // storage in bpm.cpp, inline accessors here so the compiler can cache these
   // across multiple is_bpm_on_* calls in BaseSequencer::on_tick
-  extern uint8_t time_signature_numerator;
-  extern uint8_t time_signature_denominator;
-  inline uint8_t get_time_signature_numerator(void) { return time_signature_numerator; }
-  inline uint8_t get_time_signature_denominator(void) { return time_signature_denominator; }
+  extern time_sig_t current_time_signature;
+  inline time_sig_t get_time_signature() {
+      return current_time_signature;
+  }
+  inline void set_time_signature(time_sig_t ts) {
+      current_time_signature = ts;
+  }
+  inline uint8_t get_time_signature_numerator(void) { return current_time_signature.numerator; }
+  inline uint8_t get_time_signature_denominator(void) { return current_time_signature.denominator; }
   void set_time_signature_numerator(uint8_t v);
   void set_time_signature_denominator(uint8_t v);
 

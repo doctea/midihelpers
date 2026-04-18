@@ -32,7 +32,9 @@
 
     enum conductor_menu_options_t {
         COMBINE_NONE = 0,
-        COMBINE_MUSE = 1 << 0,  // combine time signature and scale settings into a single "Muse" page
+        COMBINE_TIME_SIG_WITH_TRANSPORT = 1 << 0,  // combine time signature and scale settings into a single "Muse" page
+        COMBINE_HARMONY_WITH_TIME_SIG = 1 << 1, // combine harmony and time signature settings into a single "Muse" page
+        COMBINE_ALL = 0xFF
     };
 #endif
 
@@ -67,8 +69,8 @@ public:
 
     // ── Time-signature-change notification ────────────────────────────────
     #ifdef ENABLE_TIME_SIGNATURE
-        // Callback signature: void(uint8_t numerator, uint8_t denominator)
-        using time_sig_change_cb_t = vl::Func<void(uint8_t, uint8_t)>;
+        // Callback signature: void(time_sig_t time_sig)
+        using time_sig_change_cb_t = vl::Func<void(time_sig_t)>;
 
         // Register a subscriber. Callback is fired whenever numerator or
         // denominator changes to a new value.
@@ -102,8 +104,8 @@ public:
     #ifdef ENABLE_TIME_SIGNATURE
         uint8_t get_numerator()   const { return get_time_signature_numerator(); }
         uint8_t get_denominator() const { return get_time_signature_denominator(); }
-        void set_numerator(uint8_t v)   { if (get_time_signature_numerator()   == v) return; set_time_signature_numerator(v);   notify_time_sig_changed(); }
-        void set_denominator(uint8_t v) { if (get_time_signature_denominator() == v) return; set_time_signature_denominator(v); notify_time_sig_changed(); }
+        void set_numerator(uint8_t v)   { if (get_time_signature_numerator()   == v) return; set_time_signature_numerator(v);   notify_time_sig_changed(get_time_signature()); }
+        void set_denominator(uint8_t v) { if (get_time_signature_denominator() == v) return; set_time_signature_denominator(v); notify_time_sig_changed(get_time_signature()); }
 
         // int wrappers for saveloadlib
         int get_numerator_int()   const { return (int)get_time_signature_numerator(); }
@@ -199,6 +201,8 @@ public:
             );
 
             #ifdef ENABLE_TIME_SIGNATURE
+                // TODO: compound type to store+load both this values in one go
+                // so that we don't unnecessarily trigger time signature change notifications twice when loading
                 register_setting(
                     new LSaveableSetting<int>(
                         "time_num", "Time Signature", nullptr,
@@ -311,11 +315,9 @@ public:
     #ifdef ENABLE_TIME_SIGNATURE
         LinkedList<time_sig_change_cb_t> _time_sig_callbacks;
 
-        void notify_time_sig_changed() {
-            uint8_t num = get_time_signature_numerator();
-            uint8_t den = get_time_signature_denominator();
-            for (int i = 0; i < _time_sig_callbacks.size(); i++)
-                _time_sig_callbacks.get(i)(num, den);
+        void notify_time_sig_changed(time_sig_t ts) {
+            for (uint8_t i = 0; i < _time_sig_callbacks.size(); i++)
+                _time_sig_callbacks.get(i)(ts);
         }
     #endif // ENABLE_TIME_SIGNATURE
 
@@ -327,7 +329,7 @@ public:
         LinkedList<harmony_change_cb_t> _harmony_callbacks;
 
         void notify_harmony_changed() {
-            for (int i = 0; i < _harmony_callbacks.size(); i++)
+            for (uint8_t i = 0; i < _harmony_callbacks.size(); i++)
                 _harmony_callbacks.get(i)(global_scale_identity, global_chord_identity);
         }
     #endif

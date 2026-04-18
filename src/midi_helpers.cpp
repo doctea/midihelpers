@@ -55,3 +55,39 @@ const char *get_note_name_c(int pitch, int channel) {
 bool is_valid_note(int8_t note) {
     return note >= 0 && note < MIDI_NUM_NOTES;
 }
+
+
+int8_t note_limit_to(
+    int8_t note, 
+    NOTE_LIMIT_MODE lowest_note_mode, 
+    NOTE_LIMIT_MODE highest_note_mode, 
+    int8_t lowest_note, 
+    int8_t highest_note
+) {
+    // todo: probably move this transpose and quantise logic somewhere else
+    // into Conductor maybe?
+    if (lowest_note_mode == NOTE_LIMIT_MODE::TRANSPOSE) {
+        // transpose the note to within the allowed range
+        while (is_valid_note(note) && note < lowest_note) {
+            note += 12;
+        }
+    } else if (lowest_note_mode == NOTE_LIMIT_MODE::IGNORE) {
+        // if the note is below the allowed range, just ignore it
+        if (is_valid_note(note) && note < lowest_note) {
+            return NOTE_OFF;
+        }
+    }
+
+    if (highest_note_mode == NOTE_LIMIT_MODE::TRANSPOSE) {
+        // transpose the note to within the allowed range
+        while (is_valid_note(note) && note > highest_note) {
+            note -= 12;
+        }
+    } else if (highest_note_mode == NOTE_LIMIT_MODE::IGNORE) {
+        // if the note is above the allowed range, just ignore it
+        if (is_valid_note(note) && note > highest_note) {
+            return NOTE_OFF;
+        }
+    }
+    return note;
+}

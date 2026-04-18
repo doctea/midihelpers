@@ -93,22 +93,26 @@ int step_number_from_ticks(signed long ticks) {
 #ifdef ENABLE_TIME_SIGNATURE
   // time signature stuff..
   // first/top number ie how many beats in a bar, second/bottom number is what kind of note gets the beat (e.g. 4 for quarter note, 8 for eighth note etc)
+
+  time_sig_t current_time_signature = {
+    DEFAULT_TIME_SIGNATURE_NUMERATOR, 
+    DEFAULT_TIME_SIGNATURE_DENOMINATOR
+  };
   uint8_t time_signature_numerator = DEFAULT_TIME_SIGNATURE_NUMERATOR;
+
   // get_time_signature_numerator() is inline in bpm.h
   void set_time_signature_numerator(uint8_t v) {
-      time_signature_numerator = v;
+      current_time_signature.numerator = v;
   }
 
-  // denominator
-  uint8_t time_signature_denominator = DEFAULT_TIME_SIGNATURE_DENOMINATOR;
   // get_time_signature_denominator() is inline in bpm.h
   void set_time_signature_denominator(uint8_t v) {
     if (v == 0) {
-        time_signature_denominator = 2; // prevent divide-by-zero
+        current_time_signature.denominator = 2; // prevent divide-by-zero
     }
     if (v % 2 != 0) {
-        time_signature_denominator = 4; // prevent weird denominators that would mess up tick math
+        current_time_signature.denominator = 4; // prevent weird denominators that would mess up tick math
     }
-    time_signature_denominator = v;
+    current_time_signature.denominator = v;
   }
 #endif

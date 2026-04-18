@@ -26,17 +26,28 @@
 #define MIDI_MIN_CHANNEL 1
 #define MIDI_CHANNEL_OMNI 0
 
-// for doing lowest_note and highest_note
-enum NOTE_LIMIT_MODE {
-    IGNORE, TRANSPOSE
-};
-
 
 String get_note_name(int pitch);
 const char *get_note_name_c(int pitch, int channel = 1);
+extern const char *note_names[];
 bool is_valid_note(int8_t byte);
 
-extern const char *note_names[];
+// for doing lowest_note and highest_note
+enum NOTE_LIMIT_MODE : int8_t {
+    IGNORE, TRANSPOSE
+};
+inline NOTE_LIMIT_MODE& operator++(NOTE_LIMIT_MODE& m)    { m = static_cast<NOTE_LIMIT_MODE>(static_cast<int8_t>(m) + 1); return m; }
+inline NOTE_LIMIT_MODE  operator++(NOTE_LIMIT_MODE& m, int) { NOTE_LIMIT_MODE t = m; ++m; return t; }
+inline NOTE_LIMIT_MODE& operator--(NOTE_LIMIT_MODE& m)    { m = static_cast<NOTE_LIMIT_MODE>(static_cast<int8_t>(m) - 1); return m; }
+inline NOTE_LIMIT_MODE  operator--(NOTE_LIMIT_MODE& m, int) { NOTE_LIMIT_MODE t = m; --m; return t; }
+int8_t note_limit_to(
+    int8_t note, 
+    NOTE_LIMIT_MODE lowest_note_mode, 
+    NOTE_LIMIT_MODE highest_note_mode, 
+    int8_t lowest_note, 
+    int8_t highest_note
+);
+
 
 // interface for classes that can receive MIDI note data
 class IMIDINoteTarget {
