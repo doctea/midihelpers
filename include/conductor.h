@@ -102,16 +102,25 @@ public:
 
     // ── Time signature ──────────────────────────────────────────────────────
     #ifdef ENABLE_TIME_SIGNATURE
-        uint8_t get_numerator()   const { return get_time_signature_numerator(); }
-        uint8_t get_denominator() const { return get_time_signature_denominator(); }
-        void set_numerator(uint8_t v)   { if (get_time_signature_numerator()   == v) return; set_time_signature_numerator(v);   notify_time_sig_changed(get_time_signature()); }
-        void set_denominator(uint8_t v) { if (get_time_signature_denominator() == v) return; set_time_signature_denominator(v); notify_time_sig_changed(get_time_signature()); }
+        uint8_t get_numerator()   const { return ::get_time_signature_numerator(); }
+        uint8_t get_denominator() const { return ::get_time_signature_denominator(); }
+        void set_numerator(uint8_t v)   { set_time_signature({v, ::get_time_signature_denominator()}); }
+        void set_denominator(uint8_t v) { set_time_signature({::get_time_signature_numerator(), v}); }
+        void set_time_signature(time_sig_t time_sig) {
+            // denominator validation (prevent divide-by-zero or odd denominators)
+            if (time_sig.denominator == 0)       time_sig.denominator = 2;
+            if (time_sig.denominator % 2 != 0)   time_sig.denominator = 4;
+            if (current_time_signature.numerator == time_sig.numerator && current_time_signature.denominator == time_sig.denominator) return;
+            ::set_time_signature(time_sig);  // current_time_signature is the single source of truth
+            notify_time_sig_changed(time_sig);
+        }
+        time_sig_t get_time_signature() const { return ::get_time_signature(); }
 
-        // int wrappers for saveloadlib
-        int get_numerator_int()   const { return (int)get_time_signature_numerator(); }
-        int get_denominator_int() const { return (int)get_time_signature_denominator(); }
-        void set_numerator_int(int v)   { set_numerator((uint8_t)v); }
-        void set_denominator_int(int v) { set_denominator((uint8_t)v); }
+        // // int wrappers for saveloadlib
+        // int get_numerator_int()   const { return (int)get_time_signature_numerator(); }
+        // int get_denominator_int() const { return (int)get_time_signature_denominator(); }
+        // void set_numerator_int(int v)   { set_numerator((uint8_t)v); }
+        // void set_denominator_int(int v) { set_denominator((uint8_t)v); }
     #endif
 
     // ── Global key / scale ──────────────────────────────────────────────────
@@ -201,21 +210,12 @@ public:
             );
 
             #ifdef ENABLE_TIME_SIGNATURE
-                // TODO: compound type to store+load both this values in one go
-                // so that we don't unnecessarily trigger time signature change notifications twice when loading
                 register_setting(
-                    new LSaveableSetting<int>(
-                        "time_num", "Time Signature", nullptr,
-                        [this](int v) { set_numerator_int(v); },
-                        [this]() -> int { return get_numerator_int(); }
-                    ),
-                    SL_SCOPE_PROJECT | SL_SCOPE_SCENE
-                );
-                register_setting(
-                    new LSaveableSetting<int>(
-                        "time_den", "Time Signature", nullptr,
-                        [this](int v) { set_denominator_int(v); },
-                        [this]() -> int { return get_denominator_int(); }
+                    new LSaveablePairSetting<uint8_t, uint8_t>(
+                        "time_sig", "Time Signature",
+                        [this](uint8_t num, uint8_t den) { set_time_signature({num, den}); },
+                        [this]() -> uint8_t { return get_numerator(); },
+                        [this]() -> uint8_t { return get_denominator(); }
                     ),
                     SL_SCOPE_PROJECT | SL_SCOPE_SCENE
                 );

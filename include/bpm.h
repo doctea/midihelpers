@@ -20,8 +20,9 @@
     uint8_t denominator;
   } time_sig_t;
 
-  // storage in bpm.cpp, inline accessors here so the compiler can cache these
-  // across multiple is_bpm_on_* calls in BaseSequencer::on_tick
+  // Global cache — fast read for hot paths (TIME_NUMERATOR / TIME_DENOMINATOR macros).
+  // Conductor is the source of truth and keeps this in sync via set_time_signature().
+  // Do not write directly; always go through Conductor when available.
   extern time_sig_t current_time_signature;
   inline time_sig_t get_time_signature() {
       return current_time_signature;
@@ -31,8 +32,9 @@
   }
   inline uint8_t get_time_signature_numerator(void) { return current_time_signature.numerator; }
   inline uint8_t get_time_signature_denominator(void) { return current_time_signature.denominator; }
-  void set_time_signature_numerator(uint8_t v);
-  void set_time_signature_denominator(uint8_t v);
+  // Direct cache writers — bypass Conductor. Prefer conductor->set_numerator/denominator().
+  inline void set_time_signature_numerator(uint8_t v)   { current_time_signature.numerator   = v; }
+  inline void set_time_signature_denominator(uint8_t v) { current_time_signature.denominator = v; }
 
   #define TIME_SIG_MAX_STEPS_PER_BAR 64 // TODO: assess whether this value should be increased; used by CircleDisplays and pattern parameter limits?
 

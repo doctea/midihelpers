@@ -100,19 +100,4 @@ int step_number_from_ticks(signed long ticks) {
   };
   uint8_t time_signature_numerator = DEFAULT_TIME_SIGNATURE_NUMERATOR;
 
-  // get_time_signature_numerator() is inline in bpm.h
-  void set_time_signature_numerator(uint8_t v) {
-      current_time_signature.numerator = v;
-  }
-
-  // get_time_signature_denominator() is inline in bpm.h
-  void set_time_signature_denominator(uint8_t v) {
-    if (v == 0) {
-        current_time_signature.denominator = 2; // prevent divide-by-zero
-    }
-    if (v % 2 != 0) {
-        current_time_signature.denominator = 4; // prevent weird denominators that would mess up tick math
-    }
-    current_time_signature.denominator = v;
-  }
 #endif
