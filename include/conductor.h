@@ -9,6 +9,7 @@
 // saveloadlib. Settings scopes:
 //   SL_SCOPE_SYSTEM  — clock_mode
 //   SL_SCOPE_PROJECT — bpm, time_signature, scale root+type, chord identity
+//   SL_SCOPE_SCENE   — none currently, but could be used for song-section-specific settings like quantise on/off
 #pragma once
 
 #include "bpm.h"
@@ -17,6 +18,9 @@
 #ifdef ENABLE_SCALES
     #include "scales.h"
 #endif
+
+#include <LinkedList.h>
+#include <functional-vlpp.h>
 
 #ifdef ENABLE_STORAGE
     #include "saveload_settings.h"
@@ -43,17 +47,35 @@ public:
         #ifdef ENABLE_STORAGE
             this->set_path_segment("Conductor");
         #endif
-    }
-
-    // Call once from setup() after saveloadlib is initialised.
-    // Registers itself as the global scale / chord identity target so that
-    // the rest of the codebase can query scale/chord via the existing helpers.
-    void begin() {
         #ifdef ENABLE_SCALES
-            set_global_scale_identity_target(&_scale_identity);
-            set_global_chord_identity_target(&_chord_identity);
+            set_global_scale_identity_target(&this->global_scale_identity);
+            set_global_chord_identity_target(&this->global_chord_identity);
         #endif
     }
+
+    // ── Harmony-change notification ────────────────────────────────────────
+    #ifdef ENABLE_SCALES
+        // Callback signature: void(const scale_identity_t&, const chord_identity_t&)
+        using harmony_change_cb_t = vl::Func<void(const scale_identity_t&, const chord_identity_t&)>;
+
+        // Register a subscriber. Callback is fired whenever scale root/type,
+        // chord degree/type/inversion, or quantise flags change.
+        void register_harmony_change_callback(harmony_change_cb_t cb) {
+            _harmony_callbacks.add(cb);
+        }
+    #endif // ENABLE_SCALES
+
+    // ── Time-signature-change notification ────────────────────────────────
+    #ifdef ENABLE_TIME_SIGNATURE
+        // Callback signature: void(uint8_t numerator, uint8_t denominator)
+        using time_sig_change_cb_t = vl::Func<void(uint8_t, uint8_t)>;
+
+        // Register a subscriber. Callback is fired whenever numerator or
+        // denominator changes to a new value.
+        void register_time_sig_change_callback(time_sig_change_cb_t cb) {
+            _time_sig_callbacks.add(cb);
+        }
+    #endif // ENABLE_TIME_SIGNATURE
 
     // ── Clock source ────────────────────────────────────────────────────────
     ClockMode get_clock_mode() const { return clock_mode; }
@@ -80,47 +102,66 @@ public:
     #ifdef ENABLE_TIME_SIGNATURE
         uint8_t get_numerator()   const { return get_time_signature_numerator(); }
         uint8_t get_denominator() const { return get_time_signature_denominator(); }
-        void set_numerator(uint8_t v)   { set_time_signature_numerator(v); }
-        void set_denominator(uint8_t v) { set_time_signature_denominator(v); }
+        void set_numerator(uint8_t v)   { if (get_time_signature_numerator()   == v) return; set_time_signature_numerator(v);   notify_time_sig_changed(); }
+        void set_denominator(uint8_t v) { if (get_time_signature_denominator() == v) return; set_time_signature_denominator(v); notify_time_sig_changed(); }
 
         // int wrappers for saveloadlib
         int get_numerator_int()   const { return (int)get_time_signature_numerator(); }
         int get_denominator_int() const { return (int)get_time_signature_denominator(); }
-        void set_numerator_int(int v)   { set_time_signature_numerator((uint8_t)v); }
-        void set_denominator_int(int v) { set_time_signature_denominator((uint8_t)v); }
+        void set_numerator_int(int v)   { set_numerator((uint8_t)v); }
+        void set_denominator_int(int v) { set_denominator((uint8_t)v); }
     #endif
 
     // ── Global key / scale ──────────────────────────────────────────────────
     #ifdef ENABLE_SCALES
-        int8_t get_scale_root() const { return _scale_identity.root_note; }
-        void   set_scale_root(int8_t r) { _scale_identity.root_note = r; }
+        int8_t get_scale_root() const { return global_scale_identity.root_note; }
+        void   set_scale_root(int8_t r) { if (global_scale_identity.root_note == r) return; global_scale_identity.root_note = r; notify_harmony_changed(); }
 
-        scale_index_t get_scale_type() const { return _scale_identity.scale_number; }
-        void          set_scale_type(scale_index_t t) { _scale_identity.scale_number = t; }
+        scale_index_t get_scale_type() const { return global_scale_identity.scale_number; }
+        void          set_scale_type(scale_index_t t) { if (global_scale_identity.scale_number == t) return; global_scale_identity.scale_number = t; notify_harmony_changed(); }
 
-        const scale_identity_t& get_scale_identity() const { return _scale_identity; }
+        const scale_identity_t& get_scale_identity() const { return global_scale_identity; }
+
+        bool is_global_quantise_on() const { return global_quantise_on; }
+        void set_global_quantise_on(bool v) { if (global_quantise_on == v) return; global_quantise_on = v; notify_harmony_changed(); }
+        bool is_global_quantise_chord_on() const { return global_quantise_chord_on; }
+        void set_global_quantise_chord_on(bool v) { if (global_quantise_chord_on == v) return; global_quantise_chord_on = v; notify_harmony_changed(); }
 
         // ── Global chord ─────────────────────────────────────────────────────
-        int8_t       get_chord_degree()    const { return _chord_identity.degree; }
-        CHORD::Type  get_chord_type()      const { return _chord_identity.type; }
-        int8_t       get_chord_inversion() const { return _chord_identity.inversion; }
+        int8_t       get_chord_degree()    const { return global_chord_identity.degree; }
+        CHORD::Type  get_chord_type()      const { return global_chord_identity.type; }
+        int8_t       get_chord_inversion() const { return global_chord_identity.inversion; }
 
-        void set_chord_degree(int8_t d)        { _chord_identity.degree    = d; }
-        void set_chord_type(CHORD::Type t)     { _chord_identity.type      = t; }
-        void set_chord_inversion(int8_t inv)   { _chord_identity.inversion = inv; }
+        void set_chord_degree(int8_t d)        { if (global_chord_identity.degree    == d)   return; global_chord_identity.degree    = d;   notify_harmony_changed(); }
+        void set_chord_type(CHORD::Type t)     { if (global_chord_identity.type      == t)   return; global_chord_identity.type      = t;   notify_harmony_changed(); }
+        void set_chord_inversion(int8_t inv)   { if (global_chord_identity.inversion == inv) return; global_chord_identity.inversion = inv; notify_harmony_changed(); }
 
-        const chord_identity_t& get_chord_identity() const { return _chord_identity; }
-        void set_chord_identity(const chord_identity_t& c) { _chord_identity = c; }
+        const chord_identity_t& get_chord_identity() const { return global_chord_identity; }
+        void set_chord_identity(const chord_identity_t& c, bool requantise_immediately = true) { 
+            if (!global_chord_identity.diff(c)) 
+                return; 
+            global_chord_identity = c; 
+            notify_harmony_changed(); 
+        }
 
         // Convenience: quantise a pitch to the current global scale
         int8_t quantise_to_scale(int8_t pitch) const {
-            return quantise_pitch_to_scale(pitch, _scale_identity.root_note, _scale_identity.scale_number);
+            return quantise_pitch_to_scale(
+                pitch, 
+                global_scale_identity.root_note, 
+                global_scale_identity.scale_number
+            );
         }
 
         // Convenience: quantise a pitch to the current global chord
         int8_t quantise_to_chord(int8_t pitch, int8_t range = 0) const {
-            return quantise_pitch_to_chord(pitch, range,
-                _scale_identity.root_note, _scale_identity.scale_number, _chord_identity);
+            return quantise_pitch_to_chord(
+                pitch, 
+                range,
+                global_scale_identity.root_note, 
+                global_scale_identity.scale_number, 
+                global_chord_identity
+            );
         }
     #endif // ENABLE_SCALES
 
@@ -140,7 +181,7 @@ public:
             // BPM — project scope
             register_setting(
                 new LSaveableSetting<float>(
-                    "bpm", "Conductor", nullptr,
+                    "bpm", "BPM", nullptr,
                     [this](float v) { set_bpm_value(v); },
                     [this]() -> float { return get_bpm_value(); }
                 ),
@@ -150,7 +191,7 @@ public:
             // Clock mode — system scope (survives project changes)
             register_setting(
                 new LSaveableSetting<int>(
-                    "clock_mode", "Conductor", nullptr,
+                    "clock_mode", "Clock", nullptr,
                     [this](int v) { set_clock_mode_int(v); },
                     [this]() -> int { return get_clock_mode_int(); }
                 ),
@@ -160,7 +201,7 @@ public:
             #ifdef ENABLE_TIME_SIGNATURE
                 register_setting(
                     new LSaveableSetting<int>(
-                        "time_num", "Conductor", nullptr,
+                        "time_num", "Time Signature", nullptr,
                         [this](int v) { set_numerator_int(v); },
                         [this]() -> int { return get_numerator_int(); }
                     ),
@@ -168,7 +209,7 @@ public:
                 );
                 register_setting(
                     new LSaveableSetting<int>(
-                        "time_den", "Conductor", nullptr,
+                        "time_den", "Time Signature", nullptr,
                         [this](int v) { set_denominator_int(v); },
                         [this]() -> int { return get_denominator_int(); }
                     ),
@@ -177,9 +218,28 @@ public:
             #endif
 
             #ifdef ENABLE_SCALES
+                // global quantise
+                register_setting(new LSaveableSetting<bool>(
+                        "Global quantise on",
+                        "Quantise",
+                        &this->global_quantise_on,
+                        [=](bool v) { this->global_quantise_on = v; },
+                        [=]() -> bool { return this->global_quantise_on; }
+                    ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT  // allow global quantise state to be saved at scene or project level, since it's more of a preference setting than a performance setting
+                );
+
+                register_setting(new LSaveableSetting<bool>(
+                        "Global chord quantise on",
+                        "Chord Quantise",
+                        &this->global_quantise_chord_on,
+                        [=](bool v) { this->global_quantise_chord_on = v; },
+                        [=]() -> bool { return this->global_quantise_chord_on; }
+                    ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT  // allow global chord quantise state to be saved at scene or project level, since it's more of a preference setting than a performance setting
+                );
+
                 register_setting(
                     new LSaveableSetting<int>(
-                        "scale_root", "Conductor", nullptr,
+                        "global_scale_root", "Key/Scale", nullptr,
                         [this](int v) { set_scale_root((int8_t)v); },
                         [this]() -> int { return (int)get_scale_root(); }
                     ),
@@ -187,7 +247,7 @@ public:
                 );
                 register_setting(
                     new LSaveableSetting<int>(
-                        "scale_type", "Conductor", nullptr,
+                        "global_scale_type", "Key/Scale", nullptr,
                         [this](int v) { set_scale_type((scale_index_t)v); },
                         [this]() -> int { return (int)get_scale_type(); }
                     ),
@@ -195,7 +255,7 @@ public:
                 );
                 register_setting(
                     new LSaveableSetting<int>(
-                        "chord_degree", "Conductor", nullptr,
+                        "chord_degree", "Global chord", nullptr,
                         [this](int v) { set_chord_degree((int8_t)v); },
                         [this]() -> int { return (int)get_chord_degree(); }
                     ),
@@ -203,7 +263,7 @@ public:
                 );
                 register_setting(
                     new LSaveableSetting<int>(
-                        "chord_type", "Conductor", nullptr,
+                        "chord_type", "Global chord", nullptr,
                         [this](int v) { set_chord_type((CHORD::Type)v); },
                         [this]() -> int { return (int)get_chord_type(); }
                     ),
@@ -211,20 +271,65 @@ public:
                 );
                 register_setting(
                     new LSaveableSetting<int>(
-                        "chord_inversion", "Conductor", nullptr,
+                        "chord_inversion", "Global chord", nullptr,
                         [this](int v) { set_chord_inversion((int8_t)v); },
                         [this]() -> int { return (int)get_chord_inversion(); }
                     ),
                     SL_SCOPE_PROJECT
                 );
+
+                // global chord settings
+                register_setting(new LSaveableSetting<CHORD::Type>(
+                        "Global chord type",
+                        "Chord",
+                        &this->global_chord_identity.type,
+                        [=](CHORD::Type v) { this->global_chord_identity.type = v; },
+                        [=]() -> CHORD::Type { return this->global_chord_identity.type; }
+                    ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT  // allow global chord type state to be saved at scene or project level, since it's more of a preference setting than a performance setting
+                );
+                register_setting(new LSaveableSetting<int8_t>(
+                        "Global chord degree",
+                        "Chord",
+                        &this->global_chord_identity.degree,
+                        [=](int8_t v) { this->global_chord_identity.degree = v; },
+                        [=]() -> int8_t { return this->global_chord_identity.degree; }
+                    ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT  // allow global chord degree state to be saved at scene or project level, since it's more of a preference setting than a performance setting
+                );
+                register_setting(new LSaveableSetting<int8_t>(
+                        "Global chord inversion",
+                        "Chord",
+                        &this->global_chord_identity.inversion,
+                        [=](int8_t v) { this->global_chord_identity.inversion = v; },
+                        [=]() -> int8_t { return this->global_chord_identity.inversion; }
+                    ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT  // allow global chord inversion state to be saved at scene or project level, since it's more of a preference setting than a performance setting
+                );
             #endif // ENABLE_SCALES
         }
     #endif // ENABLE_STORAGE
 
-private:
+// private:
+    #ifdef ENABLE_TIME_SIGNATURE
+        LinkedList<time_sig_change_cb_t> _time_sig_callbacks;
+
+        void notify_time_sig_changed() {
+            uint8_t num = get_time_signature_numerator();
+            uint8_t den = get_time_signature_denominator();
+            for (int i = 0; i < _time_sig_callbacks.size(); i++)
+                _time_sig_callbacks.get(i)(num, den);
+        }
+    #endif // ENABLE_TIME_SIGNATURE
+
     #ifdef ENABLE_SCALES
-        scale_identity_t _scale_identity;
-        chord_identity_t _chord_identity;
+        bool    global_quantise_on = false, global_quantise_chord_on = false;
+        scale_identity_t global_scale_identity = {SCALE_MAJOR, SCALE_ROOT_C};
+        chord_identity_t global_chord_identity = {CHORD::TRIAD, -1, 0};
+
+        LinkedList<harmony_change_cb_t> _harmony_callbacks;
+
+        void notify_harmony_changed() {
+            for (int i = 0; i < _harmony_callbacks.size(); i++)
+                _harmony_callbacks.get(i)(global_scale_identity, global_chord_identity);
+        }
     #endif
 };
 

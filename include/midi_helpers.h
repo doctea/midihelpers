@@ -26,6 +26,12 @@
 #define MIDI_MIN_CHANNEL 1
 #define MIDI_CHANNEL_OMNI 0
 
+// for doing lowest_note and highest_note
+enum NOTE_LIMIT_MODE {
+    IGNORE, TRANSPOSE
+};
+
+
 String get_note_name(int pitch);
 const char *get_note_name_c(int pitch, int channel = 1);
 bool is_valid_note(int8_t byte);

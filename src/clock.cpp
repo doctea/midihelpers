@@ -81,9 +81,7 @@ void pc_usb_midi_handle_clock() {
     last_usb_midi_clock_ticked_at = millis();
     usb_midi_clock_ticked = true;
     #ifdef USE_UCLOCK
-      ATOMIC() {
-        uClock.clockMe();
-      }
+      uClock.clockMe();
     #endif
   }
 }

@@ -547,7 +547,6 @@ class ChordPlayer
             //          fake-poly offers auto-chord functions
             //          true-poly doesn't offer auto-chord functions
             //          all versions offer quantisation to scale
-            // TODO: allow all pitched behaviours to use a 'global scale' setting (-1?)
             menuitems->add(new LambdaScaleMenuItemBar(
                 "Scale / Key", 
                 [=](scale_index_t scale) -> void { this->set_scale(scale); }, 
