@@ -566,8 +566,8 @@ class LambdaPlaylistSubMenuItemBarWithIndicator : public SubMenuItemBar {
         vl::Func<int8_t(void)> repeats_getter_func,
         int8_t my_playlist_index,
         int8_t *current_playlist_index,
-        int8_t NUM_SONG_SECTIONS,
-        int8_t MAX_REPEATS,
+        int8_t num_song_sections,
+        int8_t max_repeats,
         bool show_sub_headers = true,
         bool show_header = true
     ) : SubMenuItemBar (label, show_sub_headers, show_header),
@@ -585,7 +585,7 @@ class LambdaPlaylistSubMenuItemBarWithIndicator : public SubMenuItemBar {
             section_setter_func, 
             section_getter_func,
             nullptr, 
-            (int8_t)0, NUM_SONG_SECTIONS - 1,
+            (int8_t)0, num_song_sections - 1,
             true, true
         ));
         this->add(new LambdaNumberControl<int8_t>(
@@ -593,7 +593,7 @@ class LambdaPlaylistSubMenuItemBarWithIndicator : public SubMenuItemBar {
             repeats_setter_func, 
             repeats_getter_func,
             nullptr,            
-            (int8_t)0, MAX_REPEATS,
+            (int8_t)0, max_repeats,
             true, true
         ));
 

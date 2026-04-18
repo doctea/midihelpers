@@ -45,7 +45,7 @@ class NoteHarmonyDisplay : public MenuItem {
     scale_index_t *scale_number;
     int_fast8_t *scale_root;
     //int_fast8_t *current_note;
-    bool *quantise_enabled;
+    quantise_mode_t *quantise_mode;
     NoteTracker *note_tracker = nullptr;
 
     NoteHarmonyDisplay(
@@ -53,12 +53,11 @@ class NoteHarmonyDisplay : public MenuItem {
         scale_index_t *scale_number, 
         int_fast8_t *scale_root, 
         NoteTracker *note_tracker, 
-        bool *quantise_enabled
+        quantise_mode_t *quantise_mode
     ) : MenuItem(label, false) {
         this->scale_number = scale_number;
         this->scale_root = scale_root;
-        //this->current_note = current_note;
-        this->quantise_enabled = quantise_enabled;
+        this->quantise_mode = quantise_mode;
         this->note_tracker = note_tracker;
     }
 
@@ -79,18 +78,27 @@ class NoteHarmonyDisplay : public MenuItem {
 
         int c = 0;
 
-        //Serial.printf("NoteHarmonyDisplay display: scale_number %i, scale_root %i\n", *scale_number, *scale_root);
+        int8_t scale_root_to_use = get_effective_scale_root(*scale_root);
+        scale_index_t scale_number_to_use = get_effective_scale_type(*scale_number);
+        quantise_mode_t mode = quantise_mode ? *quantise_mode : QUANTISE_MODE_NONE;
 
         // draw all white notes first
         for (int_fast8_t r = 0 ; r < NUM_CHROMATIC_NOTES ; r++) {
             x_pos = c * key_width;
-
-            const bool playing = note_tracker->is_note_held_any_octave_transposed(r); // r == (*current_note % NUM_CHROMATIC_NOTES);
+            const bool playing = note_tracker->is_note_held_any_octave_transposed(r);
             const bool white_key = (r==0 || r==2 || r==4 || r==5 || r==7 || r==9 || r==11);
-
-            if (white_key) { // white key
+            if (white_key) {
                 uint16_t colour = playing ? YELLOW : (white_key?C_WHITE:tft->halfbright_565(C_WHITE));
-                const bool valid = !*quantise_enabled || (*quantise_enabled && quantise_pitch_to_scale(r, *scale_root, *scale_number)==r);
+                bool in_scale = quantise_pitch_to_scale(r, *scale_root, *scale_number)==r;
+                bool in_chord = false;
+
+                const bool valid = 
+                            !mode 
+                            ||
+                            (mode == quantise_mode_t::QUANTISE_MODE_CHORD && conductor->quantise_to_chord(r) == r) 
+                            ||
+                            (mode == quantise_mode_t::QUANTISE_MODE_SCALE && quantise_pitch_to_scale(r, scale_root_to_use, scale_number_to_use)==r);
+
                 if (!valid) colour = tft->halfbright_565(colour);
 
                 if (valid)
@@ -113,7 +121,12 @@ class NoteHarmonyDisplay : public MenuItem {
                 c++;
             } else {    // black key
                 uint16_t colour = playing ? YELLOW : (white_key?C_WHITE:tft->halfbright_565(C_WHITE));
-                const bool valid = !*quantise_enabled || (*quantise_enabled && quantise_pitch_to_scale(r, *scale_root, *scale_number)==r);
+                const bool valid = 
+                            !mode 
+                            ||
+                            (mode == quantise_mode_t::QUANTISE_MODE_CHORD && conductor->quantise_to_chord(r, 2) == r) 
+                            ||
+                            (mode == quantise_mode_t::QUANTISE_MODE_SCALE && quantise_pitch_to_scale(r, scale_root_to_use, scale_number_to_use)==r);
                 if (!valid) colour = tft->halfbright_565(colour);
 
                 x_pos -= (key_width/2);
@@ -125,10 +138,7 @@ class NoteHarmonyDisplay : public MenuItem {
             }
         }
 
-        //Serial.printf("NoteHarmonyDisplay finished drawing keyboard\n");
-
         tft->setCursor(0, pos.y + key_height + gap);
-        //tft->printf("drew %i white notes?\n", c);
 
         return tft->getCursorY();
     }

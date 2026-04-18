@@ -54,6 +54,7 @@ struct scale_t {
     int8_t valid_chromatic_pitches[PITCHES_PER_SCALE];
 };
 
+
 //scale_t *make_scale_t_from_string(const char *scale_signature, const char *name, int rotation = 0);
 scale_pattern_t *make_scale_pattern_t_from_string(const char *scale_pattern, const char *name);
 scale_t *make_scale_t_from_pattern(const scale_pattern_t *scale_signature, const char *name, int rotation = 0);
@@ -98,6 +99,15 @@ const chord_t chords[] = {
     { "Oct+2",       { 0, 7, 14, NOTE_OFF } },
     { "Oct+3",       { 0, 7, 14, 21       } },
 };
+
+
+// Quantisation mode for note outputs and displays
+// NONE: no quantisation, SCALE: quantise to scale, CHORD: quantise to chord
+typedef enum quantise_mode_t : int8_t {
+    QUANTISE_MODE_NONE = 0,
+    QUANTISE_MODE_SCALE = 1,
+    QUANTISE_MODE_CHORD = 2
+} quantise_mode_t;
 
 namespace CHORD {
     // @@TODO: make this an enum class and update code accordingly
@@ -151,7 +161,7 @@ class chord_identity_t {
 
         return false;
     }
-    bool is_valid_chord() {
+    bool is_valid_chord() const {
         return this->degree>0;
     }
 };

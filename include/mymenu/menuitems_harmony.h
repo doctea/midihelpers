@@ -6,6 +6,8 @@
 //String get_note_name(int pitch);
 //const char *get_note_name_c(int pitch);
 
+#include "conductor.h"
+
 #include "menu.h"
 
 // todo: make this accept int8_t, or different datatypes, or even lambda
@@ -98,22 +100,32 @@ class HarmonyDisplay : public MenuItem {
     scale_index_t *scale_number;
     int_fast8_t *scale_root;
     int8_t *current_note;
-    bool *quantise_enabled;
+    quantise_mode_t *quantise_mode;
+    chord_identity_t *current_chord_identity = nullptr;
 
-    HarmonyDisplay(const char *label, scale_index_t *scale_number, int_fast8_t *scale_root, int8_t *current_note, bool *quantise_enabled, bool show_header = true) 
+    HarmonyDisplay(const char *label, scale_index_t *scale_number, int_fast8_t *scale_root, int8_t *current_note, quantise_mode_t *quantise_mode, bool show_header = true) 
         : MenuItem(label, false, show_header) 
     {
         this->scale_number = scale_number;
         this->scale_root = scale_root;
         this->current_note = current_note;
-        this->quantise_enabled = quantise_enabled;
+        this->quantise_mode = quantise_mode;
     }
 
-    HarmonyDisplay(const char *label, scale_identity_t *scale_identity, int8_t *current_note, bool *quantise_enabled) : MenuItem(label, false) {
-        this->scale_number = &scale_identity->scale_number;
-        this->scale_root = &scale_identity->root_note;
-        this->current_note = current_note;
-        this->quantise_enabled = quantise_enabled;
+    HarmonyDisplay(const char *label, scale_index_t *scale_number, int_fast8_t *scale_root, int8_t *current_note, quantise_mode_t *quantise_mode, chord_identity_t *current_chord_identity = nullptr, bool show_header = true) 
+        : HarmonyDisplay(label, scale_number, scale_root, current_note, quantise_mode, show_header) {
+        this->current_chord_identity = current_chord_identity;
+    }
+
+    HarmonyDisplay(
+        const char *label, 
+        scale_identity_t *scale_identity, 
+        int8_t *current_note, 
+        quantise_mode_t *quantise_mode, 
+        chord_identity_t *current_chord_identity = nullptr, 
+        bool show_header = true
+    ) : HarmonyDisplay(label, &scale_identity->scale_number, &scale_identity->root_note, current_note, quantise_mode, show_header) {
+        this->current_chord_identity = current_chord_identity;
     }
 
     virtual int display(Coord pos, bool selected, bool opened) override {
@@ -135,21 +147,23 @@ class HarmonyDisplay : public MenuItem {
 
         int8_t scale_root_to_use = get_effective_scale_root(*scale_root);
         scale_index_t scale_number_to_use = get_effective_scale_type(*scale_number);
-
-        bool obey_quantise = quantise_enabled==nullptr || *quantise_enabled;
+        quantise_mode_t mode = quantise_mode ? *quantise_mode : QUANTISE_MODE_NONE;
 
         // draw all white notes first
         for (int_fast8_t r = 0 ; r < NUM_CHROMATIC_NOTES ; r++) {
             x_pos = c * key_width;
-
             const bool playing = current_note != nullptr && r == (*current_note % NUM_CHROMATIC_NOTES);
             const bool white_key = (r==0 || r==2 || r==4 || r==5 || r==7 || r==9 || r==11);
-
-            if (white_key) { // white key
+            if (white_key) {
                 uint16_t colour = playing ? YELLOW : (white_key?C_WHITE:tft->halfbright_565(C_WHITE));
-                
+
                 const bool valid = 
-                            !obey_quantise || quantise_pitch_to_scale(r, scale_root_to_use, scale_number_to_use)==r;
+                            !mode 
+                            ||
+                            (mode == quantise_mode_t::QUANTISE_MODE_CHORD && current_chord_identity != nullptr && conductor->quantise_to_chord(r) == r) 
+                            ||
+                            (mode == quantise_mode_t::QUANTISE_MODE_SCALE && quantise_pitch_to_scale(r, scale_root_to_use, scale_number_to_use)==r);
+
                 if (!valid) colour = tft->halfbright_565(colour);
 
                 if (valid)
@@ -173,7 +187,11 @@ class HarmonyDisplay : public MenuItem {
             } else {    // black key
                 uint16_t colour = playing ? YELLOW : (white_key?C_WHITE:tft->halfbright_565(C_WHITE));
                 const bool valid = 
-                            !obey_quantise || quantise_pitch_to_scale(r, scale_root_to_use, scale_number_to_use)==r;
+                            !mode 
+                            ||
+                            (mode == quantise_mode_t::QUANTISE_MODE_CHORD && conductor->quantise_to_chord(r, 2) == r) 
+                            ||
+                            (mode == quantise_mode_t::QUANTISE_MODE_SCALE && quantise_pitch_to_scale(r, scale_root_to_use, scale_number_to_use)==r);
                 if (!valid) colour = tft->halfbright_565(colour);
 
                 x_pos -= (key_width/2);
@@ -186,7 +204,6 @@ class HarmonyDisplay : public MenuItem {
         }
 
         tft->setCursor(0, pos.y + key_height + gap);
-        //tft->printf("drew %i white notes?\n", c);
 
         return tft->getCursorY();
     }

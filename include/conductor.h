@@ -133,10 +133,8 @@ public:
 
         const scale_identity_t& get_scale_identity() const { return global_scale_identity; }
 
-        bool is_global_quantise_on() const { return global_quantise_on; }
-        void set_global_quantise_on(bool v) { if (global_quantise_on == v) return; global_quantise_on = v; notify_harmony_changed(); }
-        bool is_global_quantise_chord_on() const { return global_quantise_chord_on; }
-        void set_global_quantise_chord_on(bool v) { if (global_quantise_chord_on == v) return; global_quantise_chord_on = v; notify_harmony_changed(); }
+        quantise_mode_t get_global_quantise_mode() const { return global_quantise_mode; }
+        void set_global_quantise_mode(quantise_mode_t mode) { if (global_quantise_mode == mode) return; global_quantise_mode = mode; notify_harmony_changed(); }
 
         // ── Global chord ─────────────────────────────────────────────────────
         int8_t       get_chord_degree()    const { return global_chord_identity.degree; }
@@ -222,23 +220,18 @@ public:
             #endif
 
             #ifdef ENABLE_SCALES
-                // global quantise
-                register_setting(new LSaveableSetting<bool>(
-                        "Global quantise on",
+                register_setting(
+                    new LSaveableSetting<quantise_mode_t>(
+                        "Global quantise mode",
                         "Quantise",
-                        &this->global_quantise_on,
-                        [=](bool v) { this->global_quantise_on = v; },
-                        [=]() -> bool { return this->global_quantise_on; }
-                    ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT  // allow global quantise state to be saved at scene or project level, since it's more of a preference setting than a performance setting
-                );
-
-                register_setting(new LSaveableSetting<bool>(
-                        "Global chord quantise on",
-                        "Chord Quantise",
-                        &this->global_quantise_chord_on,
-                        [=](bool v) { this->global_quantise_chord_on = v; },
-                        [=]() -> bool { return this->global_quantise_chord_on; }
-                    ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT  // allow global chord quantise state to be saved at scene or project level, since it's more of a preference setting than a performance setting
+                        &this->global_quantise_mode,
+                        [=](quantise_mode_t value) -> void {
+                            this->set_global_quantise_mode((quantise_mode_t)constrain((int)value, (int)QUANTISE_MODE_NONE, (int)QUANTISE_MODE_CHORD));
+                        },
+                        [=](void) -> quantise_mode_t {
+                            return this->get_global_quantise_mode();
+                        }
+                    ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT
                 );
 
                 register_setting(
@@ -322,7 +315,7 @@ public:
     #endif // ENABLE_TIME_SIGNATURE
 
     #ifdef ENABLE_SCALES
-        bool    global_quantise_on = false, global_quantise_chord_on = false;
+        quantise_mode_t global_quantise_mode = QUANTISE_MODE_NONE;
         scale_identity_t global_scale_identity = {SCALE_MAJOR, SCALE_ROOT_C};
         chord_identity_t global_chord_identity = {CHORD::TRIAD, -1, 0};
 

@@ -57,10 +57,24 @@ void Conductor::make_menu_items(Menu *menu, conductor_menu_options_t options) {
                 [](int8_t r)          { conductor->set_scale_root(r); },
                 []() -> int8_t        { return conductor->get_scale_root(); }
             );
-            global_quantise_bar->add(new LambdaToggleControl("Quantise",
-                [=](bool v) -> void { conductor->set_global_quantise_on(v); },
-                [=]() -> bool { return conductor->is_global_quantise_on(); }
-            ));
+            // TODO: make a dedicated quantise-mode-selector
+            LambdaSelectorControl<int8_t> *quant_mode = new LambdaSelectorControl<int8_t>(
+                "Quant",
+                [=](int8_t v) -> void {
+                    this->set_global_quantise_mode((quantise_mode_t)constrain((int)v, (int)quantise_mode_t::QUANTISE_MODE_NONE, (int)quantise_mode_t::QUANTISE_MODE_CHORD));
+                },
+                [=]() -> int8_t {
+                    return (int8_t)this->get_global_quantise_mode();
+                },
+                nullptr,
+                true,
+                true
+            );
+            quant_mode->add_available_value((int8_t)quantise_mode_t::QUANTISE_MODE_NONE, "Off");
+            quant_mode->add_available_value((int8_t)quantise_mode_t::QUANTISE_MODE_SCALE, "Scale");
+            quant_mode->add_available_value((int8_t)quantise_mode_t::QUANTISE_MODE_CHORD, "Chord");
+            global_quantise_bar->add(quant_mode);
+
             menu->add(global_quantise_bar);
 
             LambdaChordSubMenuItemBar *global_chord_bar = new LambdaChordSubMenuItemBar(
@@ -73,17 +87,18 @@ void Conductor::make_menu_items(Menu *menu, conductor_menu_options_t options) {
                 [=]() -> int8_t { return conductor->get_chord_inversion(); },
                 false, true, true
             );
-            global_chord_bar->add(new LambdaToggleControl("Quantise",
-                [=](bool v) -> void { conductor->set_global_quantise_chord_on(v); },
-                [=]() -> bool { return conductor->is_global_quantise_chord_on(); }
-            ));
+            // global_chord_bar->add(new LambdaToggleControl("Quantise",
+            //     [=](bool v) -> void { conductor->set_global_quantise_chord_on(v); },
+            //     [=]() -> bool { return conductor->is_global_quantise_chord_on(); }
+            // ));
             menu->add(global_chord_bar);
 
             menu->add(new HarmonyDisplay(
                 "Scale", 
                 get_global_scale_identity(),
-                nullptr, 
-                nullptr
+                nullptr,
+                &conductor->global_quantise_mode,
+                &conductor->global_chord_identity
             ));
         #endif
     #endif
