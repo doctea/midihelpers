@@ -1,6 +1,6 @@
 #pragma once
 
-// abstract handling of playing chords; taken from usb_midi_clocker's behaviour_cvinput, so that we can re-use this in Microlidian
+// Event-driven chord renderer reused across outputs (timing/triggering now lives outside this class).
 #if defined(ENABLE_SCALES)
 
 #include <Arduino.h>
@@ -20,9 +20,9 @@
 #endif
 class ChordPlayer 
 #ifdef ENABLE_STORAGE
-    : public SHDynamic<0, 6> // no children; selected_chord + channel settings
+    : public SHDynamic<0, 6> // no children; core chord/scale/playback settings
 #endif
-    {  // no children; selected_chord + channel settings
+    {
     public:
 
         using setter_func_def = vl::Func<void(int8_t channel, int8_t note, int8_t velocity)>;
@@ -51,16 +51,12 @@ class ChordPlayer
         }
         bool debug = false;
 
-        bool is_playing = false;
         bool is_playing_chord = false;
-        int last_note = -1, current_note = -1, current_raw_note = -1;
+        bool is_playing_bass = false;
+        bool is_playing_topline = false;
+        int8_t current_note = NOTE_OFF;
         int8_t current_bass_note = NOTE_OFF, current_topline_note = NOTE_OFF;
         CHORD::Type last_chord = CHORD::NONE, current_chord = CHORD::NONE, selected_chord_number = CHORD::NONE;
-        unsigned long note_started_at_tick = 0;
-
-        int32_t note_length_ticks = PPQN;
-        int32_t trigger_on_ticks = 0;   // 0 = on change
-        int32_t trigger_delay_ticks = 0;
         int8_t inversion = 0;
 
         chord_instance_t current_chord_data;
@@ -81,14 +77,12 @@ class ChordPlayer
         #endif
 
         void set_scale(scale_index_t scale) {
-            //trigger_off_for_pitch_because_changed(this->current_note);
             this->scale = scale;
         }
         scale_index_t get_scale() {
             return this->scale;
         }
         void set_scale_root(int8_t scale_root) {
-            //trigger_off_for_pitch_because_changed(this->current_note);
             this->scale_root = scale_root;
         }
         int8_t get_scale_root() {
@@ -113,7 +107,6 @@ class ChordPlayer
             return inversion;
         }
         void set_inversion(int8_t inversion) {
-            //trigger_off_for_pitch_because_changed(this->current_note);
             /*if (this->inversion!=inversion)
                 Serial.printf("%s#set_inversion(%i) (was previously %i)\n", this->get_label(), inversion, this->inversion);*/
             this->inversion = inversion;
@@ -127,31 +120,12 @@ class ChordPlayer
             return this->selected_chord_number;
         }
 
-        virtual void set_note_length(int32_t length_ticks) {
-            this->note_length_ticks = length_ticks;
-        }
-        virtual int32_t get_note_length () {
-            return this->note_length_ticks;
-        }
-        virtual void set_trigger_on_ticks(int32_t length_ticks) {
-            this->trigger_on_ticks = length_ticks;
-        }
-        // 0 = trigger on change
-        virtual int32_t get_trigger_on_ticks () {
-            return this->trigger_on_ticks;
-        }
-        virtual void set_trigger_delay_ticks(int32_t delay_ticks) {
-            this->trigger_delay_ticks = delay_ticks;
-        }
-        virtual int32_t get_trigger_delay_ticks () {
-            return this->trigger_delay_ticks;
-        }
-
         void play_bass_note(int8_t pitch, uint8_t velocity = MIDI_MAX_VELOCITY) {
             if (is_valid_note(pitch)) {
                 if (this->debug) Serial.printf("play_bass_note: Playing bass note %i (%s)\n", pitch, get_note_name_c(pitch));
                 this->receive_note_on_bass(channel, pitch, velocity);
                 this->current_bass_note = pitch;
+                this->is_playing_bass = true;
             }
         }
         void play_topline_note(int8_t pitch, uint8_t velocity = MIDI_MAX_VELOCITY) {
@@ -159,21 +133,24 @@ class ChordPlayer
                 if (this->debug) Serial.printf("play_topline_note: Playing topline note %i (%s)\n", pitch, get_note_name_c(pitch));
                 this->receive_note_on_topline(channel, pitch, velocity);
                 this->current_topline_note = pitch;
+                this->is_playing_topline = true;
             }
         }
         void stop_bass_note() {
             if (is_valid_note(this->current_bass_note)) {
                 if (this->debug) Serial.printf("stop_bass_note: Stopping bass note %i (%s)\n", this->current_bass_note, get_note_name_c(this->current_bass_note));
                 this->receive_note_off_bass(channel, this->current_bass_note, 0);
-                this->current_bass_note = NOTE_OFF;
             }
+            this->current_bass_note = NOTE_OFF;
+            this->is_playing_bass = false;
         }
         void stop_topline_note() {
             if (is_valid_note(this->current_topline_note)) {
                 if (this->debug) Serial.printf("stop_topline_note: Stopping topline note %i (%s)\n", this->current_topline_note, get_note_name_c(this->current_topline_note));
                 this->receive_note_off_topline(channel, this->current_topline_note, 0);
-                this->current_topline_note = NOTE_OFF;
             }
+            this->current_topline_note = NOTE_OFF;
+            this->is_playing_topline = false;
         }
 
         void change_bass_note(int8_t new_note, uint8_t new_velocity) {
@@ -232,7 +209,6 @@ class ChordPlayer
             
             last_chord = this->current_chord;
             this->last_chord_data = current_chord_data;
-            this->is_playing = false;
             this->is_playing_chord = false;
             this->current_chord_data.clear();
             if (debug) Serial.println("---");
@@ -294,26 +270,15 @@ class ChordPlayer
             }
             if (debug) Serial.println("---");
 
-            this->is_playing = true;
         }
 
         void stop_all() {
-            if (is_playing_chord)
-                this->stop_chord(this->current_chord_data);
-            if (is_playing && is_valid_note(this->current_note)) {
-                this->last_note = this->current_note;
-                this->is_playing = false;
-                this->receive_note_off(channel, this->current_note, 0);
-            }
-            if (is_valid_note(this->current_bass_note)) 
-                stop_bass_note();
-            if (is_valid_note(this->current_topline_note))
-                stop_topline_note();
+            this->trigger_off_for_pitch_because_changed(this->current_note);
         }
 
         virtual void trigger_off_for_pitch_because_length(int8_t pitch, uint8_t velocity = MIDI_MIN_VELOCITY) {
             // don't reset current_note so that we don't retrigger the same note again immediately
-            if (is_playing_chord) //is_quantise()) 
+            if (is_playing_chord)
                 this->stop_chord(this->current_chord_data);
             else {
                 if (is_valid_note(this->current_note))
@@ -323,13 +288,10 @@ class ChordPlayer
                 if (is_valid_note(this->current_topline_note))
                     stop_topline_note();
             }
-
-            is_playing = false;
-            this->last_note = pitch;
-            this->current_note = 255;
+            this->current_note = NOTE_OFF;
         }
         virtual void trigger_off_for_pitch_because_changed(int8_t pitch, uint8_t velocity = MIDI_MIN_VELOCITY) {
-            if (is_playing_chord) //is_quantise())
+            if (is_playing_chord)
                 this->stop_chord(this->current_chord_data);
             else {
                 if (is_valid_note(this->current_note))
@@ -339,99 +301,36 @@ class ChordPlayer
                 if (is_valid_note(this->current_topline_note))
                     stop_topline_note();
             }
-
-            this->is_playing = false;
-            this->last_note = this->current_note;
-            this->current_note = 255;
+            this->current_note = NOTE_OFF;
         }
         virtual void trigger_on_for_pitch(int8_t pitch, uint8_t velocity = MIDI_MAX_VELOCITY, CHORD::Type chord_number = CHORD::TRIAD, int8_t inversion = 0) {
-            if (this->is_playing)
-                this->stop_chord(this->current_chord_data);
+            if (this->is_playing_chord || is_valid_note(this->current_note))
+                this->trigger_off_for_pitch_because_changed(this->current_note);
 
             if (!is_valid_note(pitch))
                 return;
-
+            if (this->is_quantise()) {
+                pitch = quantise_pitch_to_scale(pitch, this->scale_root, this->scale);
+            }
             this->current_note = pitch;
-            this->note_started_at_tick = ticks;
+
+
             #ifdef DEBUG_VELOCITY
                 this->velocity = velocity;
             #endif
             if (!is_quantise() || !is_play_chords() || this->selected_chord_number==CHORD::NONE) {
-                this->receive_note_on(channel, this->current_note, velocity);
+                this->receive_note_on(channel, pitch, velocity);
                 stop_bass_note();
                 stop_topline_note();
             } else
                 this->play_chord(pitch, chord_number, inversion, velocity);
-            this->is_playing = true;
-        }
-
-        //void on_tick(unsigned long ticks) override {
-        // if we send this during tick then the notes never get received, for some reason.  sending during on_pre_clock seems to work ok for now.
-        // TODO: see if this is solved now and we can revert back to using on_tick, now that we have updated to newer version of USBHost_t36 library?
-        void on_pre_clock(unsigned long ticks, int8_t new_note, int8_t velocity) {
-
-            //if (!(get_trigger_on_ticks()==0 || (ticks-trigger_delay_ticks) % get_trigger_on_ticks()==0))
-            //    return;
-
-            //int8_t just_stopped_note = NOTE_OFF;
-            
-            if (this->debug) Serial.printf("---- on_pre_clock(%i, %i, %i)\n", ticks, new_note, velocity);
-            // check if playing note duration has passed regardless of whether pitch_input is set, so that notes will still finish even if disconncted
-            if (is_playing && this->get_note_length()>0 && abs((long)this->note_started_at_tick-(long)ticks) >= this->get_note_length()) {
-                if (this->debug) Serial.printf("ChordPlayer: Stopping note\t%i because playing and elapsed is (%u-%u=%u)\n", current_note, note_started_at_tick, ticks, abs((long)this->note_started_at_tick-(long)ticks));
-                //just_stopped_note = current_note;
-                trigger_off_for_pitch_because_length(current_note);
-                //this->current_note = -1; // dont clear current_note, so that we don't retrigger it again
-            }
-
-            this->current_raw_note = new_note;
-            if (this->is_quantise())
-                new_note = quantise_pitch_to_scale(new_note, this->scale_root, this->scale); //, chord_identity_t{.chord_type=this->selected_chord_number, .chord_degree=get_degree_for, .inversion=this->inversion});
-
-            // has pitch become invalid?  is so and if note playing, stop note
-            if (is_playing && !is_valid_note(new_note) && is_valid_note(this->current_note)) {
-                if (this->debug) Serial.printf("ChordPlayer: Stopping note\t%i because playing and new_note isn't valid\n", new_note);
-                trigger_off_for_pitch_because_changed(this->current_note);
-            } else if (is_valid_note(new_note) && (new_note!=this->current_note || this->get_trigger_on_ticks()>0)) {
-                // note has changed from valid to a different valid
-                if (is_playing && this->get_trigger_on_ticks()==0) {
-                    if (this->debug) Serial.printf("ChordPlayer: Stopping note\t%i because of new_note\t%i\n", this->current_note, new_note);
-                    trigger_off_for_pitch_because_changed(this->current_note);
-                }
-
-                if (this->get_note_length()==0)
-                    return;
-
-                if (get_trigger_on_ticks()==0 && (new_note==this->current_note || new_note==this->last_note)) {
-                    // don't retrigger if we are triggering on 'change' but note hasn't changed
-                    if (this->debug) Serial.printf("ChordPlayer: Not retriggering note %i because new_note is the same as current_note and trigger_on_ticks is 0\n", new_note);
-                    return;
-                }
-
-                if (!(get_trigger_on_ticks()==0 || (ticks-trigger_delay_ticks) % get_trigger_on_ticks()==0)
-                        //|| (get_trigger_on_ticks()==0 && (just_stopped_note!=NOTE_OFF && (new_note==just_stopped_note || new_note!=last_note)))
-                            // ^^ don't retrigger note if voltage hasn't changed.... doesn't work like wanted though?  alternates on/off if value isn't changing and note length is set to something
-                )
-                    return;
-
-                if (this->debug) Serial.printf("ChordPlayer: Starting note %i\tat\t%u\n", new_note, ticks);
-
-                trigger_on_for_pitch(new_note, velocity, selected_chord_number, this->inversion);
-            }
-            if (this->debug) Serial.println("----");
         }
 
     #ifdef ENABLE_SCREEN
         // for caching available_values to save a bit of RAM
         #if __cplusplus >= 201703L
-            inline static LinkedList<LambdaSelectorControl<int32_t>::option> *length_ticks_control_options;
-            inline static LinkedList<LambdaSelectorControl<int32_t>::option> *trigger_ticks_control_options;
-            inline static LinkedList<LambdaSelectorControl<int32_t>::option> *trigger_delay_ticks_control_options;
             inline static LinkedList<LambdaSelectorControl<CHORD::Type>::option> *chord_type_control_options;
         #else
-            static LinkedList<LambdaSelectorControl<int32_t>::option> *length_ticks_control_options;
-            static LinkedList<LambdaSelectorControl<int32_t>::option> *trigger_ticks_control_options;
-            static LinkedList<LambdaSelectorControl<int32_t>::option> *trigger_delay_ticks_control_options;
             static LinkedList<LambdaSelectorControl<CHORD::Type>::option> *chord_type_control_options;
         #endif
 
@@ -440,100 +339,10 @@ class ChordPlayer
             if (menuitems==nullptr)
                 menuitems = new LinkedList<MenuItem *>();
 
-            // todo: move the below to ChordPlayer, and call it in here
             #ifdef DEBUG_VELOCITY
                 DirectNumberControl<int8_t> *velocity_control = new DirectNumberControl<int8_t>("Velocity", &this->velocity, 127, 0, 127);
                 menuitems->add(velocity_control);
             #endif
-
-            //Serial.println(F("DeviceBehaviour_CVInput::make_menu_items() setting up HarmonyStatus")); Serial_flush();
-            HarmonyStatus *harmony = new HarmonyStatus(
-                "CV->MIDI pitch", 
-                &this->last_note, 
-                &this->current_note,
-                &this->current_raw_note,
-                "Raw"
-            );
-            menuitems->add(harmony);
-
-            SubMenuItemBar *bar = new SubMenuItemBar("Trigger/durations");
-            //Serial.println(F("about to create length_ticks_control ObjectSelectorControl..")); Serial_flush();
-            LambdaSelectorControl<int32_t> *length_ticks_control = new LambdaSelectorControl<int32_t>(
-                "Note length",
-                [=](int32_t v) -> void { this->set_note_length(v); },
-                [=]() -> int32_t { return this->get_note_length(); },
-                nullptr,
-                true
-            );
-            //Serial.println(F("about to add values..")); Serial_flush();
-            if (length_ticks_control_options==nullptr) {
-                length_ticks_control->add_available_value(0,                 "None");
-                length_ticks_control->add_available_value(PPQN/PPQN,         "-");
-                length_ticks_control->add_available_value(PPQN/8,            "32nd");
-                length_ticks_control->add_available_value(PPQN/4,            "16th");
-                length_ticks_control->add_available_value(PPQN/3,            "12th");
-                length_ticks_control->add_available_value(PPQN/2,            "8th");
-                length_ticks_control->add_available_value(PPQN,              "Beat");
-                length_ticks_control->add_available_value(PPQN*2,            "2xBeat");
-                length_ticks_control->add_available_value(PPQN*4,            "Bar");
-                length_ticks_control_options = length_ticks_control->get_available_values();
-            } else {
-                length_ticks_control->set_available_values(length_ticks_control_options);
-            }
-            //Serial.println(F("about to add to menuitems list..")); Serial_flush();
-            bar->add(length_ticks_control);
-
-            //Serial.println(F("about to create length_ticks_control ObjectSelectorControl..")); Serial_flush();
-            LambdaSelectorControl<int32_t> *trigger_ticks_control = new LambdaSelectorControl<int32_t>(
-                    "Trigger each",
-                    [=](int32_t v) -> void { this->set_trigger_on_ticks(v); },
-                    [=]() -> int32_t { return this->get_trigger_on_ticks(); },
-                    nullptr,
-                    true
-            );
-            if (trigger_ticks_control_options==nullptr) {
-                trigger_ticks_control->add_available_value(0,                 "Change");
-                //trigger_ticks_control->add_available_value(PPQN/PPQN,         "-");
-                trigger_ticks_control->add_available_value(PPQN/8,            "32nd");
-                trigger_ticks_control->add_available_value(PPQN/4,            "16th");
-                trigger_ticks_control->add_available_value(PPQN/3,            "12th");
-                trigger_ticks_control->add_available_value(PPQN/2,            "8th");
-                trigger_ticks_control->add_available_value(PPQN,              "Beat");
-                trigger_ticks_control->add_available_value(PPQN*2,            "2xBeat");
-                trigger_ticks_control->add_available_value(PPQN*4,            "Bar");
-                trigger_ticks_control_options = trigger_ticks_control->get_available_values();
-            } else {
-                trigger_ticks_control->set_available_values(trigger_ticks_control_options);
-            }
-            //Serial.println(F("about to add to menuitems list..")); Serial_flush();
-            bar->add(trigger_ticks_control);
-
-            LambdaSelectorControl<int32_t> *trigger_delay_ticks_control 
-                = new LambdaSelectorControl<int32_t>(
-                    "Delay",
-                    [=](int32_t v) -> void { this->set_trigger_delay_ticks(v); },
-                    [=]() -> int32_t { return this->get_trigger_delay_ticks(); },
-                    nullptr,
-                    true
-            );
-            if (trigger_delay_ticks_control_options==nullptr) {
-                //trigger_ticks_control->add_available_value(0,                 "Change");
-                //trigger_ticks_control->add_available_value(PPQN/PPQN,         "-");
-                trigger_delay_ticks_control->add_available_value(0,                 "None");
-                trigger_delay_ticks_control->add_available_value(PPQN/8,            "32nd");
-                trigger_delay_ticks_control->add_available_value(PPQN/4,            "16th");
-                trigger_delay_ticks_control->add_available_value(PPQN/3,            "12th");
-                trigger_delay_ticks_control->add_available_value(PPQN/2,            "8th");
-                trigger_delay_ticks_control->add_available_value(PPQN,              "Beat");
-                trigger_delay_ticks_control->add_available_value(PPQN*2,            "2xBeat");
-                //trigger_ticks_control->add_available_value(PPQN*4,            "Bar");
-                trigger_delay_ticks_control_options = trigger_delay_ticks_control->get_available_values();
-            } else {
-                trigger_delay_ticks_control->set_available_values(trigger_delay_ticks_control_options);
-            }
-            bar->add(trigger_delay_ticks_control);
-
-            menuitems->add(bar);
 
             #ifdef CVINPUT_CONFIGURABLE_CHANNEL
                 menuitems->add(new LambdaNumberControl<byte>("Channel", [=](byte v) -> void { this->set_channel(v); }, [=]() -> byte { return this->get_channel(); }));
@@ -556,7 +365,7 @@ class ChordPlayer
                 true
             ));
 
-            bar = new SubMenuItemBar("Quantise / chords");
+            SubMenuItemBar *bar = new SubMenuItemBar("Quantise / chords");
             bar->add(new LambdaToggleControl("Quantise",    
                 [=](bool v) -> void { this->set_quantise(v); },
                 [=]() -> bool { return this->is_quantise(); }
@@ -604,30 +413,6 @@ class ChordPlayer
     #ifdef ENABLE_STORAGE
         virtual void setup_saveable_settings() override {
             ISaveableSettingHost::setup_saveable_settings();
-
-            register_setting(new LSaveableSetting<int32_t>(
-                    "note_length_ticks",
-                    "ChordPlayer",
-                    &this->note_length_ticks,
-                    [=](int32_t v) -> void { this->set_note_length(v); },
-                    [=]() -> int32_t { return this->get_note_length(); }
-            ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT);  // allow note length to be saved at scene or project level, since it's more of a performance setting than a preference setting
-
-            register_setting(new LSaveableSetting<int32_t>(
-                    "trigger_on_ticks",
-                    "ChordPlayer",
-                    &this->trigger_on_ticks,
-                    [=](int32_t v) -> void { this->set_trigger_on_ticks(v); },
-                    [=]() -> int32_t { return this->get_trigger_on_ticks(); } 
-            ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT);  // allow trigger_on_ticks to be saved at scene or project level, since it's more of a performance setting than a preference setting
-
-            register_setting(new LSaveableSetting<int32_t>(
-                    "trigger_delay_ticks", 
-                    "ChordPlayer",
-                    &this->trigger_delay_ticks,
-                    [=](int32_t v) -> void { this->set_trigger_delay_ticks(v); },
-                    [=]() -> int32_t { return this->get_trigger_delay_ticks(); } 
-            ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT);  // allow trigger_delay_ticks to be saved at scene or project level, since it's more of a performance setting than a preference setting
 
             register_setting(new LSaveableSetting<bool>(
                     "quantise", 

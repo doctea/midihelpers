@@ -682,3 +682,26 @@ class LambdaScaleNoteMenuItem : public LambdaNumberControl<DataType> {
         return get_note_name_c(value);
     }
 };
+
+// Dedicated selector control for quantise_mode_t - pre-populated with Off/Scale/Chord options.
+// Use instead of manually building a LambdaSelectorControl<int8_t> for quantise mode.
+class LambdaQuantiseModeControl : public LambdaSelectorControl<int8_t> {
+    public:
+
+    LambdaQuantiseModeControl(
+        const char *label,
+        vl::Func<void(int8_t)> setter_func,
+        vl::Func<int8_t(void)> getter_func,
+        bool go_back_on_select = true,
+        bool direct = true
+    ) : LambdaSelectorControl<int8_t>(label, setter_func, getter_func, nullptr, go_back_on_select, direct) {
+        static LinkedList<LambdaSelectorControl<int8_t>::option> *quantise_mode_options = nullptr;
+        if (quantise_mode_options == nullptr) {
+            quantise_mode_options = new LinkedList<LambdaSelectorControl<int8_t>::option>();
+            quantise_mode_options->add(LambdaSelectorControl<int8_t>::option { (int8_t)QUANTISE_MODE_NONE,  "Off"   });
+            quantise_mode_options->add(LambdaSelectorControl<int8_t>::option { (int8_t)QUANTISE_MODE_SCALE, "Scale" });
+            quantise_mode_options->add(LambdaSelectorControl<int8_t>::option { (int8_t)QUANTISE_MODE_CHORD, "Chord" });
+        }
+        this->set_available_values(quantise_mode_options);
+    }
+};

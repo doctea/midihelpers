@@ -14,9 +14,9 @@
 class HarmonyStatus : public MenuItem {
     public:
 
-        int *last_note = nullptr;
-        int *current_note = nullptr;
-        int *other_value = nullptr;
+        int8_t *last_note = nullptr;
+        int8_t *current_note = nullptr;
+        int8_t *other_value = nullptr;
 
         // column headers
         const char *header_label[3] = {
@@ -29,15 +29,15 @@ class HarmonyStatus : public MenuItem {
             this->selectable = false;
             this->show_header = show_header;
         };
-        HarmonyStatus(const char *label, int *last_note, int *current_note, bool show_header = true) : HarmonyStatus(label, show_header) {
+        HarmonyStatus(const char *label, int8_t *last_note, int8_t *current_note, bool show_header = true) : HarmonyStatus(label, show_header) {
             //MenuItem(label);
             this->last_note = last_note;
             this->current_note = current_note;
         }
-        HarmonyStatus(const char *label, int *last_note, int *current_note, int *other_value, bool show_header = true) : HarmonyStatus(label, last_note, current_note, show_header) {
+        HarmonyStatus(const char *label, int8_t *last_note, int8_t *current_note, int8_t *other_value, bool show_header = true) : HarmonyStatus(label, last_note, current_note, show_header) {
             this->other_value = other_value;
         }
-        HarmonyStatus(const char *label, int *last_note, int *current_note, int *other_value, const char *third_label, bool show_header = true) 
+        HarmonyStatus(const char *label, int8_t *last_note, int8_t *current_note, int8_t *other_value, const char *third_label, bool show_header = true) 
             : HarmonyStatus(label, last_note, current_note, other_value, show_header) {
                 this->set_header(2, third_label);
             }
