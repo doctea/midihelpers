@@ -1,6 +1,7 @@
 #pragma once
 
 #include "menuitems.h"
+#include "menuitems_popout.h"
 
 #include "midi_helpers.h"
 #include "scales.h"
@@ -253,7 +254,73 @@ class ObjectScaleMenuItemBar : public SubMenuItemBar {
 #include "menuitems_lambda_selector.h"
 
 template<class DataType>
-class LambdaScaleSelector : public LambdaSelectorControl<DataType> {
+class LambdaScaleTakeoverSelector : public LambdaSelectorControl<DataType> {
+    public:
+
+    LambdaScaleTakeoverSelector(
+        const char* label,
+        vl::Func<void(DataType)> setter_func,
+        vl::Func<DataType(void)> getter_func,
+        void (*on_change_handler)(DataType last_value, DataType new_value) = nullptr,
+        bool go_back_on_select = false,
+        bool direct = false
+    ) : LambdaSelectorControl<DataType>(label, setter_func, getter_func, on_change_handler, go_back_on_select, direct) {
+    }
+
+    int wrap_index(int index) {
+        const int count = this->available_values!=nullptr ? (int)this->available_values->size() : 0;
+        if (count<=0)
+            return -1;
+        while (index < 0)
+            index += count;
+        while (index >= count)
+            index -= count;
+        return index;
+    }
+
+    virtual const char *get_overlay_subtitle(int display_index) {
+        (void)display_index;
+        return nullptr;
+    }
+
+    virtual int display(Coord pos, bool selected, bool opened) override {
+        if (!opened)
+            return LambdaSelectorControl<DataType>::display(pos, selected, opened);
+
+        const int internal_idx = (int)this->get_internal_value();
+        const int current_idx = this->get_index_for_value(this->getter_func());
+        const int display_index = (this->available_values!=nullptr && internal_idx>=0 && internal_idx<(int)this->available_values->size()) ? internal_idx : current_idx;
+
+        const int left_index = this->wrap_index(display_index - 1);
+        const int right_index = this->wrap_index(display_index + 1);
+        char left_hint[MENU_C_MAX];
+        char right_hint[MENU_C_MAX];
+        snprintf(left_hint, MENU_C_MAX, "< %s", this->get_label_for_index(left_index));
+        snprintf(right_hint, MENU_C_MAX, "%s >", this->get_label_for_index(right_index));
+
+        SelectorTakeoverOverlaySpec overlay;
+        overlay.title = this->label;
+        overlay.subtitle = this->get_overlay_subtitle(display_index);
+        overlay.value = this->get_label_for_index(display_index);
+        overlay.left_hint = left_hint;
+        overlay.right_hint = right_hint;
+        overlay.frame_colour = selected ? GREEN : C_WHITE;
+        overlay.left_hint_fg = this->tft->halfbright_565(C_WHITE);
+        overlay.right_hint_fg = this->tft->halfbright_565(C_WHITE);
+        overlay.box_padding = 4;
+        overlay.min_box_h = 28;
+        overlay.subtitle_top_gap = 4;
+
+        return menu_draw_selector_takeover_overlay(this->tft, pos, overlay);
+    }
+
+    virtual bool wants_fullscreen_overlay_when_opened_in_bar() override {
+        return true;
+    }
+};
+
+template<class DataType>
+class LambdaScaleSelector : public LambdaScaleTakeoverSelector<DataType> {
     public:
 
     LambdaScaleSelector(
@@ -263,7 +330,7 @@ class LambdaScaleSelector : public LambdaSelectorControl<DataType> {
         void (*on_change_handler)(DataType last_value, DataType new_value) = nullptr,
         bool go_back_on_select = false,
         bool direct = false
-    ) : LambdaSelectorControl<DataType>(label, setter_func, getter_func, on_change_handler, go_back_on_select, direct) {
+    ) : LambdaScaleTakeoverSelector<DataType>(label, setter_func, getter_func, on_change_handler, go_back_on_select, direct) {
     }
 
     virtual const char *get_label() override {
@@ -273,6 +340,21 @@ class LambdaScaleSelector : public LambdaSelectorControl<DataType> {
             return (char*)scales[scale_number]->pattern->label;
         else
             return "[global]";        
+    }
+
+    virtual const char *get_overlay_subtitle(int display_index) override {
+        if (display_index<0 || this->available_values==nullptr || display_index>=(int)this->available_values->size())
+            return "None";
+
+        scale_index_t selected = this->available_values->get(display_index).value;
+        if (selected == SCALE_GLOBAL)
+            return "Global";
+
+        selected = get_effective_scale_type(selected);
+        if (selected>=0 && selected<(int)NUMBER_SCALES && scales[selected]!=nullptr && scales[selected]->pattern!=nullptr && scales[selected]->pattern->label!=nullptr)
+            return scales[selected]->pattern->label;
+
+        return "None";
     }
 };
 
@@ -362,7 +444,7 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
         }
 
         // create the scale_root control + add to this menu
-        LambdaSelectorControl<int8_t> *scale_root = new LambdaSelectorControl<int8_t>(
+        LambdaScaleTakeoverSelector<int8_t> *scale_root = new LambdaScaleTakeoverSelector<int8_t>(
             "Root key", 
             scale_root_setter_func, 
             scale_root_getter_func,
