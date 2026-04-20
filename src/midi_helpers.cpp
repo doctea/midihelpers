@@ -57,7 +57,7 @@ bool is_valid_note(int8_t note) {
 }
 
 
-int8_t note_limit_to(
+int8_t apply_note_limits(
     int8_t note, 
     NOTE_LIMIT_MODE lowest_note_mode, 
     NOTE_LIMIT_MODE highest_note_mode, 

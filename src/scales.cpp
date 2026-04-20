@@ -325,7 +325,15 @@ int8_t quantise_pitch_to_chord(int8_t pitch, int8_t quantised_to_nearest_toleran
 }
 
 // find the Nth note of a given chord in a given scale
-int8_t get_quantise_pitch_chord_note(int8_t chord_root, CHORD::Type chord_number, int8_t note_of_chord, int8_t scale_root, scale_index_t scale_number, int inversion, bool debug) {
+int8_t get_quantise_pitch_chord_note(
+  int8_t chord_root, 
+  CHORD::Type chord_number, 
+  int8_t note_of_chord, 
+  int8_t scale_root, 
+  scale_index_t scale_number, 
+  int inversion, 
+  bool debug
+) {
   //bool debug = false; //true;
 
   if (note_of_chord>=PITCHES_PER_CHORD || chords[chord_number].degree_number[note_of_chord]==-1)

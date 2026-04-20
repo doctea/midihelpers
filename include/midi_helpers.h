@@ -40,7 +40,7 @@ inline NOTE_LIMIT_MODE& operator++(NOTE_LIMIT_MODE& m)    { m = static_cast<NOTE
 inline NOTE_LIMIT_MODE  operator++(NOTE_LIMIT_MODE& m, int) { NOTE_LIMIT_MODE t = m; ++m; return t; }
 inline NOTE_LIMIT_MODE& operator--(NOTE_LIMIT_MODE& m)    { m = static_cast<NOTE_LIMIT_MODE>(static_cast<int8_t>(m) - 1); return m; }
 inline NOTE_LIMIT_MODE  operator--(NOTE_LIMIT_MODE& m, int) { NOTE_LIMIT_MODE t = m; --m; return t; }
-int8_t note_limit_to(
+int8_t apply_note_limits(
     int8_t note, 
     NOTE_LIMIT_MODE lowest_note_mode, 
     NOTE_LIMIT_MODE highest_note_mode, 
