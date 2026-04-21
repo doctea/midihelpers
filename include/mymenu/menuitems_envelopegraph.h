@@ -16,7 +16,6 @@
 
 #include "bpm.h"    // because we need to know the current ticks
 
-//template<unsigned long memory_size>
 class EnvelopeDisplay : public MenuItem {
     //static constexpr
     int16_t stage_colours[7] = {
@@ -51,9 +50,10 @@ class EnvelopeDisplay : public MenuItem {
 
             // todo: see if we can omptimise this by drawing in the "direction" of the framebuffer axis (ie, horizontal lines instead of vertical, from the point of view of the framebuffer)
             int last_y = 0;
-            for (int screen_x = 0 ; screen_x < tft->width() ; screen_x++) {
-                const uint16_t tick_for_screen_X = screen_x;
-                const float value = (float)envelope->graph[tick_for_screen_X].value;
+            const int graph_width = tft->width();
+            for (int screen_x = 0 ; screen_x < graph_width ; screen_x++) {
+                const uint16_t tick_for_screen_X = ((uint32_t)screen_x * EnvelopeBase::GRAPH_SIZE) / graph_width;
+                const float value = (float)envelope->graph[tick_for_screen_X].value / 255.0f;
                 const stage_t stage = envelope->graph[tick_for_screen_X].stage;
                 const int y = PARAMETER_INPUT_GRAPH_HEIGHT - (value * PARAMETER_INPUT_GRAPH_HEIGHT);
                 if (screen_x != 0) {
