@@ -105,7 +105,6 @@ struct midi_note_event_t {
     int8_t velocity = MIDI_MAX_VELOCITY;
     int8_t channel = 0;
 };
-// todo: make this structure global and re-usable everywhere that we need it
 // todo: make a saveloadlib-compatible SaveableMIDINoteArraySetting class that can save/load an array of these
 // todo: maybe we need an SL_SCOPE_SNAPSHOT scope for things like this that we want to save/load but not necessarily have them be part of the regular scene/project settings (since they might be more 'ephemeral' or 'performance' settings than 'preference' settings)?
 

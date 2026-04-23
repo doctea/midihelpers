@@ -112,10 +112,12 @@ void pc_usb_midi_handle_stop() {
   #if defined(ENABLE_SCREEN) && __has_include("menu_messages.h")
     messages_log_add("pc_usb_midi_handle_stop()!");
   #endif
-  if (clock_mode!=CLOCK_EXTERNAL_USB_HOST) {
-    // automatically switch to using external USB clock if we receive a STOP message from the usb host
-    change_clock_mode(CLOCK_EXTERNAL_USB_HOST);
-  }
+  #ifdef SWITCH_TO_USB_CLOCK_ON_STOP
+    if (clock_mode!=CLOCK_EXTERNAL_USB_HOST) {
+      // automatically switch to using external USB clock if we receive a STOP message from the usb host
+      change_clock_mode(CLOCK_EXTERNAL_USB_HOST);
+    }
+  #endif
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
     if (playing) {
       // MIDI spec: STOP freezes at current position; do not reset.

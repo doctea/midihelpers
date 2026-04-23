@@ -305,8 +305,8 @@ class LambdaScaleTakeoverSelector : public LambdaSelectorControl<DataType> {
         overlay.left_hint = left_hint;
         overlay.right_hint = right_hint;
         overlay.frame_colour = selected ? GREEN : C_WHITE;
-        overlay.left_hint_fg = this->tft->halfbright_565(C_WHITE);
-        overlay.right_hint_fg = this->tft->halfbright_565(C_WHITE);
+        overlay.left_hint_fg = C_WHITE; // this->tft->halfbright_565(C_WHITE);
+        overlay.right_hint_fg = C_WHITE; // this->tft->halfbright_565(C_WHITE);
         overlay.box_padding = 4;
         overlay.min_box_h = 28;
         overlay.subtitle_top_gap = 4;
