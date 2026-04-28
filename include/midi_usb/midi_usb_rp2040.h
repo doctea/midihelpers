@@ -336,7 +336,9 @@ class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget
     #endif
 };
 
-extern RP2040OutputWrapperClass *output_wrapper;
+#if RP2040OutputWrapperClass == RP2040DualMIDIOutputWrapper
+    extern RP2040DualMIDIOutputWrapper *output_wrapper;
+#endif
 
 void set_din_midi_clock_output_divider(uint32_t v);
 uint32_t get_din_midi_clock_output_divider();

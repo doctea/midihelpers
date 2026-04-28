@@ -137,9 +137,17 @@ public:
         void set_global_quantise_mode(quantise_mode_t mode) { if (global_quantise_mode == mode) return; global_quantise_mode = mode; notify_harmony_changed(); }
 
         // ── Global chord ─────────────────────────────────────────────────────
-        int8_t       get_chord_degree()    const { return global_chord_identity.degree; }
-        CHORD::Type  get_chord_type()      const { return global_chord_identity.type; }
-        int8_t       get_chord_inversion() const { return global_chord_identity.inversion; }
+        int8_t      get_chord_degree()    const { return global_chord_identity.degree; }
+        CHORD::Type get_chord_type()      const { return global_chord_identity.type; }
+        int8_t      get_chord_inversion() const { return global_chord_identity.inversion; }
+        
+        int8_t      get_chord_root()      const { 
+            return quantise_get_root_pitch_for_degree(
+                global_chord_identity.degree, 
+                get_scale_root(), 
+                get_scale_type()
+            );
+        }
 
         void set_chord_degree(int8_t d)        { if (global_chord_identity.degree    == d)   return; global_chord_identity.degree    = d;   notify_harmony_changed(); }
         void set_chord_type(CHORD::Type t)     { if (global_chord_identity.type      == t)   return; global_chord_identity.type      = t;   notify_harmony_changed(); }

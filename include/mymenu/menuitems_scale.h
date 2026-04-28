@@ -257,6 +257,19 @@ template<class DataType>
 class LambdaScaleTakeoverSelector : public LambdaSelectorControl<DataType> {
     public:
 
+    static const int PREVIEW_NUM_CHROMATIC_NOTES = 12;
+    static const int PREVIEW_NUM_WHITE_NOTES = 7;
+
+    protected:
+
+    vl::Func<scale_index_t(void)> preview_scale_getter_func;
+    vl::Func<int8_t(void)> preview_root_getter_func;
+    bool has_preview_scale_getter = false;
+    bool has_preview_root_getter = false;
+    int overlay_preview_index = -1;
+
+    public:
+
     LambdaScaleTakeoverSelector(
         const char* label,
         vl::Func<void(DataType)> setter_func,
@@ -265,6 +278,16 @@ class LambdaScaleTakeoverSelector : public LambdaSelectorControl<DataType> {
         bool go_back_on_select = false,
         bool direct = false
     ) : LambdaSelectorControl<DataType>(label, setter_func, getter_func, on_change_handler, go_back_on_select, direct) {
+    }
+
+    void set_preview_scale_getter(vl::Func<scale_index_t(void)> getter_func) {
+        this->preview_scale_getter_func = getter_func;
+        this->has_preview_scale_getter = true;
+    }
+
+    void set_preview_root_getter(vl::Func<int8_t(void)> getter_func) {
+        this->preview_root_getter_func = getter_func;
+        this->has_preview_root_getter = true;
     }
 
     int wrap_index(int index) {
@@ -281,6 +304,77 @@ class LambdaScaleTakeoverSelector : public LambdaSelectorControl<DataType> {
     virtual const char *get_overlay_subtitle(int display_index) {
         (void)display_index;
         return nullptr;
+    }
+
+    virtual bool get_overlay_scale_preview(int display_index, scale_index_t &out_scale, int8_t &out_root) {
+        (void)display_index;
+        if (!this->has_preview_scale_getter || !this->has_preview_root_getter)
+            return false;
+
+        out_scale = get_effective_scale_type(this->preview_scale_getter_func());
+        out_root = get_effective_scale_root(this->preview_root_getter_func());
+        return out_scale>=0 && out_scale<(int)NUMBER_SCALES;
+    }
+
+    static bool is_white_preview_key(int8_t note) {
+        return note==0 || note==2 || note==4 || note==5 || note==7 || note==9 || note==11;
+    }
+
+    static void draw_scale_preview_keyboard(
+        DisplayTranslator *tft,
+        int x,
+        int y,
+        int max_width,
+        int max_height,
+        scale_index_t scale_number,
+        int8_t scale_root
+    ) {
+        if (tft==nullptr || max_width<=0 || max_height<=0)
+            return;
+
+        const int key_gap = 2;
+        const int key_width = max_width / PREVIEW_NUM_WHITE_NOTES;
+        if (key_width<=key_gap)
+            return;
+
+        const int key_height = max_height;
+        const int key_height_black = (key_height * 5) / 8;
+
+        const uint16_t white_key_colour = C_WHITE;
+        const uint16_t black_key_colour = tft->halfbright_565(C_WHITE);
+
+        int16_t x_pos = x;
+        int white_index = 0;
+        for (int_fast8_t note = 0 ; note < PREVIEW_NUM_CHROMATIC_NOTES ; note++) {
+            if (!is_white_preview_key(note))
+                continue;
+
+            x_pos = x + (white_index * key_width);
+            const bool in_scale = quantise_pitch_to_scale(note, scale_root, scale_number) == note;
+
+            if (in_scale)
+                tft->fillRect(x_pos+2, y, key_width-key_gap-2, key_height-2, white_key_colour);
+            else
+                tft->drawRect(x_pos+2, y, key_width-key_gap-2, key_height-2, white_key_colour);
+
+            white_index++;
+        }
+
+        white_index = 0;
+        for (int_fast8_t note = 0 ; note < PREVIEW_NUM_CHROMATIC_NOTES ; note++) {
+            if (is_white_preview_key(note)) {
+                white_index++;
+                continue;
+            }
+
+            x_pos = x + (white_index * key_width) - (key_width / 2);
+            const bool in_scale = quantise_pitch_to_scale(note, scale_root, scale_number) == note;
+
+            if (in_scale)
+                tft->fillRect(x_pos+2, y, key_width-key_gap-2, key_height_black-2, black_key_colour);
+            else
+                tft->drawRect(x_pos+2, y, key_width-key_gap-2, key_height_black-2, black_key_colour);
+        }
     }
 
     virtual int display(Coord pos, bool selected, bool opened) override {
@@ -310,6 +404,24 @@ class LambdaScaleTakeoverSelector : public LambdaSelectorControl<DataType> {
         overlay.box_padding = 4;
         overlay.min_box_h = 28;
         overlay.subtitle_top_gap = 4;
+
+        scale_index_t preview_scale = SCALE_FIRST;
+        int8_t preview_root = SCALE_ROOT_A;
+        if (this->get_overlay_scale_preview(display_index, preview_scale, preview_root)) {
+            this->overlay_preview_index = display_index;
+            overlay.has_extra = true;
+            overlay.extra_height = 32;
+            overlay.draw_extra_fn = [](void *userdata, DisplayTranslator *tft, int x, int y, int max_width, int max_height) {
+                auto *self = static_cast<LambdaScaleTakeoverSelector<DataType>*>(userdata);
+                scale_index_t scale_to_draw = SCALE_FIRST;
+                int8_t root_to_draw = SCALE_ROOT_A;
+                const int draw_index = self->overlay_preview_index;
+                if (!self->get_overlay_scale_preview(draw_index, scale_to_draw, root_to_draw))
+                    return;
+                LambdaScaleTakeoverSelector<DataType>::draw_scale_preview_keyboard(tft, x, y, max_width, max_height, scale_to_draw, root_to_draw);
+            };
+            overlay.draw_extra_userdata = this;
+        }
 
         return menu_draw_selector_takeover_overlay(this->tft, pos, overlay);
     }
@@ -356,6 +468,22 @@ class LambdaScaleSelector : public LambdaScaleTakeoverSelector<DataType> {
 
         return "None";
     }
+
+    virtual bool get_overlay_scale_preview(int display_index, scale_index_t &out_scale, int8_t &out_root) override {
+        if (!this->has_preview_root_getter)
+            return false;
+
+        out_root = get_effective_scale_root(this->preview_root_getter_func());
+
+        scale_index_t selected_scale = SCALE_GLOBAL;
+        if (display_index>=0 && this->available_values!=nullptr && display_index<(int)this->available_values->size())
+            selected_scale = this->available_values->get(display_index).value;
+        else if (this->has_preview_scale_getter)
+            selected_scale = this->preview_scale_getter_func();
+
+        out_scale = get_effective_scale_type(selected_scale);
+        return out_scale>=0 && out_scale<(int)NUMBER_SCALES;
+    }
 };
 
 class LambdaScaleMenuItemBar : public SubMenuItemBar {
@@ -397,13 +525,13 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
             // first, versions with 'global' as an option
             if (scale_root_options_with_global==nullptr) {
                 scale_root_options_with_global = new LinkedList<LambdaSelectorControl<int8_t>::option>();
-                scale_root_options_with_global->add(LambdaSelectorControl<int8_t>::option {SCALE_GLOBAL_ROOT, "[use global]"});
+                scale_root_options_with_global->add(LambdaSelectorControl<int8_t>::option {SCALE_GLOBAL_ROOT, "[global]"});
             }
             scale_root_options = scale_root_options_with_global;
 
             if (scale_selector_options_with_global==nullptr) {
                 scale_selector_options_with_global = new LinkedList<LambdaSelectorControl<scale_index_t>::option>();
-                scale_selector_options_with_global->add(LambdaSelectorControl<scale_index_t>::option {SCALE_GLOBAL, "[use global]"});
+                scale_selector_options_with_global->add(LambdaSelectorControl<scale_index_t>::option {SCALE_GLOBAL, "[global]"});
             }
             scale_selector_options = scale_selector_options_with_global;
         } else {
@@ -452,6 +580,8 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
             true,
             true
         );
+        scale_root->set_preview_scale_getter(scale_getter_func);
+        scale_root->set_preview_root_getter(scale_root_getter_func);
         scale_root->set_available_values(scale_root_options);
         scale_root->go_back_on_select = true;
         this->add(scale_root);
@@ -465,6 +595,8 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
             true,
             true //false // direct -- setting to 'true' causes unacceptable lag when scrolling through the list    // TODO: fix this!!
         );
+        scale_selector->set_preview_scale_getter(scale_getter_func);
+        scale_selector->set_preview_root_getter(scale_root_getter_func);
         scale_selector->set_available_values(scale_selector_options);
         scale_selector->go_back_on_select = true;
         this->add(scale_selector);
@@ -514,7 +646,7 @@ class LambdaChordSubMenuItemBar : public SubMenuItemBar {
             true
         );
         if (allow_global)
-            chord_degree_selector->add_available_value(-1, "[use global]");
+            chord_degree_selector->add_available_value(-1, "[global]");
         chord_degree_selector->add_available_value(0, "[none]");
         chord_degree_selector->add_available_value(1, "1st");
         chord_degree_selector->add_available_value(2, "2nd");
