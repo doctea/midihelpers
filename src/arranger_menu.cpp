@@ -9,6 +9,7 @@
 #include "menuitems_lambda_selector.h"
 #include "mymenu/menuitems_scale.h"
 #include "mymenu/menu_arranger.h"
+#include "mymenu/menuitem_chord_bar.h"
 
 static const char *label_progression_cadence(Arranger::progression_cadence_t cadence) {
     switch (cadence) {
@@ -26,7 +27,7 @@ static const char *label_playback_mode(Arranger::playback_mode_t mode) {
     }
 }
 
-void arranger_make_menu_items(Menu *menu, bool compact_sections, uint16_t colour, vl::Func<void()> save_cb, vl::Func<void()> load_cb) {
+void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column, uint16_t colour, vl::Func<void()> save_cb, vl::Func<void()> load_cb) {
     if (menu == nullptr || arranger == nullptr) return;
 
     menu->add_page("Arrange", C_WHITE, false);
@@ -258,23 +259,49 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, uint16_t colour
     if (save_load_bar) menu->add(save_load_bar);
     menu->add(advance_bar);
 
-    // Rich mode: one page per song section, one row per bar
+    // Rich mode: one page per song section, one row per bar (or two bars per row in two_column mode)
     if (!compact_sections) for (int i = 0; i < NUM_SONG_SECTIONS; i++) {
         menu->add_page((String("Section ") + String(i)).c_str(), colour, false);
-        menu->add(new MenuItem("Degree      Type        Inversion", false, true));
 
-        for (int j = 0; j < CHORDS_PER_SECTION; j++) {
-            menu->add(new LambdaChordSubMenuItemBarWithIndicator(
-                (String("Bar ") + String(j)).c_str(),
-                [=](int8_t degree) { arranger->song_sections[i].grid[j].degree = degree; arranger->mark_as_modified(); },
-                [=]() -> int8_t { return arranger->song_sections[i].grid[j].degree; },
-                [=](CHORD::Type chord_type) { arranger->song_sections[i].grid[j].type = chord_type; arranger->mark_as_modified(); },
-                [=]() -> CHORD::Type { return arranger->song_sections[i].grid[j].type; },
-                [=](int8_t inversion) { arranger->song_sections[i].grid[j].inversion = inversion; arranger->mark_as_modified(); },
-                [=]() -> int8_t { return arranger->song_sections[i].grid[j].inversion; },
-                i, j, &arranger->current_section, &arranger->current_bar,
-                false, false, false
-            ));
+        if (two_column) {
+            menu->add(new MenuItem("D Chord Inv|D Chord Inv", false, true));
+            for (int j = 0; j < CHORDS_PER_SECTION; j += 2) {
+                const int j2 = j + 1;
+                menu->add(new ChordBarMenuItem(
+                    (String("Bars ") + String(j) + "+" + String(j2)).c_str(),
+                    // left bar (j)
+                    [=](int8_t d) { arranger->song_sections[i].grid[j].degree = d; arranger->mark_as_modified(); },
+                    [=]() -> int8_t { return arranger->song_sections[i].grid[j].degree; },
+                    [=](CHORD::Type t) { arranger->song_sections[i].grid[j].type = t; arranger->mark_as_modified(); },
+                    [=]() -> CHORD::Type { return arranger->song_sections[i].grid[j].type; },
+                    [=](int8_t inv) { arranger->song_sections[i].grid[j].inversion = inv; arranger->mark_as_modified(); },
+                    [=]() -> int8_t { return arranger->song_sections[i].grid[j].inversion; },
+                    i, j,
+                    // right bar (j2)
+                    [=](int8_t d) { arranger->song_sections[i].grid[j2].degree = d; arranger->mark_as_modified(); },
+                    [=]() -> int8_t { return arranger->song_sections[i].grid[j2].degree; },
+                    [=](CHORD::Type t) { arranger->song_sections[i].grid[j2].type = t; arranger->mark_as_modified(); },
+                    [=]() -> CHORD::Type { return arranger->song_sections[i].grid[j2].type; },
+                    [=](int8_t inv) { arranger->song_sections[i].grid[j2].inversion = inv; arranger->mark_as_modified(); },
+                    [=]() -> int8_t { return arranger->song_sections[i].grid[j2].inversion; },
+                    j2,
+                    &arranger->current_section, &arranger->current_bar
+                ));
+            }
+        } else {
+            menu->add(new MenuItem("Degree      Type        Inversion", false, true));
+            for (int j = 0; j < CHORDS_PER_SECTION; j++) {
+                menu->add(new ChordBarMenuItem(
+                    (String("Bar ") + String(j)).c_str(),
+                    [=](int8_t degree) { arranger->song_sections[i].grid[j].degree = degree; arranger->mark_as_modified(); },
+                    [=]() -> int8_t { return arranger->song_sections[i].grid[j].degree; },
+                    [=](CHORD::Type chord_type) { arranger->song_sections[i].grid[j].type = chord_type; arranger->mark_as_modified(); },
+                    [=]() -> CHORD::Type { return arranger->song_sections[i].grid[j].type; },
+                    [=](int8_t inversion) { arranger->song_sections[i].grid[j].inversion = inversion; arranger->mark_as_modified(); },
+                    [=]() -> int8_t { return arranger->song_sections[i].grid[j].inversion; },
+                    i, j, &arranger->current_section, &arranger->current_bar
+                ));
+            }
         }
 
         if (save_load_bar) menu->add(save_load_bar);

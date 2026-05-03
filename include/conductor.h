@@ -140,7 +140,7 @@ public:
         int8_t      get_chord_degree()    const { return global_chord_identity.degree; }
         CHORD::Type get_chord_type()      const { return global_chord_identity.type; }
         int8_t      get_chord_inversion() const { return global_chord_identity.inversion; }
-        
+
         int8_t      get_chord_root()      const { 
             return quantise_get_root_pitch_for_degree(
                 global_chord_identity.degree, 
@@ -287,25 +287,19 @@ public:
                 register_setting(new LSaveableSetting<CHORD::Type>(
                         "Global chord type",
                         "Chord",
-                        &this->global_chord_identity.type,
-                        [=](CHORD::Type v) { this->global_chord_identity.type = v; },
-                        [=]() -> CHORD::Type { return this->global_chord_identity.type; }
+                        &this->global_chord_identity.type
                     ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT  // allow global chord type state to be saved at scene or project level, since it's more of a preference setting than a performance setting
                 );
                 register_setting(new LSaveableSetting<int8_t>(
                         "Global chord degree",
                         "Chord",
-                        &this->global_chord_identity.degree,
-                        [=](int8_t v) { this->global_chord_identity.degree = v; },
-                        [=]() -> int8_t { return this->global_chord_identity.degree; }
+                        &this->global_chord_identity.degree
                     ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT  // allow global chord degree state to be saved at scene or project level, since it's more of a preference setting than a performance setting
                 );
                 register_setting(new LSaveableSetting<int8_t>(
                         "Global chord inversion",
                         "Chord",
-                        &this->global_chord_identity.inversion,
-                        [=](int8_t v) { this->global_chord_identity.inversion = v; },
-                        [=]() -> int8_t { return this->global_chord_identity.inversion; }
+                        &this->global_chord_identity.inversion
                     ), SL_SCOPE_SCENE | SL_SCOPE_PROJECT  // allow global chord inversion state to be saved at scene or project level, since it's more of a preference setting than a performance setting
                 );
             #endif // ENABLE_SCALES
