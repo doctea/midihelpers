@@ -646,7 +646,7 @@ class LambdaChordSubMenuItemBar : public SubMenuItemBar {
             true
         );
         if (allow_global)
-            chord_degree_selector->add_available_value(-1, "[global]");
+            chord_degree_selector->add_available_value(-1, "[global]"); 
         chord_degree_selector->add_available_value(0, "[none]");
         chord_degree_selector->add_available_value(1, "1st");
         chord_degree_selector->add_available_value(2, "2nd");

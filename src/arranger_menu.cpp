@@ -26,12 +26,8 @@ static const char *label_playback_mode(Arranger::playback_mode_t mode) {
     }
 }
 
-void arranger_make_menu_items(Menu *menu) {
+void arranger_make_menu_items(Menu *menu, uint16_t colour, vl::Func<void()> save_cb, vl::Func<void()> load_cb) {
     if (menu == nullptr || arranger == nullptr) return;
-
-    static int8_t ui_edit_section = 0;
-    static int8_t ui_edit_bar = 0;
-    static int8_t ui_edit_playlist_slot = 0;
 
     menu->add_page("Arrange", C_WHITE, false);
 
@@ -170,42 +166,13 @@ void arranger_make_menu_items(Menu *menu) {
 
     menu->add_page("Arrange Chord", C_WHITE, false);
 
-    menu->add(new LambdaNumberControl<int8_t>(
-        "Edit section",
-        [=](int8_t v) {
-            ui_edit_section = constrain(v, (int8_t)0, (int8_t)(NUM_SONG_SECTIONS - 1));
-        },
-        [=]() -> int8_t { return ui_edit_section; },
-        nullptr,
-        (int8_t)0,
-        (int8_t)(NUM_SONG_SECTIONS - 1),
-        true,
-        true
-    ));
-
-    menu->add(new LambdaNumberControl<int8_t>(
-        "Edit bar",
-        [=](int8_t v) {
-            ui_edit_bar = constrain(v, (int8_t)0, (int8_t)(CHORDS_PER_SECTION - 1));
-        },
-        [=]() -> int8_t { return ui_edit_bar; },
-        nullptr,
-        (int8_t)0,
-        (int8_t)(CHORDS_PER_SECTION - 1),
-        true,
-        true
-    ));
-
     menu->add(new CallbackMenuItem(
-        "Chord editor status",
+        "Arrange Chord status",
         [=]() -> const char * {
-            static char msg[96];
+            static char msg[64];
             snprintf(
-                msg,
-                sizeof(msg),
-                "Editing S:%d B:%d  Playing S:%d B:%d",
-                ui_edit_section,
-                ui_edit_bar,
+                msg, sizeof(msg),
+                "Playing S:%d B:%d",
                 arranger->current_section,
                 arranger->current_bar
             );
@@ -213,95 +180,73 @@ void arranger_make_menu_items(Menu *menu) {
         }, false
     ));
 
-    menu->add(new LambdaChordSubMenuItemBar(
-        "Chord",
-        [=](int8_t degree) {
-            arranger->song_sections[ui_edit_section].grid[ui_edit_bar].degree = degree;
-            arranger->mark_as_modified();
-        },
-        [=]() -> int8_t {
-            return arranger->song_sections[ui_edit_section].grid[ui_edit_bar].degree;
-        },
-        [=](CHORD::Type chord_type) {
-            arranger->song_sections[ui_edit_section].grid[ui_edit_bar].type = chord_type;
-            arranger->mark_as_modified();
-        },
-        [=]() -> CHORD::Type {
-            return arranger->song_sections[ui_edit_section].grid[ui_edit_bar].type;
-        },
-        [=](int8_t inversion) {
-            arranger->song_sections[ui_edit_section].grid[ui_edit_bar].inversion = inversion;
-            arranger->mark_as_modified();
-        },
-        [=]() -> int8_t {
-            return arranger->song_sections[ui_edit_section].grid[ui_edit_bar].inversion;
-        },
-        false,  // don't allow global
-        true,
-        false   // don't show header since the chord type selector already has a header, and it would be redundant to have two
+    // Build reusable save/load bar (only when callbacks are provided)
+    SubMenuItemBar *save_load_bar = nullptr;
+    if (save_cb || load_cb) {
+        save_load_bar = new SubMenuItemBar("Section controls", false, true);
+        if (save_cb) save_load_bar->add(new LambdaActionConfirmItem("Save", [=]() { save_cb(); }));
+        save_load_bar->add(new CallbackMenuItem(
+            "State",
+            [=]() -> const char* { return arranger->has_changes_to_save() ? "Unsaved" : "Saved"; },
+            [=]() -> uint16_t { return arranger->has_changes_to_save() ? RED : GREEN; },
+            false
+        ));
+        if (load_cb) save_load_bar->add(new LambdaActionConfirmItem("Load", [=]() { load_cb(); }));
+    }
+
+    // Build reusable advance-flags bar
+    SubMenuItemBar *advance_bar = new SubMenuItemBar("Advance controls", false, true);
+    advance_bar->add(new LambdaToggleControl("Advance bar",
+        [=](bool v) { arranger->advance_bar = v; arranger->mark_as_modified(); },
+        [=]() -> bool { return arranger->advance_bar; }
+    ));
+    advance_bar->add(new LambdaToggleControl("Advance playlist",
+        [=](bool v) { arranger->advance_playlist = v; arranger->mark_as_modified(); },
+        [=]() -> bool { return arranger->advance_playlist; }
     ));
 
-    menu->add_page("Arrange Playlist", C_WHITE, false);
+    // Playlist page: one row per playlist slot
+    menu->add_page("Playlist", colour, false);
+    menu->add(new MenuItem("Section      Repeats        ", false, true));
+    for (int i = 0; i < NUM_SONG_SECTIONS; i++) {
+        menu->add(new LambdaPlaylistSubMenuItemBarWithIndicator(
+            (String("Slot ") + String(i)).c_str(),
+            [=](int8_t section) { arranger->playlist.entries[i].section = section; arranger->mark_as_modified(); },
+            [=]() -> int8_t { return arranger->playlist.entries[i].section; },
+            [=](int8_t repeats) { arranger->playlist.entries[i].repeats = repeats; arranger->mark_as_modified(); },
+            [=]() -> int8_t { return arranger->playlist.entries[i].repeats; },
+            i,
+            &arranger->current_section,
+            NUM_SONG_SECTIONS,
+            MAX_REPEATS,
+            false, false
+        ));
+    }
+    if (save_load_bar) menu->add(save_load_bar);
+    menu->add(advance_bar);
 
-    menu->add(new LambdaNumberControl<int8_t>(
-        "Edit slot",
-        [=](int8_t v) {
-            ui_edit_playlist_slot = constrain(v, (int8_t)0, (int8_t)(NUM_PLAYLIST_SLOTS - 1));
-        },
-        [=]() -> int8_t { return ui_edit_playlist_slot; },
-        nullptr,
-        (int8_t)0,
-        (int8_t)(NUM_PLAYLIST_SLOTS - 1),
-        true,
-        true
-    ));
+    // One page per song section, one row per bar
+    for (int i = 0; i < NUM_SONG_SECTIONS; i++) {
+        menu->add_page((String("Section ") + String(i)).c_str(), colour, false);
+        menu->add(new MenuItem("Degree      Type        Inversion", false, true));
 
-    menu->add(new CallbackMenuItem(
-        "Playlist editor status",
-        [=]() -> const char * {
-            static char msg[96];
-            snprintf(
-                msg,
-                sizeof(msg),
-                "Editing slot:%d  Current slot:%d",
-                ui_edit_playlist_slot,
-                arranger->playlist_position
-            );
-            return msg;
-        }, false
-    ));
+        for (int j = 0; j < CHORDS_PER_SECTION; j++) {
+            menu->add(new LambdaChordSubMenuItemBarWithIndicator(
+                (String("Bar ") + String(j)).c_str(),
+                [=](int8_t degree) { arranger->song_sections[i].grid[j].degree = degree; arranger->mark_as_modified(); },
+                [=]() -> int8_t { return arranger->song_sections[i].grid[j].degree; },
+                [=](CHORD::Type chord_type) { arranger->song_sections[i].grid[j].type = chord_type; arranger->mark_as_modified(); },
+                [=]() -> CHORD::Type { return arranger->song_sections[i].grid[j].type; },
+                [=](int8_t inversion) { arranger->song_sections[i].grid[j].inversion = inversion; arranger->mark_as_modified(); },
+                [=]() -> int8_t { return arranger->song_sections[i].grid[j].inversion; },
+                i, j, &arranger->current_section, &arranger->current_bar,
+                false, false, false
+            ));
+        }
 
-    menu->add(new LambdaNumberControl<int8_t>(
-        "Section",
-        [=](int8_t section_index) {
-            arranger->playlist.entries[ui_edit_playlist_slot].section = constrain(section_index, (int8_t)0, (int8_t)(NUM_SONG_SECTIONS - 1));
-            arranger->mark_as_modified();
-        },
-        [=]() -> int8_t {
-            return arranger->playlist.entries[ui_edit_playlist_slot].section;
-        },
-        nullptr,
-        (int8_t)0,
-        (int8_t)(NUM_SONG_SECTIONS - 1),
-        true,
-        true
-    ));
-
-    menu->add(new LambdaNumberControl<int8_t>(
-        "Repeats",
-        [=](int8_t repeats) {
-            arranger->playlist.entries[ui_edit_playlist_slot].repeats = constrain(repeats, (int8_t)1, (int8_t)MAX_REPEATS);
-            arranger->mark_as_modified();
-        },
-        [=]() -> int8_t {
-            return arranger->playlist.entries[ui_edit_playlist_slot].repeats;
-        },
-        nullptr,
-        (int8_t)1,
-        (int8_t)MAX_REPEATS,
-        true,
-        true
-    ));
+        if (save_load_bar) menu->add(save_load_bar);
+        menu->add(advance_bar);
+    }
 }
 
 #endif

@@ -89,8 +89,6 @@ class NoteHarmonyDisplay : public MenuItem {
             const bool white_key = (r==0 || r==2 || r==4 || r==5 || r==7 || r==9 || r==11);
             if (white_key) {
                 uint16_t colour = playing ? YELLOW : (white_key?C_WHITE:tft->halfbright_565(C_WHITE));
-                bool in_scale = quantise_pitch_to_scale(r, *scale_root, *scale_number)==r;
-                bool in_chord = false;
 
                 const bool valid = 
                             !mode 
