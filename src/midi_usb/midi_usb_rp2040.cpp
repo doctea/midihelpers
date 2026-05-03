@@ -116,14 +116,49 @@ void setup_midi() {
     #include "menuitems_lambda.h"
     #include "mymenu_items/ParameterMenuItems_lowmemory.h"
 
+    #ifdef ENABLE_BUTTON_MATRIX
+        #include "include_keypad.h"
+    #endif
+
+    // #ifdef ENABLE_STORAGE
+    //     #include "storage/storage.h"
+    // #endif
+
     extern uint32_t external_cv_ticks_per_pulse_values[9];
     #define NUM_EXTERNAL_CV_TICKS_VALUES (sizeof(external_cv_ticks_per_pulse_values)/sizeof(uint32_t))
 
     void RP2040DualMIDIOutputWrapper::create_menu_items() {
         // controls for cv-to-midi outputs..
 
-        // todo: probably move this to another more generic 'settings' page
-        menu->add_page("MIDI Settings");
+        menu->add_page("System Settings");
+
+        // TODO: make a mechanism to be able to do something like this here
+        // #ifdef ENABLE_STORAGE
+        //     DualMenuItem *system_settings_bar = new DualMenuItem("System settings");
+        //     system_settings_bar->add(new ActionConfirmItem("Load", &load_system_settings, false));
+        //     system_settings_bar->add(new ActionConfirmItem("Save", &save_system_settings, false));
+        //     menu->add(system_settings_bar);
+        // #endif
+
+        #ifdef ENABLE_BUTTON_MATRIX
+            // TODO: probably want to move this somewhere else, as it's not really
+            // specific to the MIDI output wrapper; maybe should be in the main menu setup or something?
+            SubMenuItemBar *settings_bar = new SubMenuItemBar("Hardware settings");
+            settings_bar->add(new LambdaToggleControl(
+                "Keypad Enabled", 
+                [=](bool v) -> void { 
+                    menu->set_keypad_enabled(v);
+                    if (v) {
+                        setup_keypad();
+                    }
+                },
+                [=]() -> bool { return menu->is_keypad_enabled(); }
+            ));
+            menu->add(settings_bar);
+        #endif
+
+        // global MIDI settings
+        SubMenuItemBar *midi_settings_bar = new SubMenuItemBar("MIDI settings");
         
         LambdaSelectorControl<OUTPUT_TYPE> *output_mode_selector = new LambdaSelectorControl<OUTPUT_TYPE>(
             "DIN output mode", 
@@ -135,14 +170,16 @@ void setup_midi() {
         for (int i = 0 ; i < sizeof(available_output_types)/sizeof(output_type_t) ; i++) {
             output_mode_selector->add_available_value(available_output_types[i].type_id, available_output_types[i].label);
         }
-        menu->add(output_mode_selector);
+        midi_settings_bar->add(output_mode_selector);
 
         LambdaToggleControl *cc_output_toggle = new LambdaToggleControl(
             "CC Output", 
             [=](bool v) -> void { this->set_cc_output_enabled(v); },
             [=]() -> bool { return this->is_cc_output_enabled(); }
         );
-        menu->add(cc_output_toggle);
+        midi_settings_bar->add(cc_output_toggle);
+
+        menu->add(midi_settings_bar);
 
         #ifdef ENABLE_CLOCK_INPUT_CV
             SelectorControl<uint32_t> *external_cv_ticks_per_pulse_selector = new SelectorControl<uint32_t>("External CV clock: Pulses per tick");
