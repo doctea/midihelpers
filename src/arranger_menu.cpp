@@ -26,7 +26,7 @@ static const char *label_playback_mode(Arranger::playback_mode_t mode) {
     }
 }
 
-void arranger_make_menu_items(Menu *menu, uint16_t colour, vl::Func<void()> save_cb, vl::Func<void()> load_cb) {
+void arranger_make_menu_items(Menu *menu, bool compact_sections, uint16_t colour, vl::Func<void()> save_cb, vl::Func<void()> load_cb) {
     if (menu == nullptr || arranger == nullptr) return;
 
     menu->add_page("Arrange", C_WHITE, false);
@@ -164,22 +164,6 @@ void arranger_make_menu_items(Menu *menu, uint16_t colour, vl::Func<void()> save
         [=]() { arranger->on_restart(); }
     ));
 
-    menu->add_page("Arrange Chord", C_WHITE, false);
-
-    menu->add(new CallbackMenuItem(
-        "Arrange Chord status",
-        [=]() -> const char * {
-            static char msg[64];
-            snprintf(
-                msg, sizeof(msg),
-                "Playing S:%d B:%d",
-                arranger->current_section,
-                arranger->current_bar
-            );
-            return msg;
-        }, false
-    ));
-
     // Build reusable save/load bar (only when callbacks are provided)
     SubMenuItemBar *save_load_bar = nullptr;
     if (save_cb || load_cb) {
@@ -205,6 +189,55 @@ void arranger_make_menu_items(Menu *menu, uint16_t colour, vl::Func<void()> save
         [=]() -> bool { return arranger->advance_playlist; }
     ));
 
+    // Compact mode: single chord-editor page for all sections (memory-saving alternative)
+    if (compact_sections) {
+        static int8_t ui_edit_section = 0;
+        static int8_t ui_edit_bar = 0;
+
+        menu->add_page("Arrange Chord", colour, false);
+
+        menu->add(new LambdaNumberControl<int8_t>(
+            "Edit section",
+            [=](int8_t v) { ui_edit_section = constrain(v, (int8_t)0, (int8_t)(NUM_SONG_SECTIONS - 1)); },
+            [=]() -> int8_t { return ui_edit_section; },
+            nullptr,
+            (int8_t)0, (int8_t)(NUM_SONG_SECTIONS - 1), true, true
+        ));
+
+        menu->add(new LambdaNumberControl<int8_t>(
+            "Edit bar",
+            [=](int8_t v) { ui_edit_bar = constrain(v, (int8_t)0, (int8_t)(CHORDS_PER_SECTION - 1)); },
+            [=]() -> int8_t { return ui_edit_bar; },
+            nullptr,
+            (int8_t)0, (int8_t)(CHORDS_PER_SECTION - 1), true, true
+        ));
+
+        menu->add(new CallbackMenuItem(
+            "Chord editor status",
+            [=]() -> const char * {
+                static char msg[96];
+                snprintf(msg, sizeof(msg), "Editing S:%d B:%d  Playing S:%d B:%d",
+                    ui_edit_section, ui_edit_bar,
+                    arranger->current_section, arranger->current_bar);
+                return msg;
+            }, false
+        ));
+
+        menu->add(new LambdaChordSubMenuItemBar(
+            "Chord",
+            [=](int8_t degree) { arranger->song_sections[ui_edit_section].grid[ui_edit_bar].degree = degree; arranger->mark_as_modified(); },
+            [=]() -> int8_t { return arranger->song_sections[ui_edit_section].grid[ui_edit_bar].degree; },
+            [=](CHORD::Type chord_type) { arranger->song_sections[ui_edit_section].grid[ui_edit_bar].type = chord_type; arranger->mark_as_modified(); },
+            [=]() -> CHORD::Type { return arranger->song_sections[ui_edit_section].grid[ui_edit_bar].type; },
+            [=](int8_t inversion) { arranger->song_sections[ui_edit_section].grid[ui_edit_bar].inversion = inversion; arranger->mark_as_modified(); },
+            [=]() -> int8_t { return arranger->song_sections[ui_edit_section].grid[ui_edit_bar].inversion; },
+            false, true, false
+        ));
+
+        if (save_load_bar) menu->add(save_load_bar);
+        menu->add(advance_bar);
+    }
+
     // Playlist page: one row per playlist slot
     menu->add_page("Playlist", colour, false);
     menu->add(new MenuItem("Section      Repeats        ", false, true));
@@ -225,8 +258,8 @@ void arranger_make_menu_items(Menu *menu, uint16_t colour, vl::Func<void()> save
     if (save_load_bar) menu->add(save_load_bar);
     menu->add(advance_bar);
 
-    // One page per song section, one row per bar
-    for (int i = 0; i < NUM_SONG_SECTIONS; i++) {
+    // Rich mode: one page per song section, one row per bar
+    if (!compact_sections) for (int i = 0; i < NUM_SONG_SECTIONS; i++) {
         menu->add_page((String("Section ") + String(i)).c_str(), colour, false);
         menu->add(new MenuItem("Degree      Type        Inversion", false, true));
 
