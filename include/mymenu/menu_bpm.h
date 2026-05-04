@@ -54,7 +54,7 @@ class LoopMarkerPanel : public PinnedPanelMenuItem {
             // save some float maths by only recalculating if tick is different from last time
             if (last_serviced_tick != ticks) {
                 last_serviced_tick = ticks;     // must update HERE so reset-to-0 is detected next call
-                tick_of_loop = ticks % TICKS_PER_PHRASE; //loop_length;
+                tick_of_loop = BPM_PHASE_TICKS(ticks) % TICKS_PER_PHRASE; //loop_length;
                 float percent = float(tick_of_loop) / (float)TICKS_PER_PHRASE;
                 new_position_width = (percent*(float)tft_width);
                 //Serial.printf("ticks %i: ticks%loop_length = %i: ", ticks, ticks%loop_length);

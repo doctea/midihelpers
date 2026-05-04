@@ -399,6 +399,9 @@ void clock_reset() {
     #endif
     
     ticks = 0;
+    #ifdef ENABLE_TIME_SIGNATURE
+      ts_phase_offset = 0;
+    #endif
   }
 }
 

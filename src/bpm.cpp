@@ -100,4 +100,9 @@ int step_number_from_ticks(signed long ticks) {
   };
   uint8_t time_signature_numerator = DEFAULT_TIME_SIGNATURE_NUMERATOR;
 
+  // Tick count at the moment the current time signature started.
+  // All modulo-based bar/beat/phrase calculations use (ticks - ts_phase_offset)
+  // so the grid resets cleanly when a new time signature is applied mid-stream.
+  uint32_t ts_phase_offset = 0;
+
 #endif

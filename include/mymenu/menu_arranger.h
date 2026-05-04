@@ -18,7 +18,8 @@ void arranger_make_menu_items(Menu *menu,
     bool two_column = false,
     uint16_t colour = C_WHITE,
     vl::Func<void()> save_cb = vl::Func<void()>(),
-    vl::Func<void()> load_cb = vl::Func<void()>());
+    vl::Func<void()> load_cb = vl::Func<void()>()
+);
 
 #endif
 #endif

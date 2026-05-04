@@ -10,6 +10,10 @@
 #include "mymenu/menuitems_scale.h"
 #include "mymenu/menu_arranger.h"
 #include "mymenu/menuitem_chord_bar.h"
+#include "mymenu/menuitem_song_section.h"
+
+// Out-of-class definition for SongSectionSelectorItem's shared options list
+LinkedList<LambdaSelectorControl<int8_t>::option> *SongSectionSelectorItem::song_section_options = nullptr;
 
 static const char *label_progression_cadence(Arranger::progression_cadence_t cadence) {
     switch (cadence) {
@@ -165,6 +169,69 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
         [=]() { arranger->on_restart(); }
     ));
 
+    // ── Arrange Jump page ────────────────────────────────────────────────
+    menu->add_page("Arrange Jump", C_WHITE, false);
+
+    {
+        static int8_t jump_section = 0;
+        static int8_t jump_bar     = 0;
+
+        menu->add(new SongSectionSelectorItem(
+            "Jump section",
+            [=](int8_t v) { jump_section = constrain((int)v, 0, NUM_SONG_SECTIONS - 1); },
+            [=]() -> int8_t { return jump_section; }
+        ));
+
+        menu->add(new LambdaNumberControl<int8_t>(
+            "Jump bar",
+            [=](int8_t v) { jump_bar = constrain((int)v, 0, CHORDS_PER_SECTION - 1); },
+            [=]() -> int8_t { return jump_bar; },
+            nullptr,
+            (int8_t)0, (int8_t)(CHORDS_PER_SECTION - 1), true, true
+        ));
+
+        menu->add(new LambdaActionItem(
+            "Jump Now",
+            [=]() { arranger->change_section(jump_section); arranger->move_bar(jump_bar); }
+        ));
+
+        menu->add(new LambdaActionItem(
+            "Queue Jump (bar-sync)",
+            [=]() { arranger->queue_jump(jump_section, jump_bar); }
+        ));
+
+        menu->add(new LambdaActionItem(
+            "Enter Loop Section",
+            [=]() { arranger->enter_loop_section(); }
+        ));
+
+        menu->add(new LambdaActionItem(
+            "Loop This Bar",
+            [=]() { arranger->loop_current_bar(); }
+        ));
+
+        menu->add(new LambdaNumberControl<int8_t>(
+            "Loop start bar",
+            [=](int8_t v) { arranger->set_loop_range(v, arranger->loop_end_bar); },
+            [=]() -> int8_t { return arranger->loop_start_bar; },
+            nullptr,
+            (int8_t)0, (int8_t)(CHORDS_PER_SECTION - 1), true, true
+        ));
+
+        menu->add(new LambdaNumberControl<int8_t>(
+            "Loop end bar",
+            [=](int8_t v) { arranger->set_loop_range(arranger->loop_start_bar, v); },
+            [=]() -> int8_t { return arranger->loop_end_bar; },
+            nullptr,
+            (int8_t)0, (int8_t)(CHORDS_PER_SECTION - 1), true, true
+        ));
+
+        menu->add(new LambdaActionItem(
+            "Exit Loop -> Playlist",
+            [=]() { arranger->exit_loop_to_playlist(); }
+        ));
+    }
+
     // Build reusable save/load bar (only when callbacks are provided)
     SubMenuItemBar *save_load_bar = nullptr;
     if (save_cb || load_cb) {
@@ -240,28 +307,90 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
     }
 
     // Playlist page: one row per playlist slot
-    menu->add_page("Playlist", colour, false);
-    menu->add(new MenuItem("Section      Repeats        ", false, true));
-    for (int i = 0; i < NUM_SONG_SECTIONS; i++) {
-        menu->add(new LambdaPlaylistSubMenuItemBarWithIndicator(
-            (String("Slot ") + String(i)).c_str(),
-            [=](int8_t section) { arranger->playlist.entries[i].section = section; arranger->mark_as_modified(); },
-            [=]() -> int8_t { return arranger->playlist.entries[i].section; },
-            [=](int8_t repeats) { arranger->playlist.entries[i].repeats = repeats; arranger->mark_as_modified(); },
-            [=]() -> int8_t { return arranger->playlist.entries[i].repeats; },
-            i,
-            &arranger->current_section,
-            NUM_SONG_SECTIONS,
-            MAX_REPEATS,
-            false, false
+    menu->add_page("Playlist", colour, true);
+    menu->add(new MenuItem("Section      Repeats  MaxBars  ", false, true));
+    for (int i = 0; i < NUM_PLAYLIST_SLOTS; i++) {
+        SubMenuItemBar *slot_bar = new SubMenuItemBar(
+            (String("Slot ") + String(i)).c_str(), false, true
+        );
+        slot_bar->add(new SongSectionSelectorItem(
+            "Section",
+            [=](int8_t v) { arranger->playlist.entries[i].section = constrain((int)v, 0, NUM_SONG_SECTIONS-1); arranger->mark_as_modified(); },
+            [=]() -> int8_t { return arranger->playlist.entries[i].section; }
         ));
+        slot_bar->add(new LambdaNumberControl<int8_t>(
+            "Repeats",
+            [=](int8_t v) { arranger->playlist.entries[i].repeats = constrain((int)v, 1, MAX_REPEATS); arranger->mark_as_modified(); },
+            [=]() -> int8_t { return arranger->playlist.entries[i].repeats; },
+            nullptr, (int8_t)1, (int8_t)MAX_REPEATS, true, true
+        ));
+        slot_bar->add(new LambdaNumberControl<uint8_t>(
+            "MaxBars",
+            [=](uint8_t v) { arranger->playlist.entries[i].max_bars = constrain((int)v, 0, CHORDS_PER_SECTION); arranger->mark_as_modified(); },
+            [=]() -> uint8_t { return arranger->playlist.entries[i].max_bars; },
+            nullptr, (uint8_t)0, (uint8_t)CHORDS_PER_SECTION, true, true
+        ));
+        // Active indicator
+        slot_bar->add(new CallbackMenuItem(
+            "cur?",
+            [=]() -> const char* { return (arranger->playlist_position == i) ? "*" : " "; },
+            [=]() -> uint16_t    { return (arranger->playlist_position == i) ? GREEN : C_WHITE; },
+            false
+        ));
+        menu->add(slot_bar);
     }
     if (save_load_bar) menu->add(save_load_bar);
     menu->add(advance_bar);
 
     // Rich mode: one page per song section, one row per bar (or two bars per row in two_column mode)
     if (!compact_sections) for (int i = 0; i < NUM_SONG_SECTIONS; i++) {
-        menu->add_page((String("Section ") + String(i)).c_str(), colour, false);
+        // Page title uses hardcoded section name
+        menu->add_page(get_section_name(i), colour, false);
+
+        // Section metadata bar: length and bars_per_phrase
+        {
+            SubMenuItemBar *meta_bar = new SubMenuItemBar("Section props", false, true);
+            meta_bar->add(new LambdaNumberControl<uint8_t>(
+                "Length",
+                [=](uint8_t v) { arranger->song_sections[i].length = (uint8_t)constrain((int)v, 1, CHORDS_PER_SECTION); arranger->mark_as_modified(); },
+                [=]() -> uint8_t { return arranger->song_sections[i].length; },
+                nullptr, (uint8_t)1, (uint8_t)CHORDS_PER_SECTION, true, true
+            ));
+            meta_bar->add(new LambdaNumberControl<uint8_t>(
+                "Phrase",
+                [=](uint8_t v) { arranger->song_sections[i].bars_per_phrase = (uint8_t)constrain((int)v, 1, 64); arranger->mark_as_modified(); },
+                [=]() -> uint8_t { return arranger->song_sections[i].bars_per_phrase; },
+                nullptr, (uint8_t)1, (uint8_t)64, true, true
+            ));
+            menu->add(meta_bar);
+        }
+
+        #ifdef ENABLE_TIME_SIGNATURE
+            {
+                SubMenuItemBar *ts_bar = new SubMenuItemBar("Time sig", false, true);
+                ts_bar->add(new LambdaNumberControl<uint8_t>(
+                    "Numerator",
+                    [=](uint8_t v) { arranger->song_sections[i].time_signature.numerator = (uint8_t)constrain((int)v, 1, TIME_SIG_MAX_STEPS_PER_BAR); arranger->mark_as_modified(); },
+                    [=]() -> uint8_t { return arranger->song_sections[i].time_signature.numerator; },
+                    nullptr, (uint8_t)1, (uint8_t)TIME_SIG_MAX_STEPS_PER_BAR, true, true
+                ));
+                ts_bar->add(new LambdaNumberControl<uint8_t>(
+                    "Denominator",
+                    [=](uint8_t v) { arranger->song_sections[i].time_signature.denominator = (uint8_t)constrain((int)v, 1, 32); arranger->mark_as_modified(); },
+                    [=]() -> uint8_t { return arranger->song_sections[i].time_signature.denominator; },
+                    nullptr, (uint8_t)1, (uint8_t)32, true, true
+                ));
+                menu->add(ts_bar);
+            }
+        #endif
+
+        // Copy / paste bar
+        {
+            SubMenuItemBar *cp_bar = new SubMenuItemBar("Copy/Paste", false, true);
+            cp_bar->add(new LambdaActionItem("Copy",  [=]() { arranger->copy_section(i); }));
+            cp_bar->add(new LambdaActionItem("Paste", [=]() { arranger->paste_section(i); }));
+            menu->add(cp_bar);
+        }
 
         if (two_column) {
             menu->add(new MenuItem("D Chord Inv|D Chord Inv", false, true));

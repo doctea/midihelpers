@@ -15,6 +15,10 @@
 
 #ifdef ENABLE_TIME_SIGNATURE
 
+  // Forward declarations so set_time_signature() (below) can capture ticks.
+  extern volatile uint32_t ticks;
+  extern uint32_t ts_phase_offset;
+
   typedef struct {
     uint8_t numerator;
     uint8_t denominator;
@@ -28,6 +32,7 @@
       return current_time_signature;
   }
   inline void set_time_signature(time_sig_t ts) {
+      ts_phase_offset = ticks;  // anchor the bar/beat grid at the moment of change
       current_time_signature = ts;
   }
   inline uint8_t get_time_signature_numerator(void) { return current_time_signature.numerator; }
@@ -73,6 +78,11 @@
   // (Old incorrect definition was just TIME_SIG_MAX_STEPS_PER_BAR * BARS_PER_PHRASE = 256,
   //  which was in musical steps not ticks, causing frames[] out-of-bounds access in 4/4.)
   #define MAX_LOOP_LENGTH_STEPS ((PPQN * (TIME_SIG_MAX_STEPS_PER_BAR / STEPS_PER_BEAT) * BARS_PER_PHRASE) / LOOP_LENGTH_STEP_SIZE)  // maximum possible steps per loop given time signature limits
+
+  // Phase-relative tick: (t - ts_phase_offset) gives ticks elapsed since the current time sig started.
+  // Ensures all modulo-based bar/beat/phrase calculations restart cleanly after a time sig change.
+  #define BPM_PHASE_TICKS(t) ((t) - ts_phase_offset)
+
 #else
   // old style of fixed 4/4 time signature, with PPQN=24 and 16 steps per bar (i.e. 16th notes)
 
@@ -112,6 +122,9 @@
 
   #define TICKS_PER_BEAT    (PPQN)
 
+  // No time-sig phase offset in fixed-4/4 mode.
+  #define BPM_PHASE_TICKS(t) (t)
+
 #endif
 
 volatile extern bool playing;
@@ -135,11 +148,11 @@ volatile extern float bpm_current; //BPM_MINIMUM; //60.0f;
 
 #define BPM_CURRENT_STEP_OF_SONG    (ticks / (TICKS_PER_STEP))
 #define BPM_CURRENT_BEAT_OF_SONG    (ticks / (TICKS_PER_BEAT))
-#define BPM_CURRENT_BAR_OF_PHRASE   (ticks % (PPQN*BEATS_PER_BAR*BARS_PER_PHRASE) / (PPQN*BEATS_PER_BAR))
-#define BPM_CURRENT_BEAT_OF_BAR     (ticks % (PPQN*BEATS_PER_BAR) / PPQN)
-#define BPM_CURRENT_STEP_OF_BAR     (ticks % (PPQN*BEATS_PER_BAR) / (PPQN/STEPS_PER_BEAT))
-#define BPM_CURRENT_STEP_OF_PHRASE  (ticks % (PPQN*BEATS_PER_BAR*BARS_PER_PHRASE) / (PPQN/STEPS_PER_BEAT))
-#define BPM_CURRENT_BEAT_OF_PHRASE  (ticks % (PPQN*BEATS_PER_BAR*BARS_PER_PHRASE) / (PPQN))
+#define BPM_CURRENT_BAR_OF_PHRASE   (BPM_PHASE_TICKS(ticks) % (PPQN*BEATS_PER_BAR*BARS_PER_PHRASE) / (PPQN*BEATS_PER_BAR))
+#define BPM_CURRENT_BEAT_OF_BAR     (BPM_PHASE_TICKS(ticks) % (PPQN*BEATS_PER_BAR) / PPQN)
+#define BPM_CURRENT_STEP_OF_BAR     (BPM_PHASE_TICKS(ticks) % (PPQN*BEATS_PER_BAR) / (PPQN/STEPS_PER_BEAT))
+#define BPM_CURRENT_STEP_OF_PHRASE  (BPM_PHASE_TICKS(ticks) % (PPQN*BEATS_PER_BAR*BARS_PER_PHRASE) / (PPQN/STEPS_PER_BEAT))
+#define BPM_CURRENT_BEAT_OF_PHRASE  (BPM_PHASE_TICKS(ticks) % (PPQN*BEATS_PER_BAR*BARS_PER_PHRASE) / (PPQN))
 #define BPM_CURRENT_TICK_OF_BEAT    (ticks % PPQN)
 
 #define BPM_GLOBAL_BEAT_FROM_TICKS(ticks) ((ticks) / (TICKS_PER_BEAT))
@@ -150,14 +163,14 @@ int step_number_from_ticks(signed long ticks);
 
 // inline so the compiler sees through the macro constants and eliminates
 // per-call function overhead — 10 of these fire per ISR tick in MultiSequencer
-inline bool is_bpm_on_phrase(uint32_t ticks,        unsigned long offset = 0) { return ticks==offset || ticks%(TICKS_PER_PHRASE) == offset; }
-inline bool is_bpm_on_half_phrase(uint32_t ticks,   unsigned long offset = 0) { return ticks==offset || ticks%(TICKS_PER_PHRASE/2) == offset; }
-inline bool is_bpm_on_bar(uint32_t ticks,           unsigned long offset = 0) { return ticks==offset || ticks%(TICKS_PER_BAR) == offset; }
-inline bool is_bpm_on_half_bar(uint32_t ticks,      unsigned long offset = 0) { return ticks==offset || ticks%(TICKS_PER_BAR/2) == offset; }
-inline bool is_bpm_on_beat(uint32_t ticks,          unsigned long offset = 0) { return ticks==offset || ticks%(TICKS_PER_BEAT) == offset; }
-inline bool is_bpm_on_eighth(uint32_t ticks,        unsigned long offset = 0) { return ticks==offset || ticks%(TICKS_PER_BEAT/2) == offset; }
-inline bool is_bpm_on_sixteenth(uint32_t ticks,     unsigned long offset = 0) { return ticks==offset || ticks%(TICKS_PER_STEP) == offset; }
-inline bool is_bpm_on_thirtysecond(uint32_t ticks,  unsigned long offset = 0) { return ticks==offset || ticks%(TICKS_PER_STEP/2) == offset; }
+inline bool is_bpm_on_phrase(uint32_t ticks,        unsigned long offset = 0) { return ticks==offset || BPM_PHASE_TICKS(ticks)%(TICKS_PER_PHRASE) == offset; }
+inline bool is_bpm_on_half_phrase(uint32_t ticks,   unsigned long offset = 0) { return ticks==offset || BPM_PHASE_TICKS(ticks)%(TICKS_PER_PHRASE/2) == offset; }
+inline bool is_bpm_on_bar(uint32_t ticks,           unsigned long offset = 0) { return ticks==offset || BPM_PHASE_TICKS(ticks)%(TICKS_PER_BAR) == offset; }
+inline bool is_bpm_on_half_bar(uint32_t ticks,      unsigned long offset = 0) { return ticks==offset || BPM_PHASE_TICKS(ticks)%(TICKS_PER_BAR/2) == offset; }
+inline bool is_bpm_on_beat(uint32_t ticks,          unsigned long offset = 0) { return ticks==offset || BPM_PHASE_TICKS(ticks)%(TICKS_PER_BEAT) == offset; }
+inline bool is_bpm_on_eighth(uint32_t ticks,        unsigned long offset = 0) { return ticks==offset || BPM_PHASE_TICKS(ticks)%(TICKS_PER_BEAT/2) == offset; }
+inline bool is_bpm_on_sixteenth(uint32_t ticks,     unsigned long offset = 0) { return ticks==offset || BPM_PHASE_TICKS(ticks)%(TICKS_PER_STEP) == offset; }
+inline bool is_bpm_on_thirtysecond(uint32_t ticks,  unsigned long offset = 0) { return ticks==offset || BPM_PHASE_TICKS(ticks)%(TICKS_PER_STEP/2) == offset; }
 
 bool is_bpm_on_multiplier(unsigned long ticks, float multiplier, unsigned long offset = 0);
 

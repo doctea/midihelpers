@@ -11,6 +11,8 @@
 
 #include "scales.h"
 
+#include "bpm.h"
+
 #include <LinkedList.h>
 #include <functional-vlpp.h>
 #include "saveloadlib.h"
@@ -21,7 +23,7 @@
 // ── Tuneable constants (override before #include if desired) ────────────
 
 #ifndef NUM_SONG_SECTIONS
-#define NUM_SONG_SECTIONS 4
+#define NUM_SONG_SECTIONS 9
 #endif
 
 #ifndef CHORDS_PER_SECTION
@@ -29,17 +31,35 @@
 #endif
 
 #ifndef NUM_PLAYLIST_SLOTS
-#define NUM_PLAYLIST_SLOTS 8
+#define NUM_PLAYLIST_SLOTS 16
 #endif
 
 #ifndef MAX_REPEATS
 #define MAX_REPEATS 64
 #endif
 
+// Hardcoded section names (index 0 to NUM_SONG_SECTIONS-1)
+inline const char* get_section_name(int idx) {
+    static const char* const names[] = {
+        "Intro",
+        "Verse 1", "Verse 2", "Verse 3",
+        "Bridge 1", "Bridge 2",
+        "Chorus 1", "Chorus 2",
+        "Outro"
+    };
+    if (idx < 0 || idx >= (int)(sizeof(names)/sizeof(names[0]))) return "?Section";
+    return names[idx];
+}
+
 // ── Data types ──────────────────────────────────────────────────────────
 
 struct song_section_t {
     chord_identity_t grid[CHORDS_PER_SECTION];
+    uint8_t length          = CHORDS_PER_SECTION;  // active bars (1–CHORDS_PER_SECTION)
+    uint8_t bars_per_phrase = 4;                   // bars before playlist-advance check
+#ifdef ENABLE_TIME_SIGNATURE
+    time_sig_t time_signature = { DEFAULT_TIME_SIGNATURE_NUMERATOR, DEFAULT_TIME_SIGNATURE_DENOMINATOR };
+#endif
 
     void add_section_add_lines(LinkedList<String> *lines) {
         for (int i = 0 ; i < CHORDS_PER_SECTION ; i++) {
@@ -67,20 +87,29 @@ struct song_section_t {
 };
 
 struct playlist_entry_t {
-    int8_t section;
-    int8_t repeats;
+    int8_t  section;
+    int8_t  repeats;
+    uint8_t max_bars = 0;  // 0 = play full section length; >0 = exit after N bars
 };
 
 struct playlist_t {
     playlist_entry_t entries[NUM_PLAYLIST_SLOTS] = {
-        { 0, 2 },
-        { 1, 2 },
-        { 2, 2 },
-        { 3, 2 },
-        { 0, 2 },
-        { 1, 2 },
-        { 2, 2 },
-        { 3, 2 },
+        { 0, 1, 0 },  // Intro
+        { 1, 2, 0 },  // Verse 1
+        { 6, 2, 0 },  // Chorus 1
+        { 2, 2, 0 },  // Verse 2
+        { 6, 2, 0 },  // Chorus 1
+        { 4, 1, 0 },  // Bridge 1
+        { 7, 2, 0 },  // Chorus 2
+        { 8, 1, 0 },  // Outro
+        { 0, 1, 0 },
+        { 0, 1, 0 },
+        { 0, 1, 0 },
+        { 0, 1, 0 },
+        { 0, 1, 0 },
+        { 0, 1, 0 },
+        { 0, 1, 0 },
+        { 0, 1, 0 },
     };
     void save_project_add_lines(LinkedList<String> *lines) {
         for (int i = 0 ; i < NUM_PLAYLIST_SLOTS ; i++) {
@@ -169,10 +198,11 @@ public:
 
     const char* get_line() override {
         int pos = snprintf(linebuf, SL_MAX_LINE, "%s=", label);
-        for (int i = 0; i < NUM_PLAYLIST_SLOTS && pos < SL_MAX_LINE - 4; i++) {
+        for (int i = 0; i < NUM_PLAYLIST_SLOTS && pos < SL_MAX_LINE - 6; i++) {
             uint8_t s = (uint8_t)playlist->entries[i].section;
             uint8_t r = (uint8_t)playlist->entries[i].repeats;
-            pos += snprintf(linebuf + pos, SL_MAX_LINE - pos, "%02x%02x", s, r);
+            uint8_t m = (uint8_t)playlist->entries[i].max_bars;
+            pos += snprintf(linebuf + pos, SL_MAX_LINE - pos, "%02x%02x%02x", s, r, m);
         }
         linebuf[pos] = '\0';
         return linebuf;
@@ -181,13 +211,19 @@ public:
     bool parse_key_value(const char* key, const char* value) override {
         if (strcmp(key, label) != 0) return false;
         for (int i = 0; i < NUM_PLAYLIST_SLOTS; i++) {
-            int base = i * 4; // 2 bytes × 2 hex chars each
+            int base = i * 6; // 3 bytes × 2 hex chars each
             if (!value[base] || !value[base+1] || !value[base+2] || !value[base+3]) break;
             char hex[3] = {0};
             hex[0] = value[base];   hex[1] = value[base+1];
             playlist->entries[i].section = (int8_t)strtol(hex, nullptr, 16);
             hex[0] = value[base+2]; hex[1] = value[base+3];
             playlist->entries[i].repeats = (int8_t)strtol(hex, nullptr, 16);
+            if (value[base+4] && value[base+5]) {
+                hex[0] = value[base+4]; hex[1] = value[base+5];
+                playlist->entries[i].max_bars = (uint8_t)strtol(hex, nullptr, 16);
+            } else {
+                playlist->entries[i].max_bars = 0;
+            }
         }
         return true;
     }
@@ -264,6 +300,25 @@ public:
 
     bool debug = false;
 
+    // ── Per-section bar counter (resets on change_section / on_restart) ────
+    uint8_t section_bar_count  = 0;
+
+    // ── Pending quantized jump (applied at start of next on_bar()) ──────────
+    int8_t pending_jump_bar     = -1;   // -1 = none
+    int8_t pending_jump_section = -1;   // -1 = none
+
+    // ── Pre-loop snapshot (restored on exit_loop_to_playlist()) ────────────
+    int8_t pre_loop_playlist_position = 0;
+    int8_t pre_loop_section           = 0;
+
+    // ── Bar-range loop bounds (only used in LOOP_SECTION mode) ─────────────
+    int8_t loop_start_bar = 0;
+    int8_t loop_end_bar   = CHORDS_PER_SECTION - 1;
+
+    // ── Copy/paste clipboard ────────────────────────────────────────────────
+    song_section_t clipboard_section;
+    bool           clipboard_valid = false;
+
     // dirty flag for save tracking
     bool modified_since_save = true;
     bool has_changes_to_save() const    { return modified_since_save; }
@@ -299,12 +354,18 @@ public:
     // ── Navigation ──────────────────────────────────────────────────────
 
     void move_bar(int new_bar) {
-        if (new_bar >= CHORDS_PER_SECTION) {
-            new_bar = 0;
-        } else if (new_bar < 0) {
-            new_bar = CHORDS_PER_SECTION - 1;
+        const int sec_len = (int)song_sections[current_section].length;
+        if (playback_mode == LOOP_SECTION) {
+            // Clamp loop bounds to section length
+            int lstart = (int)loop_start_bar;
+            int lend   = ((int)loop_end_bar < sec_len) ? (int)loop_end_bar : sec_len - 1;
+            if (new_bar > lend)  new_bar = lstart;
+            if (new_bar < lstart) new_bar = lend;
+        } else {
+            if (new_bar >= sec_len) new_bar = 0;
+            if (new_bar < 0)        new_bar = sec_len - 1;
         }
-        current_bar = new_bar;
+        current_bar = (int8_t)new_bar;
         current_chord = song_sections[current_section].grid[current_bar];
         mark_as_modified();
         notify_chord_changed(current_chord, true);
@@ -322,7 +383,6 @@ public:
         change_section(playlist.entries[playlist_position].section);
     }
 
-    // Changes section, but leaves resetting the bar to the caller.
     void change_section(int section_number) {
         if (section_number >= NUM_SONG_SECTIONS)
             section_number = 0;
@@ -331,6 +391,11 @@ public:
 
         current_section_plays = 0;
         current_section = section_number;
+        current_bar = -1;       // next on_bar() will advance to 0
+        section_bar_count = 0;
+        #ifdef ENABLE_TIME_SIGNATURE
+            set_time_signature(song_sections[current_section].time_signature);
+        #endif
         mark_as_modified();
         notify_section_changed(current_section);
     }
@@ -340,6 +405,21 @@ public:
     void on_bar(int bar_number) {
         if (!enabled) return;
 
+        // Apply any queued bar-quantized jump first
+        bool jumped = false;
+        if (pending_jump_section >= 0) {
+            change_section(pending_jump_section);  // also resets current_bar + section_bar_count
+            pending_jump_section = -1;
+            jumped = true;
+        }
+        if (pending_jump_bar >= 0) {
+            move_bar(pending_jump_bar);
+            pending_jump_bar = -1;
+            section_bar_count = 0;
+            jumped = true;
+        }
+        if (jumped) return;
+
         if (progression_cadence == PROGRESSION_PER_BAR) {
             if (advance_bar) {
                 move_bar(current_bar + 1);
@@ -347,11 +427,29 @@ public:
                 move_bar(current_bar);
             }
         }
+
+        // Count bars within section; trigger playlist advance when phrase boundary reached
+        section_bar_count++;
+        const uint8_t eff_phrase = (playlist.entries[playlist_position].max_bars > 0)
+                                    ? playlist.entries[playlist_position].max_bars
+                                    : song_sections[current_section].bars_per_phrase;
+        if (section_bar_count >= eff_phrase) {
+            section_bar_count = 0;
+            if (playback_mode == PLAYLIST && advance_playlist) {
+                current_section_plays++;
+                if (current_section_plays >= get_current_playlist_repeats()) {
+                    current_section_plays = 0;
+                    move_next_playlist();
+                }
+            }
+        }
     }
 
     void on_end_phrase(uint32_t phrase_number) {
         if (!enabled) return;
 
+        // Bar advance for PROGRESSION_PER_PHRASE cadence only.
+        // Playlist advance is handled by on_bar() via section_bar_count.
         if (progression_cadence == PROGRESSION_PER_PHRASE) {
             if (advance_bar) {
                 move_bar(current_bar + 1);
@@ -359,27 +457,83 @@ public:
                 move_bar(current_bar);
             }
         }
-
-        if (playback_mode == PLAYLIST && advance_playlist) {
-            current_section_plays++;
-
-            if (current_section_plays >= get_current_playlist_repeats()) {
-                current_section_plays = 0;
-                move_next_playlist();
-            }
-        }
     }
 
     void on_restart() {
         playlist_position = 0;
         current_section_plays = 0;
-        if (playlist_position >= 0 && playlist_position < NUM_PLAYLIST_SLOTS)
-            current_section = playlist.entries[playlist_position].section;
-        current_bar = -1;
+        pending_jump_section = -1;   // discard any queued jump
+        pending_jump_bar     = -1;
+        // change_section() resets current_bar, section_bar_count, and applies time signature
+        change_section(playlist.entries[playlist_position].section);
+    }
+
+    // ── Loop control ────────────────────────────────────────────────────────
+
+    void enter_loop_section() {
+        pre_loop_playlist_position = playlist_position;
+        pre_loop_section = current_section;
+        loop_start_bar = 0;
+        loop_end_bar   = (int8_t)(song_sections[current_section].length - 1);
+        set_playback_mode(LOOP_SECTION);
+    }
+
+    // Queue a return to the pre-loop playlist position; fires at next bar boundary.
+    void exit_loop_to_playlist() {
+        pending_jump_section = pre_loop_section;
+        pending_jump_bar     = 0;
+        playlist_position    = pre_loop_playlist_position;
+        set_playback_mode(PLAYLIST);
+    }
+
+    void set_loop_range(int8_t start, int8_t end) {
+        const int8_t sec_len = (int8_t)song_sections[current_section].length;
+        loop_start_bar = constrain((int)start, 0, (int)sec_len - 1);
+        loop_end_bar   = constrain((int)end,   (int)loop_start_bar, (int)sec_len - 1);
+    }
+
+    // Freeze playback on the current bar.
+    void loop_current_bar() {
+        set_loop_range(current_bar, current_bar);
+    }
+
+    // Queue a bar-quantized jump to a specific section and bar.
+    void queue_jump(int8_t section, int8_t bar = 0) {
+        pending_jump_section = section;
+        pending_jump_bar     = bar;
+    }
+
+    // ── Copy / paste ────────────────────────────────────────────────────────
+
+    void copy_section(uint8_t src) {
+        if (src >= NUM_SONG_SECTIONS) return;
+        clipboard_section = song_sections[src];
+        clipboard_valid   = true;
+    }
+
+    void paste_section(uint8_t dst) {
+        if (!clipboard_valid || dst >= NUM_SONG_SECTIONS) return;
+        song_sections[dst] = clipboard_section;
+        mark_as_modified();
+    }
+
+    void swap_sections(uint8_t a, uint8_t b) {
+        if (a >= NUM_SONG_SECTIONS || b >= NUM_SONG_SECTIONS || a == b) return;
+        song_section_t tmp = song_sections[a];
+        song_sections[a]   = song_sections[b];
+        song_sections[b]   = tmp;
         mark_as_modified();
     }
 
     #ifdef ENABLE_STORAGE
+    // Reapply derived state after settings are loaded from file.
+    // Called automatically by sl_notify_after_load() after every load.
+    virtual void on_after_load() override {
+#ifdef ENABLE_TIME_SIGNATURE
+        set_time_signature(song_sections[current_section].time_signature);
+#endif
+    }
+
     virtual void setup_saveable_settings() override {
         SHDynamic<16, 2>::setup_saveable_settings();
 
@@ -411,6 +565,24 @@ public:
 
         register_setting(
             new LSaveableSetting<bool>(
+                "advance_bar", "Arranger", nullptr,
+                [this](bool v) { this->advance_bar = v; },
+                [this]() -> bool { return this->advance_bar; }
+            ),
+            SL_SCOPE_SCENE
+        );
+
+        register_setting(
+            new LSaveableSetting<bool>(
+                "advance_playlist", "Arranger", nullptr,
+                [this](bool v) { this->advance_playlist = v; },
+                [this]() -> bool { return this->advance_playlist; }
+            ),
+            SL_SCOPE_SCENE
+        );
+
+        register_setting(
+            new LSaveableSetting<bool>(
                 "enabled", "Arranger", nullptr,
                 [this](bool v) {
                     this->set_enabled(v);
@@ -428,12 +600,50 @@ public:
         );
 
         for (int8_t i = 0; i < NUM_SONG_SECTIONS; i++) {
-            char label[20];
+            char label[24];
             snprintf(label, sizeof(label), "section_%d_grid", i);
             register_setting(
                 new SaveableSectionGridSetting(label, "Arranger", &this->song_sections[i]),
                 SL_SCOPE_PROJECT
             );
+            snprintf(label, sizeof(label), "section_%d_len", i);
+            register_setting(
+                new LSaveableSetting<uint8_t>(
+                    label, nullptr, nullptr,
+                    [this, i](uint8_t v) { this->song_sections[i].length = (uint8_t)constrain((int)v, 1, CHORDS_PER_SECTION); },
+                    [this, i]() -> uint8_t { return this->song_sections[i].length; }
+                ),
+                SL_SCOPE_PROJECT
+            );
+            snprintf(label, sizeof(label), "section_%d_bpp", i);
+            register_setting(
+                new LSaveableSetting<uint8_t>(
+                    label, nullptr, nullptr,
+                    [this, i](uint8_t v) { this->song_sections[i].bars_per_phrase = (uint8_t)constrain((int)v, 1, 64); },
+                    [this, i]() -> uint8_t { return this->song_sections[i].bars_per_phrase; }
+                ),
+                SL_SCOPE_PROJECT
+            );
+            #ifdef ENABLE_TIME_SIGNATURE
+                snprintf(label, sizeof(label), "section_%d_tsn", i);
+                register_setting(
+                    new LSaveableSetting<uint8_t>(
+                        label, nullptr, nullptr,
+                        [this, i](uint8_t v) { this->song_sections[i].time_signature.numerator = (uint8_t)constrain((int)v, 1, TIME_SIG_MAX_STEPS_PER_BAR); },
+                        [this, i]() -> uint8_t { return this->song_sections[i].time_signature.numerator; }
+                    ),
+                    SL_SCOPE_PROJECT
+                );
+                snprintf(label, sizeof(label), "section_%d_tsd", i);
+                register_setting(
+                    new LSaveableSetting<uint8_t>(
+                        label, nullptr, nullptr,
+                        [this, i](uint8_t v) { this->song_sections[i].time_signature.denominator = (uint8_t)constrain((int)v, 1, 32); },
+                        [this, i]() -> uint8_t { return this->song_sections[i].time_signature.denominator; }
+                    ),
+                    SL_SCOPE_PROJECT
+                );
+            #endif
         }
     }
     #endif

@@ -178,7 +178,7 @@ public:
             }
             case FIELD_TYPE: {
                 int8_t v = (int8_t)type_getter() + 1;
-                if (v >= NUMBER_CHORDS) v = 0;
+                if (v >= (int8_t)NUMBER_CHORDS) v = 0;
                 type_setter((CHORD::Type)v);
                 break;
             }
@@ -196,7 +196,7 @@ public:
             }
             case FIELD_R_TYPE: {
                 int8_t v = (int8_t)r_type_getter() + 1;
-                if (v >= NUMBER_CHORDS) v = 0;
+                if (v >= (int8_t)NUMBER_CHORDS) v = 0;
                 r_type_setter((CHORD::Type)v);
                 break;
             }
@@ -225,7 +225,7 @@ public:
 
     // Format chord type label; guard against CHORD::NONE (=8, out of bounds)
     static const char *format_type(CHORD::Type t) {
-        if ((int)t >= 0 && (int)t < NUMBER_CHORDS)
+        if ((int)t >= 0 && (int)t < (int)NUMBER_CHORDS)
             return chords[(int)t].label;
         return "None ";
     }
@@ -234,12 +234,11 @@ public:
         const bool two_col = (my_r_bar >= 0 && (bool)r_degree_getter);
 
         // Pick text size to fit the full row content
-        // const char *size_probe = two_col ? "1 Triad 0*|2 Sus 2 0 " : "1 Triad 0*";
-        // int pixel_width = max_character_width * tft->currentCharacterWidth();
-        // uint8_t ts = tft->get_textsize_for_width(size_probe, pixel_width);
+        const char *size_probe = two_col ? "1 Triad 0*|2 Sus 2 0 " : "1 Triad 0*";
+        int pixel_width = max_character_width * tft->currentCharacterWidth();
+        uint8_t ts = tft->get_textsize_for_width(size_probe, pixel_width);
         bool wrap_was = tft->isTextWrap();
-        // tft->setTextSize(ts);
-        tft->setTextSize(2);
+        tft->setTextSize(ts);
         tft->setTextWrap(false);
 
         // Apply GREEN when this field is active+opened, else normal colours
@@ -272,7 +271,7 @@ public:
 
         if (two_col) {
             colours(selected || opened);
-            // tft->print("|");
+            tft->print("|");
 
             // --- right bar ---
             fcol(FIELD_R_DEGREE);
