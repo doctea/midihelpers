@@ -242,7 +242,7 @@ public:
         // force text size to ensure better visibility.
         bool wrap_was = tft->isTextWrap();
         tft->setTextWrap(false);
-        uint8_t ts = 1;
+        uint8_t ts = 2;
         tft->setTextSize(ts);
 
         // Apply GREEN when this field is active+opened, else normal colours

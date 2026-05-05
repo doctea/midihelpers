@@ -443,9 +443,8 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
 
     // Playlist page: shared-bar pattern — 16 lightweight switcher items + ONE shared editor bar.
     menu->add_page("Playlist", colour, true);
+    menu->set_page_header("## Section Rep Max  ");
     {
-        menu->add(new MenuItem("## Section   Rep Max   ", false, true));
-
         for (int i = 0; i < NUM_PLAYLIST_SLOTS; i++) {
             menu->add(new PlaylistRowMenuItem((int8_t)i));
         }
@@ -502,7 +501,7 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
         // Shared chord rows and column header
         MenuItem *shared_header_row;
         if (two_column) {
-            shared_header_row = new MenuItem("D Chord Inv|D Chord Inv", false, true);
+            shared_header_row = new SeparatorMenuItem("D Chord i D Chord i", menu->tft->halfbright_565(C_WHITE), 2, false);
             for (int k = 0; k < num_shared_rows; k++) {
                 const int j  = k * 2;
                 const int j2 = j + 1;
@@ -530,7 +529,7 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
                 );
             }
         } else {
-            shared_header_row = new MenuItem("Degree      Type        Inversion", false, true);
+            shared_header_row = new SeparatorMenuItem("D Chord Inv", menu->tft->halfbright_565(C_WHITE), 2, false);
             for (int j = 0; j < num_shared_rows; j++) {
                 char lbl[8];
                 snprintf(lbl, sizeof(lbl), "Bar %d", j);
