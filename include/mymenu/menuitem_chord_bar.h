@@ -234,12 +234,16 @@ public:
         const bool two_col = (my_r_bar >= 0 && (bool)r_degree_getter);
 
         // Pick text size to fit the full row content
-        const char *size_probe = two_col ? "1 Triad 0*|2 Sus 2 0 " : "1 Triad 0*";
+        /*const char *size_probe = two_col ? "1 Triad 0*|2 Sus 2 0 " : "1 Triad 0*";
         int pixel_width = max_character_width * tft->currentCharacterWidth();
         uint8_t ts = tft->get_textsize_for_width(size_probe, pixel_width);
+        tft->setTextWrap(false);*/
+
+        // force text size to ensure better visibility.
         bool wrap_was = tft->isTextWrap();
-        tft->setTextSize(ts);
         tft->setTextWrap(false);
+        uint8_t ts = 1;
+        tft->setTextSize(ts);
 
         // Apply GREEN when this field is active+opened, else normal colours
         auto fcol = [this, opened, selected](Field f) {
@@ -271,7 +275,7 @@ public:
 
         if (two_col) {
             colours(selected || opened);
-            tft->print("|");
+            // tft->print("|"); // keep this removed so taht we can fit the two-column layout in 20 chars. The space between bars is now just a gap in the text colour.
 
             // --- right bar ---
             fcol(FIELD_R_DEGREE);

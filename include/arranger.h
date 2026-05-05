@@ -57,9 +57,9 @@ struct song_section_t {
     chord_identity_t grid[CHORDS_PER_SECTION];
     uint8_t length          = CHORDS_PER_SECTION;  // active bars (1–CHORDS_PER_SECTION)
     uint8_t bars_per_phrase = 4;                   // bars before playlist-advance check
-#ifdef ENABLE_TIME_SIGNATURE
-    time_sig_t time_signature = { DEFAULT_TIME_SIGNATURE_NUMERATOR, DEFAULT_TIME_SIGNATURE_DENOMINATOR };
-#endif
+    #ifdef ENABLE_TIME_SIGNATURE
+        time_sig_t time_signature = { DEFAULT_TIME_SIGNATURE_NUMERATOR, DEFAULT_TIME_SIGNATURE_DENOMINATOR };
+    #endif
 
     void add_section_add_lines(LinkedList<String> *lines) {
         for (int i = 0 ; i < CHORDS_PER_SECTION ; i++) {
