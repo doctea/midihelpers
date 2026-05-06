@@ -23,7 +23,7 @@
 // ── Tuneable constants (override before #include if desired) ────────────
 
 #ifndef NUM_SONG_SECTIONS
-#define NUM_SONG_SECTIONS 9
+#define NUM_SONG_SECTIONS 10
 #endif
 
 #ifndef CHORDS_PER_SECTION
@@ -39,16 +39,23 @@
 #endif
 
 // Hardcoded section names (index 0 to NUM_SONG_SECTIONS-1)
-inline const char* get_section_name(int idx) {
-    static const char* const names[] = {
+constexpr const char* get_section_name(int idx) {
+    constexpr const char* const names[] = {
         "Intro",
         "Verse 1", "Verse 2", "Verse 3",
         "Bridge 1", "Bridge 2",
-        "Chorus 1", "Chorus 2",
+        "Chorus 1", "Chorus 2", "Chorus 3",
         "Outro"
     };
     if (idx < 0 || idx >= (int)(sizeof(names)/sizeof(names[0]))) return "?Section";
     return names[idx];
+}
+
+constexpr int8_t get_section_idx_for_name(const char* name) {
+    for (int i = 0; i < NUM_SONG_SECTIONS; i++) {
+        if (strcmp(name, get_section_name(i)) == 0) return i;
+    }
+    return -1;
 }
 
 // ── Data types ──────────────────────────────────────────────────────────
@@ -60,30 +67,6 @@ struct song_section_t {
     #ifdef ENABLE_TIME_SIGNATURE
         time_sig_t time_signature = { DEFAULT_TIME_SIGNATURE_NUMERATOR, DEFAULT_TIME_SIGNATURE_DENOMINATOR };
     #endif
-
-    void add_section_add_lines(LinkedList<String> *lines) {
-        for (int i = 0 ; i < CHORDS_PER_SECTION ; i++) {
-            lines->add(String("grid_")+String(i)+String("_degree=")+String(grid[i].degree));
-            lines->add(String("grid_")+String(i)+String("_type=")+String(grid[i].type));
-            lines->add(String("grid_")+String(i)+String("_inversion=")+String(grid[i].inversion));
-        }
-    }
-    bool parse_section_line(String key, String value) {
-        if (key.startsWith("grid_")) {
-            int8_t grid_index = key.substring(5,6).toInt();
-            if (grid_index>=0 && grid_index<CHORDS_PER_SECTION) {
-                if (key.endsWith("_degree")) {
-                    grid[grid_index].degree = value.toInt();
-                } else if (key.endsWith("_type")) {
-                    grid[grid_index].type = (CHORD::Type)value.toInt();
-                } else if (key.endsWith("_inversion")) {
-                    grid[grid_index].inversion = value.toInt();
-                }
-            }
-            return true;
-        }
-        return false;
-    }
 };
 
 struct playlist_entry_t {
@@ -94,46 +77,27 @@ struct playlist_entry_t {
 
 struct playlist_t {
     playlist_entry_t entries[NUM_PLAYLIST_SLOTS] = {
-        { 0, 1, 0 },  // Intro
-        { 1, 2, 0 },  // Verse 1
-        { 6, 2, 0 },  // Chorus 1
-        { 2, 2, 0 },  // Verse 2
-        { 6, 2, 0 },  // Chorus 1
-        { 4, 1, 0 },  // Bridge 1
-        { 7, 2, 0 },  // Chorus 2
-        { 8, 1, 0 },  // Outro
-        { 0, 1, 0 },
-        { 0, 1, 0 },
-        { 0, 1, 0 },
-        { 0, 1, 0 },
-        { 0, 1, 0 },
-        { 0, 1, 0 },
-        { 0, 1, 0 },
-        { 0, 1, 0 },
+        { get_section_idx_for_name("Intro"), 1, 0 },  // Intro
+        { get_section_idx_for_name("Verse 1"), 1, 0 },  // Verse 1
+        { get_section_idx_for_name("Chorus 1"), 1, 0 },  // Chorus 1
+        { get_section_idx_for_name("Verse 2"), 1, 0 },  // Verse 2
+        { get_section_idx_for_name("Chorus 2"), 1, 0 },  // Chorus 2
+        { get_section_idx_for_name("Bridge 1"), 1, 0 },  // Bridge 1
+        { get_section_idx_for_name("Verse 3"), 1, 0 },  // Verse 3
+        { get_section_idx_for_name("Bridge 2"), 1, 0 },  // Bridge 2
+        { get_section_idx_for_name("Chorus 3"), 1, 0 },  // Chorus 3
+        { get_section_idx_for_name("Outro"), 1, 0 },  // Outro
+        { get_section_idx_for_name("Outro"), 0, 0 },  // Outro
+        { get_section_idx_for_name("Outro"), 0, 0 },  // Outro
+        { get_section_idx_for_name("Outro"), 0, 0 },  // Outro
+        { get_section_idx_for_name("Outro"), 0, 0 },  // Outro
+        { get_section_idx_for_name("Outro"), 0, 0 },  // Outro
+        { get_section_idx_for_name("Outro"), 0, 0 },  // Outro
+        // Remaining slots default to section=0, repeats=0 (inactive)
     };
-    void save_project_add_lines(LinkedList<String> *lines) {
-        for (int i = 0 ; i < NUM_PLAYLIST_SLOTS ; i++) {
-            lines->add(String("section_")+String(i)+String("=")+String(entries[i].section));
-            lines->add(String("repeats_")+String(i)+String("=")+String(entries[i].repeats));
-        }
-    }
-    bool parse_key_value(String key, String value) {
-        if (key.startsWith("section_")) {
-            int8_t slot = key.substring(8,9).toInt();
-            if (slot>=0 && slot<NUM_PLAYLIST_SLOTS) {
-                entries[slot].section = value.toInt();
-                return true;
-            }
-        } else if (key.startsWith("repeats_")) {
-            int8_t slot = key.substring(8,9).toInt();
-            if (slot>=0 && slot<NUM_PLAYLIST_SLOTS) {
-                entries[slot].repeats = value.toInt();
-                return true;
-            }
-        }
-        return false;
-    }
 };
+
+playlist_t* get_default_playlist();
 
 // ── Saveable setting subclasses for song data ───────────────────────────
 
@@ -351,6 +315,23 @@ public:
         return repeats < 1 ? 1 : repeats;
     }
 
+    // A slot is active (will be played automatically) when repeats > 0.
+    // repeats == 0 marks a slot as disabled/empty — skipped during playback.
+    bool is_playlist_slot_active(int8_t slot) const {
+        if (slot < 0 || slot >= NUM_PLAYLIST_SLOTS) return false;
+        return playlist.entries[slot].repeats > 0;
+    }
+
+    // Returns the next active slot at or after `from`, wrapping around.
+    // Returns `from` unchanged if no active slot exists anywhere.
+    int8_t find_next_active_playlist_slot(int8_t from) const {
+        for (int i = 0; i < NUM_PLAYLIST_SLOTS; i++) {
+            int8_t candidate = (int8_t)((from + i) % NUM_PLAYLIST_SLOTS);
+            if (is_playlist_slot_active(candidate)) return candidate;
+        }
+        return from;  // all inactive — stay put
+    }
+
     // ── Navigation ──────────────────────────────────────────────────────
 
     void move_bar(int new_bar) {
@@ -372,7 +353,10 @@ public:
     }
 
     void move_next_playlist() {
-        move_playlist(playlist_position + 1);
+        int8_t next = find_next_active_playlist_slot((int8_t)((playlist_position + 1) % NUM_PLAYLIST_SLOTS));
+        if (is_playlist_slot_active(next))
+            move_playlist(next);
+        // If all slots are inactive, stay put (move_playlist not called).
     }
 
     void move_playlist(int8_t pos) {
@@ -424,22 +408,34 @@ public:
             if (advance_bar) {
                 move_bar(current_bar + 1);
             } else {
-                move_bar(current_bar);
+                // Clamp -1 sentinel (post-restart/section-change) to 0 so that
+                // "stay in place" mode doesn't wrap to the last bar on first call.
+                move_bar(current_bar < 0 ? 0 : (int)current_bar);
             }
         }
 
-        // Count bars within section; trigger playlist advance when phrase boundary reached
+        // Count bars within section; trigger playlist advance when full section length reached.
+        // bars_per_phrase is a separate concept (phrase subdivision) and does NOT control
+        // when the playlist advances — only section length (or max_bars override) does.
         section_bar_count++;
-        const uint8_t eff_phrase = (playlist.entries[playlist_position].max_bars > 0)
+        const uint8_t eff_length = (playlist.entries[playlist_position].max_bars > 0)
                                     ? playlist.entries[playlist_position].max_bars
-                                    : song_sections[current_section].bars_per_phrase;
-        if (section_bar_count >= eff_phrase) {
+                                    : song_sections[current_section].length;
+        if (section_bar_count >= eff_length) {
             section_bar_count = 0;
             if (playback_mode == PLAYLIST && advance_playlist) {
                 current_section_plays++;
                 if (current_section_plays >= get_current_playlist_repeats()) {
                     current_section_plays = 0;
                     move_next_playlist();
+                    // change_section() inside move_next_playlist() anchors ts_phase_offset = ticks
+                    // (via set_time_signature), so LoopMarkerPanel considers THIS bar as bar 1 of
+                    // the new section.  Advance current_bar to 0 right now so the bar indicator
+                    // stays in sync; the -1 sentinel would otherwise defer the update to the next
+                    // on_bar(), leaving the indicator one bar behind LoopMarkerPanel.
+                    if (current_bar < 0 && progression_cadence == PROGRESSION_PER_BAR) {
+                        move_bar(0);
+                    }
                 }
             }
         }
@@ -460,10 +456,12 @@ public:
     }
 
     void on_restart() {
-        playlist_position = 0;
         current_section_plays = 0;
         pending_jump_section = -1;   // discard any queued jump
         pending_jump_bar     = -1;
+        // Start at the first active slot; find_next_active_playlist_slot(0)
+        // returns 0 itself if all slots are inactive (safe fallback).
+        playlist_position = find_next_active_playlist_slot(0);
         // change_section() resets current_bar, section_bar_count, and applies time signature
         change_section(playlist.entries[playlist_position].section);
     }
@@ -505,6 +503,20 @@ public:
 
     // ── Copy / paste ────────────────────────────────────────────────────────
 
+    void reset_playlist() {
+        playlist = *get_default_playlist();
+        mark_as_modified();
+    }
+
+    void clear_playlist() {
+        for (int i = 0; i < NUM_PLAYLIST_SLOTS; i++) {
+            playlist.entries[i].section = 0;
+            playlist.entries[i].repeats = 0;
+            playlist.entries[i].max_bars = 0;
+        }
+        mark_as_modified();
+    }
+
     void copy_section(uint8_t src) {
         if (src >= NUM_SONG_SECTIONS) return;
         clipboard_section = song_sections[src];
@@ -526,126 +538,126 @@ public:
     }
 
     #ifdef ENABLE_STORAGE
-    // Reapply derived state after settings are loaded from file.
-    // Called automatically by sl_notify_after_load() after every load.
-    virtual void on_after_load() override {
-#ifdef ENABLE_TIME_SIGNATURE
-        set_time_signature(song_sections[current_section].time_signature);
-#endif
-    }
-
-    virtual void setup_saveable_settings() override {
-        SHDynamic<16, 2>::setup_saveable_settings();
-
-        register_setting(
-            new LSaveableSetting<int>(
-                "progression_cadence", "Arranger", nullptr,
-                [this](int v) {
-                    this->set_progression_cadence((progression_cadence_t)constrain(v, 0, 1));
-                },
-                [this]() -> int {
-                    return (int)this->get_progression_cadence();
-                }
-            ),
-            SL_SCOPE_PROJECT
-        );
-
-        register_setting(
-            new LSaveableSetting<int>(
-                "playback_mode", "Arranger", nullptr,
-                [this](int v) {
-                    this->set_playback_mode((playback_mode_t)constrain(v, 0, 1));
-                },
-                [this]() -> int {
-                    return (int)this->get_playback_mode();
-                }
-            ),
-            SL_SCOPE_PROJECT
-        );
-
-        register_setting(
-            new LSaveableSetting<bool>(
-                "advance_bar", "Arranger", nullptr,
-                [this](bool v) { this->advance_bar = v; },
-                [this]() -> bool { return this->advance_bar; }
-            ),
-            SL_SCOPE_SCENE
-        );
-
-        register_setting(
-            new LSaveableSetting<bool>(
-                "advance_playlist", "Arranger", nullptr,
-                [this](bool v) { this->advance_playlist = v; },
-                [this]() -> bool { return this->advance_playlist; }
-            ),
-            SL_SCOPE_SCENE
-        );
-
-        register_setting(
-            new LSaveableSetting<bool>(
-                "enabled", "Arranger", nullptr,
-                [this](bool v) {
-                    this->set_enabled(v);
-                },
-                [this]() -> bool {
-                    return this->is_enabled();
-                }
-            ),
-            SL_SCOPE_PROJECT
-        );
-
-        register_setting(
-            new SaveablePlaylistSetting("playlist_grid", "Arranger", &this->playlist),
-            SL_SCOPE_PROJECT
-        );
-
-        for (int8_t i = 0; i < NUM_SONG_SECTIONS; i++) {
-            char label[24];
-            snprintf(label, sizeof(label), "section_%d_grid", i);
-            register_setting(
-                new SaveableSectionGridSetting(label, "Arranger", &this->song_sections[i]),
-                SL_SCOPE_PROJECT
-            );
-            snprintf(label, sizeof(label), "section_%d_len", i);
-            register_setting(
-                new LSaveableSetting<uint8_t>(
-                    label, nullptr, nullptr,
-                    [this, i](uint8_t v) { this->song_sections[i].length = (uint8_t)constrain((int)v, 1, CHORDS_PER_SECTION); },
-                    [this, i]() -> uint8_t { return this->song_sections[i].length; }
-                ),
-                SL_SCOPE_PROJECT
-            );
-            snprintf(label, sizeof(label), "section_%d_bpp", i);
-            register_setting(
-                new LSaveableSetting<uint8_t>(
-                    label, nullptr, nullptr,
-                    [this, i](uint8_t v) { this->song_sections[i].bars_per_phrase = (uint8_t)constrain((int)v, 1, 64); },
-                    [this, i]() -> uint8_t { return this->song_sections[i].bars_per_phrase; }
-                ),
-                SL_SCOPE_PROJECT
-            );
+        // Reapply derived state after settings are loaded from file.
+        // Called automatically by sl_notify_after_load() after every load.
+        virtual void on_after_load() override {
             #ifdef ENABLE_TIME_SIGNATURE
-                snprintf(label, sizeof(label), "section_%d_tsn", i);
-                register_setting(
-                    new LSaveableSetting<uint8_t>(
-                        label, nullptr, nullptr,
-                        [this, i](uint8_t v) { this->song_sections[i].time_signature.numerator = (uint8_t)constrain((int)v, 1, TIME_SIG_MAX_STEPS_PER_BAR); },
-                        [this, i]() -> uint8_t { return this->song_sections[i].time_signature.numerator; }
-                    ),
-                    SL_SCOPE_PROJECT
-                );
-                snprintf(label, sizeof(label), "section_%d_tsd", i);
-                register_setting(
-                    new LSaveableSetting<uint8_t>(
-                        label, nullptr, nullptr,
-                        [this, i](uint8_t v) { this->song_sections[i].time_signature.denominator = (uint8_t)constrain((int)v, 1, 32); },
-                        [this, i]() -> uint8_t { return this->song_sections[i].time_signature.denominator; }
-                    ),
-                    SL_SCOPE_PROJECT
-                );
+                    set_time_signature(song_sections[current_section].time_signature);
             #endif
         }
-    }
+
+        virtual void setup_saveable_settings() override {
+            SHDynamic<16, 2>::setup_saveable_settings();
+
+            register_setting(
+                new LSaveableSetting<int>(
+                    "progression_cadence", "Arranger", nullptr,
+                    [this](int v) {
+                        this->set_progression_cadence((progression_cadence_t)constrain(v, 0, 1));
+                    },
+                    [this]() -> int {
+                        return (int)this->get_progression_cadence();
+                    }
+                ),
+                SL_SCOPE_PROJECT
+            );
+
+            register_setting(
+                new LSaveableSetting<int>(
+                    "playback_mode", "Arranger", nullptr,
+                    [this](int v) {
+                        this->set_playback_mode((playback_mode_t)constrain(v, 0, 1));
+                    },
+                    [this]() -> int {
+                        return (int)this->get_playback_mode();
+                    }
+                ),
+                SL_SCOPE_PROJECT
+            );
+
+            register_setting(
+                new LSaveableSetting<bool>(
+                    "advance_bar", "Arranger", nullptr,
+                    [this](bool v) { this->advance_bar = v; },
+                    [this]() -> bool { return this->advance_bar; }
+                ),
+                SL_SCOPE_SCENE
+            );
+
+            register_setting(
+                new LSaveableSetting<bool>(
+                    "advance_playlist", "Arranger", nullptr,
+                    [this](bool v) { this->advance_playlist = v; },
+                    [this]() -> bool { return this->advance_playlist; }
+                ),
+                SL_SCOPE_SCENE
+            );
+
+            register_setting(
+                new LSaveableSetting<bool>(
+                    "enabled", "Arranger", nullptr,
+                    [this](bool v) {
+                        this->set_enabled(v);
+                    },
+                    [this]() -> bool {
+                        return this->is_enabled();
+                    }
+                ),
+                SL_SCOPE_PROJECT
+            );
+
+            register_setting(
+                new SaveablePlaylistSetting("playlist_grid", "Arranger", &this->playlist),
+                SL_SCOPE_PROJECT
+            );
+
+            for (int8_t i = 0; i < NUM_SONG_SECTIONS; i++) {
+                char label[24];
+                snprintf(label, sizeof(label), "section_%d_grid", i);
+                register_setting(
+                    new SaveableSectionGridSetting(label, "Arranger", &this->song_sections[i]),
+                    SL_SCOPE_PROJECT
+                );
+                snprintf(label, sizeof(label), "section_%d_len", i);
+                register_setting(
+                    new LSaveableSetting<uint8_t>(
+                        label, nullptr, nullptr,
+                        [this, i](uint8_t v) { this->song_sections[i].length = (uint8_t)constrain((int)v, 1, CHORDS_PER_SECTION); },
+                        [this, i]() -> uint8_t { return this->song_sections[i].length; }
+                    ),
+                    SL_SCOPE_PROJECT
+                );
+                snprintf(label, sizeof(label), "section_%d_bpp", i);
+                register_setting(
+                    new LSaveableSetting<uint8_t>(
+                        label, nullptr, nullptr,
+                        [this, i](uint8_t v) { this->song_sections[i].bars_per_phrase = (uint8_t)constrain((int)v, 1, 64); },
+                        [this, i]() -> uint8_t { return this->song_sections[i].bars_per_phrase; }
+                    ),
+                    SL_SCOPE_PROJECT
+                );
+                #ifdef ENABLE_TIME_SIGNATURE
+                    snprintf(label, sizeof(label), "section_%d_tsn", i);
+                    register_setting(
+                        new LSaveableSetting<uint8_t>(
+                            label, nullptr, nullptr,
+                            [this, i](uint8_t v) { this->song_sections[i].time_signature.numerator = (uint8_t)constrain((int)v, 1, TIME_SIG_MAX_STEPS_PER_BAR); },
+                            [this, i]() -> uint8_t { return this->song_sections[i].time_signature.numerator; }
+                        ),
+                        SL_SCOPE_PROJECT
+                    );
+                    snprintf(label, sizeof(label), "section_%d_tsd", i);
+                    register_setting(
+                        new LSaveableSetting<uint8_t>(
+                            label, nullptr, nullptr,
+                            [this, i](uint8_t v) { this->song_sections[i].time_signature.denominator = (uint8_t)constrain((int)v, 1, 32); },
+                            [this, i]() -> uint8_t { return this->song_sections[i].time_signature.denominator; }
+                        ),
+                        SL_SCOPE_PROJECT
+                    );
+                #endif
+            }
+        }
     #endif
 
 private:

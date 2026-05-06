@@ -56,7 +56,7 @@ public:
         playlist_entry_t &e = arranger->playlist.entries[my_slot];
         switch (active_field) {
             case FIELD_SECTION: e.section  = (int8_t)constrain(e.section  - 1, 0, NUM_SONG_SECTIONS - 1); break;
-            case FIELD_REPEATS: e.repeats  = (int8_t)constrain(e.repeats  - 1, 1, MAX_REPEATS);          break;
+            case FIELD_REPEATS: e.repeats  = (int8_t)constrain(e.repeats  - 1, 0, MAX_REPEATS);          break;
             case FIELD_MAXBARS: e.max_bars = (uint8_t)constrain((int)e.max_bars - 1, 0, CHORDS_PER_SECTION); break;
             default: break;
         }
@@ -67,7 +67,7 @@ public:
         playlist_entry_t &e = arranger->playlist.entries[my_slot];
         switch (active_field) {
             case FIELD_SECTION: e.section  = (int8_t)constrain(e.section  + 1, 0, NUM_SONG_SECTIONS - 1); break;
-            case FIELD_REPEATS: e.repeats  = (int8_t)constrain(e.repeats  + 1, 1, MAX_REPEATS);          break;
+            case FIELD_REPEATS: e.repeats  = (int8_t)constrain(e.repeats  + 1, 0, MAX_REPEATS);          break;
             case FIELD_MAXBARS: e.max_bars = (uint8_t)constrain((int)e.max_bars + 1, 0, CHORDS_PER_SECTION); break;
             default: break;
         }
@@ -451,6 +451,17 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
 
         if (save_load_bar) menu->add(save_load_bar);
         menu->add(advance_bar);
+
+        SubMenuItemBar *playlist_reset_bar = new SubMenuItemBar("Playlist reset", false, true);
+        playlist_reset_bar->add(new LambdaActionConfirmItem(
+            "Reset all sections",
+            []() { arranger->reset_playlist(); }
+        ));
+        playlist_reset_bar->add(new LambdaActionConfirmItem(
+            "Clear all sections",
+            []() { arranger->clear_playlist(); }
+        ));
+        menu->add(playlist_reset_bar);
     }
 
     // Per-section pages: shared-object approach — one set of controls shared across all

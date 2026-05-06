@@ -27,7 +27,9 @@
 #define MIDI_CHANNEL_OMNI 0
 
 
+#ifdef ARDUINO
 String get_note_name(int pitch);
+#endif
 const char *get_note_name_c(int pitch, int channel = 1);
 extern const char *note_names[];
 bool is_valid_note(int8_t byte);
