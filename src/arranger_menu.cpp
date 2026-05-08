@@ -169,8 +169,9 @@ static const char *label_progression_cadence(Arranger::progression_cadence_t cad
 
 static const char *label_playback_mode(Arranger::playback_mode_t mode) {
     switch (mode) {
+        case Arranger::LOOP_BAR: return "Loop bar";
         case Arranger::LOOP_SECTION: return "Loop section";
-        case Arranger::PLAYLIST: return "Playlist";
+        case Arranger::LOOP_PLAYLIST: return "Loop playlist";
         default: return "Unknown";
     }
 }
@@ -263,19 +264,20 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
 
     LambdaSelectorControl<int> *mode_selector = new LambdaSelectorControl<int>(
         "Mode",
-        [=](int v) { arranger->set_playback_mode((Arranger::playback_mode_t)constrain(v, 0, 1)); },
+        [=](int v) { arranger->set_playback_mode((Arranger::playback_mode_t)v); },
         [=]() -> int { return (int)arranger->get_playback_mode(); },
         nullptr,
         true,
         true
     );
-    mode_selector->add_available_value((int)Arranger::LOOP_SECTION, "Loop section");
-    mode_selector->add_available_value((int)Arranger::PLAYLIST, "Playlist");
+    mode_selector->add_available_value((int)Arranger::LOOP_BAR, label_playback_mode(Arranger::LOOP_BAR));
+    mode_selector->add_available_value((int)Arranger::LOOP_SECTION, label_playback_mode(Arranger::LOOP_SECTION));
+    mode_selector->add_available_value((int)Arranger::LOOP_PLAYLIST, label_playback_mode(Arranger::LOOP_PLAYLIST));
     menu->add(mode_selector);
 
     LambdaSelectorControl<int> *cadence_selector = new LambdaSelectorControl<int>(
         "Cadence",
-        [=](int v) { arranger->set_progression_cadence((Arranger::progression_cadence_t)constrain(v, 0, 1)); },
+        [=](int v) { arranger->set_progression_cadence((Arranger::progression_cadence_t)v); },
         [=]() -> int { return (int)arranger->get_progression_cadence(); },
         nullptr,
         true,
@@ -285,24 +287,12 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
     cadence_selector->add_available_value((int)Arranger::PROGRESSION_PER_PHRASE, "Per phrase");
     menu->add(cadence_selector);
 
-    menu->add_page("Arrange Advance", C_WHITE, false);
+    // menu->add_page("Arrange Advance", C_WHITE, false);
 
-    menu->add(new LambdaToggleControl(
-        "Advance chord",
-        [=](bool v) { arranger->advance_bar = v; arranger->mark_as_modified(); },
-        [=]() -> bool { return arranger->advance_bar; }
-    ));
-
-    menu->add(new LambdaToggleControl(
-        "Advance playlist",
-        [=](bool v) { arranger->advance_playlist = v; arranger->mark_as_modified(); },
-        [=]() -> bool { return arranger->advance_playlist; }
-    ));
-
-    menu->add(new LambdaActionItem(
-        "Restart",
-        [=]() { arranger->on_restart(); }
-    ));
+    // menu->add(new LambdaActionItem(
+    //     "Restart",
+    //     [=]() { arranger->on_restart(); }
+    // ));
 
     // ── Arrange Jump page ────────────────────────────────────────────────
     menu->add_page("Arrange Jump", C_WHITE, false);
@@ -345,7 +335,8 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
             [=]() { arranger->loop_current_bar(); }
         ));
 
-        menu->add(new LambdaNumberControl<int8_t>(
+        SubMenuItemBar *loop_range_bar = new SubMenuItemBar("Loop range", false, true);
+        loop_range_bar->add(new LambdaNumberControl<int8_t>(
             "Loop start bar",
             [=](int8_t v) { arranger->set_loop_range(v, arranger->loop_end_bar); },
             [=]() -> int8_t { return arranger->loop_start_bar; },
@@ -353,13 +344,14 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
             (int8_t)0, (int8_t)(CHORDS_PER_SECTION - 1), true, true
         ));
 
-        menu->add(new LambdaNumberControl<int8_t>(
+        loop_range_bar->add(new LambdaNumberControl<int8_t>(
             "Loop end bar",
             [=](int8_t v) { arranger->set_loop_range(arranger->loop_start_bar, v); },
             [=]() -> int8_t { return arranger->loop_end_bar; },
             nullptr,
             (int8_t)0, (int8_t)(CHORDS_PER_SECTION - 1), true, true
         ));
+        menu->add(loop_range_bar);
 
         menu->add(new LambdaActionItem(
             "Exit Loop -> Playlist",
@@ -380,17 +372,6 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
         ));
         if (load_cb) save_load_bar->add(new LambdaActionConfirmItem("Load", [=]() { load_cb(); }));
     }
-
-    // Build reusable advance-flags bar
-    SubMenuItemBar *advance_bar = new SubMenuItemBar("Advance controls", false, true);
-    advance_bar->add(new LambdaToggleControl("Advance bar",
-        [=](bool v) { arranger->advance_bar = v; arranger->mark_as_modified(); },
-        [=]() -> bool { return arranger->advance_bar; }
-    ));
-    advance_bar->add(new LambdaToggleControl("Advance playlist",
-        [=](bool v) { arranger->advance_playlist = v; arranger->mark_as_modified(); },
-        [=]() -> bool { return arranger->advance_playlist; }
-    ));
 
     // Compact mode: single chord-editor page for all sections (memory-saving alternative)
     if (compact_sections) {
@@ -438,7 +419,6 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
         ));
 
         if (save_load_bar) menu->add(save_load_bar);
-        menu->add(advance_bar);
     }
 
     // Playlist page: shared-bar pattern — 16 lightweight switcher items + ONE shared editor bar.
@@ -450,7 +430,6 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
         }
 
         if (save_load_bar) menu->add(save_load_bar);
-        menu->add(advance_bar);
 
         SubMenuItemBar *playlist_reset_bar = new SubMenuItemBar("Playlist reset", false, true);
         playlist_reset_bar->add(new LambdaActionConfirmItem(
@@ -507,7 +486,7 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
         // Shared copy/paste bar
         SubMenuItemBar *shared_cp_bar = new SubMenuItemBar("Copy/Paste", false, true);
         shared_cp_bar->add(new LambdaActionItem("Copy",  []() { arranger->copy_section(shared_edit_section); }));
-        shared_cp_bar->add(new LambdaActionItem("Paste", []() { arranger->paste_section(shared_edit_section); }));
+        shared_cp_bar->add(new LambdaActionConfirmItem("Paste", []() { arranger->paste_section(shared_edit_section); }));
 
         // Shared chord rows and column header
         MenuItem *shared_header_row;
@@ -574,7 +553,6 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
                 menu->add(shared_chord_rows[k]);
             }
             if (save_load_bar) menu->add(save_load_bar);
-            menu->add(advance_bar);
         }
     }
 }

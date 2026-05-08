@@ -220,11 +220,14 @@ public:
     enum progression_cadence_t : int8_t {
         PROGRESSION_PER_BAR = 0,
         PROGRESSION_PER_PHRASE = 1,
+        PROGRESSION_CADENCE_COUNT = 2
     };
 
     enum playback_mode_t : int8_t {
-        LOOP_SECTION = 0,
-        PLAYLIST = 1,
+        LOOP_BAR = 0,
+        LOOP_SECTION = 1,
+        LOOP_PLAYLIST = 2,
+        LOOP_MODE_COUNT = 3
     };
 
     // ── Callbacks ───────────────────────────────────────────────────────
@@ -255,8 +258,6 @@ public:
     int8_t current_section_plays  = 0;
     chord_identity_t current_chord;
 
-    bool advance_bar      = true;
-    bool advance_playlist = true;
     bool enabled = true;
 
     progression_cadence_t progression_cadence = PROGRESSION_PER_BAR;
@@ -290,17 +291,27 @@ public:
     void mark_as_modified()             { modified_since_save = true; }
 
     // ── Mode/Query helpers ─────────────────────────────────────────────
-    void set_progression_cadence(progression_cadence_t mode) { progression_cadence = mode; mark_as_modified(); }
+    void set_progression_cadence(progression_cadence_t mode) { 
+        mode = (progression_cadence_t)constrain((int)mode, 0, (int)PROGRESSION_CADENCE_COUNT - 1);
+        progression_cadence = mode; mark_as_modified(); 
+    }
     progression_cadence_t get_progression_cadence() const { return progression_cadence; }
 
-    void set_playback_mode(playback_mode_t mode) { playback_mode = mode; mark_as_modified(); }
+    void set_playback_mode(playback_mode_t mode) {
+        mode = (playback_mode_t)constrain((int)mode, 0, (int)LOOP_MODE_COUNT - 1);
+        if (mode != playback_mode)
+            section_bar_count = 0;  // re-anchor count so current section plays fully in new mode
+        playback_mode = mode;
+        mark_as_modified();
+    }
     playback_mode_t get_playback_mode() const { return playback_mode; }
 
     void set_enabled(bool state) { enabled = state; mark_as_modified(); }
     bool is_enabled() const { return enabled; }
 
-    bool is_playlist_mode() const { return playback_mode == PLAYLIST; }
-    bool is_loop_section_mode() const { return playback_mode == LOOP_SECTION; }
+    bool is_playlist_mode() const    { return playback_mode == LOOP_PLAYLIST; }
+    bool is_section_mode() const     { return playback_mode == LOOP_SECTION; }
+    bool is_bar_mode() const         { return playback_mode == LOOP_BAR; }
 
     const chord_identity_t& get_current_chord() const { return current_chord; }
     const chord_identity_t& get_chord_at(int8_t section, int8_t bar) const {
@@ -405,12 +416,12 @@ public:
         if (jumped) return;
 
         if (progression_cadence == PROGRESSION_PER_BAR) {
-            if (advance_bar) {
-                move_bar(current_bar + 1);
+            if (playback_mode == LOOP_BAR) {
+                // LOOP_BAR: freeze on current bar — clock never advances it.
+                // Resolve the -1 sentinel (post-restart) to bar 0 on first call.
+                move_bar(current_bar < 0 ? 0 : current_bar);
             } else {
-                // Clamp -1 sentinel (post-restart/section-change) to 0 so that
-                // "stay in place" mode doesn't wrap to the last bar on first call.
-                move_bar(current_bar < 0 ? 0 : (int)current_bar);
+                move_bar(current_bar + 1);
             }
         }
 
@@ -423,7 +434,7 @@ public:
                                     : song_sections[current_section].length;
         if (section_bar_count >= eff_length) {
             section_bar_count = 0;
-            if (playback_mode == PLAYLIST && advance_playlist) {
+            if (playback_mode == LOOP_PLAYLIST) {
                 current_section_plays++;
                 if (current_section_plays >= get_current_playlist_repeats()) {
                     current_section_plays = 0;
@@ -447,7 +458,7 @@ public:
         // Bar advance for PROGRESSION_PER_PHRASE cadence only.
         // Playlist advance is handled by on_bar() via section_bar_count.
         if (progression_cadence == PROGRESSION_PER_PHRASE) {
-            if (advance_bar) {
+            if (playback_mode != LOOP_BAR) {
                 move_bar(current_bar + 1);
             } else {
                 move_bar(current_bar);
@@ -481,7 +492,7 @@ public:
         pending_jump_section = pre_loop_section;
         pending_jump_bar     = 0;
         playlist_position    = pre_loop_playlist_position;
-        set_playback_mode(PLAYLIST);
+        set_playback_mode(LOOP_PLAYLIST);
     }
 
     void set_loop_range(int8_t start, int8_t end) {
@@ -541,8 +552,23 @@ public:
         // Reapply derived state after settings are loaded from file.
         // Called automatically by sl_notify_after_load() after every load.
         virtual void on_after_load() override {
+            // Reset runtime counters so a mid-section load doesn't cause an
+            // immediate or premature playlist advance.
+            section_bar_count    = 0;
+            pending_jump_section = -1;
+            pending_jump_bar     = -1;
             #ifdef ENABLE_TIME_SIGNATURE
-                    set_time_signature(song_sections[current_section].time_signature);
+                time_sig_t desired = song_sections[current_section].time_signature;
+                if (desired.numerator   != current_time_signature.numerator ||
+                    desired.denominator != current_time_signature.denominator) {
+                    // Metre changed: re-anchor ts_phase_offset so LoopMarkerPanel
+                    // and BPM_PHASE_TICKS() align to the new bar grid.
+                    set_time_signature(desired);
+                } else {
+                    // Same metre: update the cached value without disrupting the
+                    // running phase reference (ts_phase_offset stays unchanged).
+                    current_time_signature = desired;
+                }
             #endif
         }
 
@@ -566,31 +592,13 @@ public:
                 new LSaveableSetting<int>(
                     "playback_mode", "Arranger", nullptr,
                     [this](int v) {
-                        this->set_playback_mode((playback_mode_t)constrain(v, 0, 1));
+                        this->set_playback_mode((playback_mode_t)constrain(v, 0, (int)LOOP_MODE_COUNT - 1));
                     },
                     [this]() -> int {
                         return (int)this->get_playback_mode();
                     }
                 ),
                 SL_SCOPE_PROJECT
-            );
-
-            register_setting(
-                new LSaveableSetting<bool>(
-                    "advance_bar", "Arranger", nullptr,
-                    [this](bool v) { this->advance_bar = v; },
-                    [this]() -> bool { return this->advance_bar; }
-                ),
-                SL_SCOPE_SCENE
-            );
-
-            register_setting(
-                new LSaveableSetting<bool>(
-                    "advance_playlist", "Arranger", nullptr,
-                    [this](bool v) { this->advance_playlist = v; },
-                    [this]() -> bool { return this->advance_playlist; }
-                ),
-                SL_SCOPE_SCENE
             );
 
             register_setting(

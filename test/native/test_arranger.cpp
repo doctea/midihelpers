@@ -70,7 +70,6 @@ void test_basic_bar_advance() {
     Arranger a;
     a.setup_saveable_settings();
     a.song_sections[0].length = 8;
-    a.advance_bar = true;
     a.on_restart();
 
     for (int expected = 0; expected < 8; expected++) {
@@ -82,11 +81,11 @@ void test_basic_bar_advance() {
     TEST_ASSERT_EQUAL_INT(0, a.current_bar);
 }
 
-// With advance_bar=false, current_bar stays at 0 after on_restart().
+// In LOOP_BAR mode, current_bar stays at 0 after on_restart().
 void test_advance_bar_false_stays_at_zero() {
     Arranger a;
     a.setup_saveable_settings();
-    a.advance_bar = false;
+    a.set_playback_mode(Arranger::LOOP_BAR);
     a.on_restart();
 
     tick_bars(&a, 8);
@@ -99,8 +98,7 @@ void test_advance_bar_false_stays_at_zero() {
 void test_section_length_triggers_playlist_advance() {
     Arranger a;
     a.setup_saveable_settings();
-    a.set_playback_mode(Arranger::PLAYLIST);
-    a.advance_playlist = true;
+    a.set_playback_mode(Arranger::LOOP_PLAYLIST);
     a.song_sections[0].length         = 8;
     a.song_sections[0].bars_per_phrase = 4;  // 2 phrases per section — must NOT trigger advance
     a.playlist.entries[0] = { 0, 1, 0 };
@@ -120,8 +118,7 @@ void test_section_length_triggers_playlist_advance() {
 void test_max_bars_override() {
     Arranger a;
     a.setup_saveable_settings();
-    a.set_playback_mode(Arranger::PLAYLIST);
-    a.advance_playlist = true;
+    a.set_playback_mode(Arranger::LOOP_PLAYLIST);
     a.song_sections[0].length         = 8;  // full section is 8 bars
     a.song_sections[0].bars_per_phrase = 4;
     a.playlist.entries[0] = { 0, 1, 4 };    // max_bars=4: exit after half the section
@@ -139,8 +136,7 @@ void test_max_bars_override() {
 void test_multiple_repeats() {
     Arranger a;
     a.setup_saveable_settings();
-    a.set_playback_mode(Arranger::PLAYLIST);
-    a.advance_playlist = true;
+    a.set_playback_mode(Arranger::LOOP_PLAYLIST);
     a.song_sections[0].length         = 8;
     a.song_sections[0].bars_per_phrase = 4;
     a.playlist.entries[0] = { 0, 3, 0 };  // repeat 3 times → 3×8=24 bars total
@@ -165,8 +161,7 @@ void test_multiple_repeats() {
 void test_playlist_wraparound() {
     Arranger a;
     a.setup_saveable_settings();
-    a.set_playback_mode(Arranger::PLAYLIST);
-    a.advance_playlist = true;
+    a.set_playback_mode(Arranger::LOOP_PLAYLIST);
     a.song_sections[0].length         = 8;
     a.song_sections[0].bars_per_phrase = 4;
     for (int i = 0; i < NUM_PLAYLIST_SLOTS; i++) {
@@ -179,12 +174,11 @@ void test_playlist_wraparound() {
     TEST_ASSERT_EQUAL_INT(0, a.playlist_position);
 }
 
-// advance_playlist=false: section should not advance no matter how many bars pass.
+// LOOP_SECTION mode: section should not advance no matter how many bars pass.
 void test_advance_playlist_false() {
     Arranger a;
     a.setup_saveable_settings();
-    a.set_playback_mode(Arranger::PLAYLIST);
-    a.advance_playlist = false;
+    a.set_playback_mode(Arranger::LOOP_SECTION);
     a.song_sections[0].length         = 8;
     a.song_sections[0].bars_per_phrase = 4;
     a.playlist.entries[0] = { 0, 1, 0 };
@@ -296,9 +290,7 @@ void test_default_playlist_no_invalid_sections() {
 void test_full_playlist() {
     Arranger a;
     a.setup_saveable_settings();
-    a.set_playback_mode(Arranger::PLAYLIST);
-    a.advance_bar      = true;
-    a.advance_playlist = true;
+    a.set_playback_mode(Arranger::LOOP_PLAYLIST);
     for (int i = 0; i < NUM_SONG_SECTIONS; i++) {
         a.song_sections[i].length         = 8;  // standard section length
         a.song_sections[i].bars_per_phrase = 4;  // 2 phrases per play — must not trigger advance mid-section
@@ -332,8 +324,7 @@ void test_full_playlist() {
 void test_inactive_slot_skipped() {
     Arranger a;
     a.setup_saveable_settings();
-    a.set_playback_mode(Arranger::PLAYLIST);
-    a.advance_playlist = true;
+    a.set_playback_mode(Arranger::LOOP_PLAYLIST);
     a.song_sections[0].length         = 8;
     a.song_sections[0].bars_per_phrase = 4;
     a.song_sections[2].length         = 8;
@@ -355,8 +346,7 @@ void test_inactive_slot_skipped() {
 void test_multiple_inactive_slots_skipped() {
     Arranger a;
     a.setup_saveable_settings();
-    a.set_playback_mode(Arranger::PLAYLIST);
-    a.advance_playlist = true;
+    a.set_playback_mode(Arranger::LOOP_PLAYLIST);
     a.song_sections[0].length         = 8;
     a.song_sections[0].bars_per_phrase = 4;
     a.song_sections[4].length         = 8;
@@ -376,8 +366,7 @@ void test_multiple_inactive_slots_skipped() {
 void test_all_inactive_stays_put() {
     Arranger a;
     a.setup_saveable_settings();
-    a.set_playback_mode(Arranger::PLAYLIST);
-    a.advance_playlist = true;
+    a.set_playback_mode(Arranger::LOOP_PLAYLIST);
     for (int i = 0; i < NUM_PLAYLIST_SLOTS; i++) {
         a.playlist.entries[i] = { 0, 0, 0 };  // all inactive
     }
@@ -408,9 +397,7 @@ void test_restart_skips_inactive_leading_slots() {
 void test_current_bar_synced_after_playlist_advance() {
     Arranger a;
     a.setup_saveable_settings();
-    a.set_playback_mode(Arranger::PLAYLIST);
-    a.advance_bar      = true;
-    a.advance_playlist = true;
+    a.set_playback_mode(Arranger::LOOP_PLAYLIST);
     a.song_sections[0].length         = 8;
     a.song_sections[0].bars_per_phrase = 4;
     a.song_sections[1].length         = 8;
@@ -434,8 +421,7 @@ void test_current_bar_synced_after_playlist_advance() {
 void test_bars_per_phrase_does_not_control_advance() {
     Arranger a;
     a.setup_saveable_settings();
-    a.set_playback_mode(Arranger::PLAYLIST);
-    a.advance_playlist = true;
+    a.set_playback_mode(Arranger::LOOP_PLAYLIST);
     a.song_sections[0].length         = 8;
     a.song_sections[0].bars_per_phrase = 2;  // 4 phrases per section — none should fire advance
     a.playlist.entries[0] = { 0, 1, 0 };
@@ -458,8 +444,7 @@ void test_bars_per_phrase_does_not_control_advance() {
 void test_two_repeats_standard_section() {
     Arranger a;
     a.setup_saveable_settings();
-    a.set_playback_mode(Arranger::PLAYLIST);
-    a.advance_playlist = true;
+    a.set_playback_mode(Arranger::LOOP_PLAYLIST);
     a.song_sections[0].length         = 8;
     a.song_sections[0].bars_per_phrase = 4;
     a.playlist.entries[0] = { 0, 2, 0 };  // 2 repeats → 16 bars
@@ -478,8 +463,7 @@ void test_two_repeats_standard_section() {
 void test_max_bars_smaller_than_bars_per_phrase() {
     Arranger a;
     a.setup_saveable_settings();
-    a.set_playback_mode(Arranger::PLAYLIST);
-    a.advance_playlist = true;
+    a.set_playback_mode(Arranger::LOOP_PLAYLIST);
     a.song_sections[0].length         = 8;
     a.song_sections[0].bars_per_phrase = 4;
     a.playlist.entries[0] = { 0, 1, 2 };  // exit after just 2 bars (half a phrase)
@@ -497,8 +481,7 @@ void test_max_bars_smaller_than_bars_per_phrase() {
 void test_max_bars_larger_than_section_length() {
     Arranger a;
     a.setup_saveable_settings();
-    a.set_playback_mode(Arranger::PLAYLIST);
-    a.advance_playlist = true;
+    a.set_playback_mode(Arranger::LOOP_PLAYLIST);
     a.song_sections[0].length         = 4;
     a.song_sections[0].bars_per_phrase = 4;
     a.playlist.entries[0] = { 0, 1, 12 }; // max_bars=12 overrides length=4
@@ -511,6 +494,114 @@ void test_max_bars_larger_than_section_length() {
     TEST_ASSERT_EQUAL_INT(1, a.playlist_position);
 }
 
+// ── Mode-switch and load-sync tests ───────────────────────────────────
+
+// LOOP_BAR mode: the clock must never auto-advance current_bar.
+void test_loop_bar_mode_freezes_bar() {
+    Arranger a;
+    a.setup_saveable_settings();
+    a.set_playback_mode(Arranger::LOOP_BAR);
+    a.song_sections[0].length = 8;
+    a.on_restart();
+
+    tick_bars(&a, 16);  // 16 bars — bar must stay at 0
+    TEST_ASSERT_EQUAL_INT(0, a.current_bar);
+}
+
+// Switching playback mode resets section_bar_count so the current section
+// plays its full length in the new mode before the playlist advances.
+// Without the reset, a mid-section switch to LOOP_PLAYLIST could fire the
+// advance after only the remaining bars instead of the full section length.
+void test_mode_switch_resets_bar_count() {
+    Arranger a;
+    a.setup_saveable_settings();
+    a.set_playback_mode(Arranger::LOOP_PLAYLIST);
+    a.song_sections[0].length         = 8;
+    a.song_sections[0].bars_per_phrase = 4;
+    a.song_sections[1].length         = 8;
+    a.playlist.entries[0] = { 0, 1, 0 };
+    a.playlist.entries[1] = { 1, 1, 0 };
+    a.on_restart();
+
+    tick_bars(&a, 4);   // section_bar_count = 4, halfway through
+    TEST_ASSERT_EQUAL_INT(0, a.playlist_position);
+
+    // Detour through LOOP_SECTION and back — bar count must be zeroed each time
+    a.set_playback_mode(Arranger::LOOP_SECTION);
+    a.set_playback_mode(Arranger::LOOP_PLAYLIST);
+
+    // Must take a full 8 bars from here, not just the remaining 4
+    tick_bars(&a, 7);
+    TEST_ASSERT_EQUAL_INT(0, a.playlist_position);
+    tick_bars(&a, 1);   // 8th bar after reset → advance
+    TEST_ASSERT_EQUAL_INT(1, a.playlist_position);
+}
+
+// on_after_load() resets section_bar_count so a mid-section load does not
+// cause a premature or immediate playlist advance.
+void test_after_load_resets_bar_count() {
+    Arranger a;
+    a.setup_saveable_settings();
+    a.set_playback_mode(Arranger::LOOP_PLAYLIST);
+    a.song_sections[0].length         = 8;
+    a.song_sections[0].bars_per_phrase = 4;
+    a.song_sections[1].length         = 8;
+    a.playlist.entries[0] = { 0, 1, 0 };
+    a.playlist.entries[1] = { 1, 1, 0 };
+    a.on_restart();
+
+    tick_bars(&a, 5);   // section_bar_count = 5 (3 bars from end)
+    TEST_ASSERT_EQUAL_INT(0, a.playlist_position);
+
+    a.on_after_load();  // simulates a preset load — must zero section_bar_count
+
+    // Should now take the full 8 bars, not just the 3 remaining before load
+    tick_bars(&a, 7);
+    TEST_ASSERT_EQUAL_INT(0, a.playlist_position);
+    tick_bars(&a, 1);   // 8th bar after reset → advance
+    TEST_ASSERT_EQUAL_INT(1, a.playlist_position);
+}
+
+// on_after_load() must NOT reset ts_phase_offset when the time signature
+// matches what is already active.  Disrupting ts_phase_offset mid-phrase
+// would shift the LoopMarkerPanel position and throw everything out of sync.
+void test_after_load_no_phase_disruption_same_ts() {
+    Arranger a;
+    a.setup_saveable_settings();
+    // Section 0 uses the default 4/4 — same as current_time_signature at boot.
+    a.song_sections[0].time_signature = { DEFAULT_TIME_SIGNATURE_NUMERATOR,
+                                           DEFAULT_TIME_SIGNATURE_DENOMINATOR };
+    a.on_restart();
+    tick_bars(&a, 3);   // run the clock on a bit
+
+    uint32_t phase_before = ts_phase_offset;
+
+    a.on_after_load();  // same ts: must not touch ts_phase_offset
+
+    TEST_ASSERT_EQUAL_UINT32(phase_before, ts_phase_offset);
+}
+
+// on_after_load() DOES re-anchor ts_phase_offset when the time signature
+// differs from the currently active one (e.g. project saved in 3/4, loaded
+// while clock is running in 4/4).
+void test_after_load_reanchors_phase_on_ts_change() {
+    Arranger a;
+    a.setup_saveable_settings();
+    a.song_sections[0].time_signature = { 3, 4 };  // different from default 4/4
+    a.current_section = 0;
+
+    tick_bars(&a, 3);   // run the clock so ts_phase_offset != ticks
+    uint32_t phase_before = ts_phase_offset;
+
+    a.on_after_load();
+
+    TEST_ASSERT_EQUAL_UINT8(3, current_time_signature.numerator);
+    TEST_ASSERT_EQUAL_UINT8(4, current_time_signature.denominator);
+    // Phase must have been re-anchored (ts_phase_offset now equals ticks at load moment)
+    TEST_ASSERT_NOT_EQUAL(phase_before, ts_phase_offset);
+    TEST_ASSERT_EQUAL_UINT32(ticks, ts_phase_offset);
+}
+
 // ── Time signature tests ───────────────────────────────────────────────
 
 // change_section() applies the new section's time signature immediately.
@@ -519,8 +610,7 @@ void test_max_bars_larger_than_section_length() {
 void test_time_sig_applied_on_playlist_advance() {
     Arranger a;
     a.setup_saveable_settings();
-    a.set_playback_mode(Arranger::PLAYLIST);
-    a.advance_playlist = true;
+    a.set_playback_mode(Arranger::LOOP_PLAYLIST);
     a.song_sections[0].length         = 8;
     a.song_sections[0].bars_per_phrase = 4;
     a.song_sections[0].time_signature  = { 4, 4 };
@@ -548,8 +638,7 @@ void test_time_sig_applied_on_playlist_advance() {
 void test_time_sig_sequence_4_4_to_3_4_to_5_4() {
     Arranger a;
     a.setup_saveable_settings();
-    a.set_playback_mode(Arranger::PLAYLIST);
-    a.advance_playlist = true;
+    a.set_playback_mode(Arranger::LOOP_PLAYLIST);
 
     a.song_sections[0].length         = 8;
     a.song_sections[0].bars_per_phrase = 4;
@@ -595,8 +684,7 @@ void test_time_sig_sequence_4_4_to_3_4_to_5_4() {
 void test_ts_phase_offset_reset_on_section_change() {
     Arranger a;
     a.setup_saveable_settings();
-    a.set_playback_mode(Arranger::PLAYLIST);
-    a.advance_playlist = true;
+    a.set_playback_mode(Arranger::LOOP_PLAYLIST);
 
     a.song_sections[0].length        = 8;
     a.song_sections[0].time_signature = { 4, 4 };
@@ -624,8 +712,7 @@ void test_ts_phase_offset_reset_on_section_change() {
 void test_bar_counting_in_3_4() {
     Arranger a;
     a.setup_saveable_settings();
-    a.set_playback_mode(Arranger::PLAYLIST);
-    a.advance_playlist = true;
+    a.set_playback_mode(Arranger::LOOP_PLAYLIST);
     a.song_sections[0].length         = 8;
     a.song_sections[0].bars_per_phrase = 4;
     a.song_sections[0].time_signature  = { 3, 4 };
@@ -672,6 +759,11 @@ int main(int /*argc*/, char** /*argv*/) {
     RUN_TEST(test_two_repeats_standard_section);
     RUN_TEST(test_max_bars_smaller_than_bars_per_phrase);
     RUN_TEST(test_max_bars_larger_than_section_length);
+    RUN_TEST(test_loop_bar_mode_freezes_bar);
+    RUN_TEST(test_mode_switch_resets_bar_count);
+    RUN_TEST(test_after_load_resets_bar_count);
+    RUN_TEST(test_after_load_no_phase_disruption_same_ts);
+    RUN_TEST(test_after_load_reanchors_phase_on_ts_change);
     RUN_TEST(test_time_sig_applied_on_playlist_advance);
     RUN_TEST(test_time_sig_sequence_4_4_to_3_4_to_5_4);
     RUN_TEST(test_ts_phase_offset_reset_on_section_change);
