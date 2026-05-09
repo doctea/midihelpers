@@ -677,13 +677,13 @@ private:
         if (_chord_sink_cb) {
             _chord_sink_cb(chord, requantise);
         }
-        for (uint8_t i = 0; i < _chord_cbs.size(); i++)
-            _chord_cbs.get(i)(chord, requantise);
+        for (auto& cb : _chord_cbs)
+            cb(chord, requantise);
     }
 
     void notify_section_changed(int8_t section) {
-        for (uint8_t i = 0; i < _section_cbs.size(); i++)
-            _section_cbs.get(i)(section);
+        for (auto& cb : _section_cbs)
+            cb(section);
     }
 };
 

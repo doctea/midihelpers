@@ -311,8 +311,7 @@ public:
         LinkedList<time_sig_change_cb_t> _time_sig_callbacks;
 
         void notify_time_sig_changed(time_sig_t ts) {
-            for (uint8_t i = 0; i < _time_sig_callbacks.size(); i++)
-                _time_sig_callbacks.get(i)(ts);
+            for (auto& cb : _time_sig_callbacks) cb(ts);
         }
     #endif // ENABLE_TIME_SIGNATURE
 
@@ -324,8 +323,7 @@ public:
         LinkedList<harmony_change_cb_t> _harmony_callbacks;
 
         void notify_harmony_changed() {
-            for (uint8_t i = 0; i < _harmony_callbacks.size(); i++)
-                _harmony_callbacks.get(i)(global_scale_identity, global_chord_identity);
+            for (auto& cb : _harmony_callbacks) cb(global_scale_identity, global_chord_identity);
         }
     #endif
 };
