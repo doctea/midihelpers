@@ -423,6 +423,7 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
 
     // Playlist page: shared-bar pattern — 16 lightweight switcher items + ONE shared editor bar.
     menu->add_page("Playlist", colour, true);
+    menu->remember_opened_page(-1, true);
     menu->set_page_header("## Section Rep Max  ");
     {
         for (int i = 0; i < NUM_PLAYLIST_SLOTS; i++) {

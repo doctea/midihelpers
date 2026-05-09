@@ -45,8 +45,11 @@ void Conductor::make_menu_items(Menu *menu, conductor_menu_options_t options) {
             menu->add(new TimeSignatureIndicator());
         #endif
 
+        menu->remember_opened_page(-1, true);
+
         if (!(options & COMBINE_HARMONY_WITH_TIME_SIG)) {
             menu->add_page("Harmony", C_WHITE, false);
+            menu->remember_opened_page(-1, true);
         }
 
         #ifdef ENABLE_SCALES
