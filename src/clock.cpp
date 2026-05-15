@@ -245,18 +245,22 @@ void set_clock_mode_changed_callback(void(*callback)(ClockMode old_mode, ClockMo
       return false;
 
     if (cv_clock_reset) {
+      // Serial.printf("check_and_unset_cv_clock_ticked: Received CV reset pulse during tick %u\n", ticks);
       cv_clock_reset = false;
       // if we got a reset signal on the CV input, reset the clock and notify the UI
       clock_reset();
       // if (__global_restart_callback!=nullptr)
       //     __global_restart_callback();
-      // return false; // return early so that the tick that came in on the reset pulse doesn't also trigger a clock tick
+      return false; // return early so that the tick that came in on the reset pulse doesn't also trigger a clock tick
     }
 
     // use a callback to do the actual check on whether input is high
     bool v = check_cv_clock_ticked_callback();
-    if (v)
+    if (v) {
+      // Serial.printf("check_and_unset_cv_clock_ticked: Received CV clock pulse during tick %u\n", ticks);
       cv_clock_ticked = true;
+      uClock.clockMe(); 
+    }
 
     bool retval = cv_clock_ticked;
     cv_clock_ticked = false;
@@ -297,7 +301,8 @@ bool update_clock_ticks() {
     else if (clock_mode==CLOCK_EXTERNAL_CV && check_and_unset_cv_clock_ticked()) {
       //ticks += external_cv_ticks_per_pulse;
       // Serial.println("CV clock ticked!");
-      uClock.clockMe();
+      // uClock.clockMe();
+      // ticks++;
 
       return true;
     }
@@ -408,7 +413,7 @@ void clock_reset() {
       uClock.resetCounters();
     #endif
     
-    ticks = 0;
+    // ticks = 0;
     #ifdef ENABLE_TIME_SIGNATURE
       ts_phase_offset = 0;
     #endif
