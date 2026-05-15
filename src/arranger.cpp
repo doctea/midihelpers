@@ -3,10 +3,10 @@
 #include "arranger.h"
 
 #ifdef ENABLE_ARRANGER
-Arranger *arranger = nullptr;
-#endif
+    Arranger *arranger = nullptr;
 
-playlist_t* get_default_playlist() {
-    static playlist_t default_playlist;
-    return &default_playlist;
-}
+    playlist_t* get_default_playlist() {
+        static playlist_t default_playlist;
+        return &default_playlist;
+    }
+#endif
