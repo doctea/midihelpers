@@ -131,6 +131,33 @@ class ExternalPPQNSelectorControl : public SelectorControl<int> {
             this->available_values = (int*)available_ppqn_values;
             this->num_values = 11;
         };
+
+    const char *get_clock_mode_label() {
+        #ifdef ENABLE_CLOCK_INPUT_CV
+            if (clock_mode==CLOCK_EXTERNAL_CV) {
+                return "External CV";
+            } else 
+        #endif
+
+        if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
+            return "External USB-MIDI";
+        } else if (clock_mode==CLOCK_INTERNAL) {
+            return "Internal";
+        } else {
+            return "N/A";
+        }
+    }
+
+    virtual const char *get_label() override {
+        static char label[50];
+        static int last_clock_mode = -1;
+        if (clock_mode != last_clock_mode) {
+            last_clock_mode = clock_mode;
+            snprintf(label, 49, "%s (%s)", SelectorControl<int>::get_label(), get_clock_mode_label());
+        }        
+        return label;
+    }
+
     virtual const char* get_label_for_index(int index) {
         switch(index) {
             case umodular::clock::uClockClass::PPQN_1:   return "1 PPQN";
@@ -147,7 +174,7 @@ class ExternalPPQNSelectorControl : public SelectorControl<int> {
             default: return "??";
         }
     }
-    virtual void setter (int new_value) {
+    virtual void setter (int new_value) override {
         // Serial.printf("ExternalPPQNSelectorControl::setter(%i)\n", new_value);
         #ifdef ENABLE_CLOCK_INPUT_CV
         if (clock_mode==CLOCK_EXTERNAL_CV) {
@@ -156,7 +183,11 @@ class ExternalPPQNSelectorControl : public SelectorControl<int> {
             uClock.setInputPPQN(external_cv_ppqn);
         } else 
         #endif
-        if (clock_mode==CLOCK_INTERNAL) {
+        if (clock_mode==CLOCK_EXTERNAL_USB_HOST || clock_mode==CLOCK_EXTERNAL_MIDI_DIN) {
+            internal_ppqn = (umodular::clock::uClockClass::PPQNResolution) new_value;
+            messages_log_add("Set external MIDI PPQN");
+            uClock.setInputPPQN(internal_ppqn);
+        } else if (clock_mode==CLOCK_INTERNAL) {
             internal_ppqn = (umodular::clock::uClockClass::PPQNResolution) new_value;
             messages_log_add("Set internal PPQN");
             uClock.setInputPPQN(internal_ppqn);
@@ -164,15 +195,18 @@ class ExternalPPQNSelectorControl : public SelectorControl<int> {
             messages_log_add("Cannot set PPQN unless clock mode is internal or external CV");
         }
     }
-    virtual int getter () {
+    virtual int getter () override {
         #ifdef ENABLE_CLOCK_INPUT_CV
         if (clock_mode==CLOCK_EXTERNAL_CV) {
+            // Serial.printf("ExternalPPQNSelectorControl::getter() - clock_mode=%i, returning external_cv_ppqn=%i\n", clock_mode, external_cv_ppqn);
             return external_cv_ppqn;
         } else 
         #endif
-        if (clock_mode==CLOCK_INTERNAL) {
+        if (clock_mode==CLOCK_INTERNAL || clock_mode==CLOCK_EXTERNAL_USB_HOST || clock_mode==CLOCK_EXTERNAL_MIDI_DIN) {
+            // Serial.printf("ExternalPPQNSelectorControl::getter() - clock_mode=%i, returning internal_ppqn=%i\n", clock_mode, internal_ppqn);
             return internal_ppqn;
         }
+        // Serial.printf("ExternalPPQNSelectorControl::getter() - clock_mode=%i, returning DEFAULT_CV_PPQN=%i\n", clock_mode, DEFAULT_CV_PPQN);
         return DEFAULT_CV_PPQN;
     }
 };

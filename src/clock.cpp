@@ -413,7 +413,7 @@ void clock_reset() {
       uClock.resetCounters();
     #endif
     
-    // ticks = 0;
+    ticks = 0;
     #ifdef ENABLE_TIME_SIGNATURE
       ts_phase_offset = 0;
     #endif
@@ -438,7 +438,7 @@ void change_clock_mode(ClockMode new_mode) {
       {
         bool was_playing = playing;
 
-        if (new_mode==ClockMode::CLOCK_INTERNAL) {
+        if (new_mode==ClockMode::CLOCK_INTERNAL || new_mode==CLOCK_EXTERNAL_USB_HOST || new_mode==CLOCK_EXTERNAL_MIDI_DIN) {
           internal_ppqn = DEFAULT_INTERNAL_PPQN;
           uClock.setInputPPQN(internal_ppqn); //umodular::clock::uClockClass::PPQNResolution::PPQN_24);
           uClock.setClockMode(uClock.ClockMode::INTERNAL_CLOCK);
