@@ -84,20 +84,13 @@ void pc_usb_midi_handle_clock() {
       tap_tempo_tracker.push_beat();
   }*/
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
-    #ifdef USE_UCLOCK
-    // If the user pressed Start/Continue but uClock's internal timer has not
-    // yet been armed (uClock is still PAUSED or STOPED), transition it to
-    // STARTED now so that sync callbacks begin firing from this first pulse.
-    if (uClock.clock_state == umodular::clock::uClockClass::ClockState::PAUSED) {
-      uClock.pause(); // PAUSED -> STARTED (INTERNAL_CLOCK mode)
-    } else if (uClock.clock_state == umodular::clock::uClockClass::ClockState::STOPED) {
-      uClock.start(); // STOPED -> STARTED
-    }
-    #endif
-    waiting_for_external_clock = false; // first pulse received — no longer waiting
+    waiting_for_external_clock = false; // first pulse received
     last_usb_midi_clock_ticked_at = millis();
     usb_midi_clock_ticked = true;
     #ifdef USE_UCLOCK
+      // In EXTERNAL_CLOCK mode clockMe() drives the state machine
+      // (STARTING -> SYNCING -> STARTED) and feeds the interval buffer
+      // that handleInternalClock() uses to sync the timer speed.
       uClock.clockMe();
     #endif
   }
@@ -362,18 +355,12 @@ void clock_start() {
   #endif
   {
     #ifdef USE_UCLOCK
-      if (clock_mode == CLOCK_EXTERNAL_USB_HOST) {
-        // In external USB host mode, set playing so the system is "armed" and
-        // recognisable as started, but do NOT start the internal uClock timer.
-        // It will be armed when the first external clock pulse arrives in
-        // pc_usb_midi_handle_clock().
+      // uClock.start() resets counters and transitions to STARTING (EXTERNAL_CLOCK)
+      // or STARTED (INTERNAL_CLOCK).  For CLOCK_EXTERNAL_USB_HOST we are now in
+      // EXTERNAL_CLOCK mode, so the ISR returns early until clockMe() drives the
+      // state through SYNCING -> STARTED after enough pulses arrive.
+      if (clock_mode == CLOCK_EXTERNAL_USB_HOST)
         waiting_for_external_clock = true;
-        clock_set_playing(true);
-        return;
-      }
-      // Always call uClock.start() -- it resets counters and puts the clock into
-      // STARTING state (for external) or STARTED (for internal), which is exactly
-      // what a MIDI START requires.
       uClock.start();
     #endif
 
@@ -396,12 +383,15 @@ void clock_stop() {
     clock_set_playing(false);
 
     #ifdef USE_UCLOCK
-      // Only pause uClock when it is actively running.  Calling uClock.pause()
-      // on an already-PAUSED clock would toggle it back to STARTED, which is
-      // wrong (e.g. user pressed Stop while still waiting for the first external
-      // clock pulse, leaving uClock in PAUSED state).
-      if (uClock.clock_state == umodular::clock::uClockClass::ClockState::STARTED) {
-        uClock.pause(); // STARTED -> PAUSED, preserving song position
+      // STARTED -> PAUSED preserves song position so that clock_continue() can resume.
+      // STARTING/SYNCING have no meaningful position yet; use stop() for a clean abort.
+      // Do not call pause() on PAUSED (it would toggle back to STARTING).
+      auto cs = uClock.clock_state;
+      if (cs == umodular::clock::uClockClass::ClockState::STARTED) {
+        uClock.pause(); // STARTED -> PAUSED (preserves position)
+      } else if (cs == umodular::clock::uClockClass::ClockState::STARTING ||
+                 cs == umodular::clock::uClockClass::ClockState::SYNCING) {
+        uClock.stop(); // abort sync-in-progress -> STOPED
       }
     #endif
   }
@@ -413,24 +403,13 @@ void clock_continue() {
   #endif
   {
     #ifdef USE_UCLOCK
-      if (clock_mode == CLOCK_EXTERNAL_USB_HOST) {
-        // In external USB host mode, mark as playing so the system is "armed"
-        // but do NOT transition uClock to STARTED yet.  The internal timer is
-        // armed when the first external clock pulse arrives.
+      if (clock_mode == CLOCK_EXTERNAL_USB_HOST)
         waiting_for_external_clock = true;
-        clock_set_playing(true);
-        return;
-      }
-      // uClock.pause() is a STARTED<->PAUSED toggle.
-      // After clock_stop() the state should be PAUSED, so calling pause() again
-      // will un-pause correctly (to STARTED for internal, STARTING for external).
-      // If somehow in STOPED state (e.g. never played), force STARTING so that
-      // incoming external clock pulses will bring us to life without resetting.
+      // uClock.pause() toggles PAUSED -> STARTING (EXTERNAL_CLOCK) or STARTED (INTERNAL_CLOCK).
+      // If somehow in STOPED state (e.g. CONTINUE before first START), use start() instead.
       if (uClock.clock_state == umodular::clock::uClockClass::ClockState::PAUSED) {
-        uClock.pause(); // un-pause: PAUSED -> STARTED/STARTING
+        uClock.pause(); // PAUSED -> STARTING/STARTED
       } else if (uClock.clock_state == umodular::clock::uClockClass::ClockState::STOPED) {
-        // Never been started (e.g. CONTINUE received before first START).
-        // Counters are already at zero, so start() is safe and correct here.
         uClock.start();
       }
       // If already STARTED/STARTING/SYNCING: nothing to do.
@@ -478,7 +457,7 @@ void change_clock_mode(ClockMode new_mode) {
       {
         bool was_playing = playing;
 
-        if (new_mode==ClockMode::CLOCK_INTERNAL || new_mode==CLOCK_EXTERNAL_USB_HOST || new_mode==CLOCK_EXTERNAL_MIDI_DIN) {
+        if (new_mode==ClockMode::CLOCK_INTERNAL || new_mode==CLOCK_EXTERNAL_MIDI_DIN) {
           internal_ppqn = DEFAULT_INTERNAL_PPQN;
           uClock.setInputPPQN(internal_ppqn); //umodular::clock::uClockClass::PPQNResolution::PPQN_24);
           uClock.setClockMode(uClock.ClockMode::INTERNAL_CLOCK);
