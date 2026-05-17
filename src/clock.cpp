@@ -64,8 +64,14 @@ void messages_log_add(String msg);
 
 volatile bool usb_midi_clock_ticked = false;
 volatile unsigned long last_usb_midi_clock_ticked_at;
+
+// Armed-but-waiting flag: set when the user presses Start/Play in an external
+// clock mode but no pulse has arrived yet.  Cleared when the first incoming
+// clock pulse triggers actual playback (or when stopped / mode changed).
+volatile bool waiting_for_external_clock = false;
+
 void pc_usb_midi_handle_clock() {
-  if(!playing)
+  if (!playing)
     return;
 
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST && usb_midi_clock_ticked) {
@@ -78,6 +84,17 @@ void pc_usb_midi_handle_clock() {
       tap_tempo_tracker.push_beat();
   }*/
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
+    #ifdef USE_UCLOCK
+    // If the user pressed Start/Continue but uClock's internal timer has not
+    // yet been armed (uClock is still PAUSED or STOPED), transition it to
+    // STARTED now so that sync callbacks begin firing from this first pulse.
+    if (uClock.clock_state == umodular::clock::uClockClass::ClockState::PAUSED) {
+      uClock.pause(); // PAUSED -> STARTED (INTERNAL_CLOCK mode)
+    } else if (uClock.clock_state == umodular::clock::uClockClass::ClockState::STOPED) {
+      uClock.start(); // STOPED -> STARTED
+    }
+    #endif
+    waiting_for_external_clock = false; // first pulse received — no longer waiting
     last_usb_midi_clock_ticked_at = millis();
     usb_midi_clock_ticked = true;
     #ifdef USE_UCLOCK
@@ -345,6 +362,15 @@ void clock_start() {
   #endif
   {
     #ifdef USE_UCLOCK
+      if (clock_mode == CLOCK_EXTERNAL_USB_HOST) {
+        // In external USB host mode, set playing so the system is "armed" and
+        // recognisable as started, but do NOT start the internal uClock timer.
+        // It will be armed when the first external clock pulse arrives in
+        // pc_usb_midi_handle_clock().
+        waiting_for_external_clock = true;
+        clock_set_playing(true);
+        return;
+      }
       // Always call uClock.start() -- it resets counters and puts the clock into
       // STARTING state (for external) or STARTED (for internal), which is exactly
       // what a MIDI START requires.
@@ -366,13 +392,17 @@ void clock_stop() {
         clock_reset();
       }
     #endif
+    waiting_for_external_clock = false; // cancel any armed-but-waiting state
     clock_set_playing(false);
 
     #ifdef USE_UCLOCK
-      // Pause uClock (STARTED -> PAUSED), preserving song position.
-      // This leaves uClock in PAUSED state so that clock_continue() can
-      // cleanly un-pause via the same toggle without needing a full restart.
-      uClock.pause();
+      // Only pause uClock when it is actively running.  Calling uClock.pause()
+      // on an already-PAUSED clock would toggle it back to STARTED, which is
+      // wrong (e.g. user pressed Stop while still waiting for the first external
+      // clock pulse, leaving uClock in PAUSED state).
+      if (uClock.clock_state == umodular::clock::uClockClass::ClockState::STARTED) {
+        uClock.pause(); // STARTED -> PAUSED, preserving song position
+      }
     #endif
   }
 }
@@ -383,6 +413,14 @@ void clock_continue() {
   #endif
   {
     #ifdef USE_UCLOCK
+      if (clock_mode == CLOCK_EXTERNAL_USB_HOST) {
+        // In external USB host mode, mark as playing so the system is "armed"
+        // but do NOT transition uClock to STARTED yet.  The internal timer is
+        // armed when the first external clock pulse arrives.
+        waiting_for_external_clock = true;
+        clock_set_playing(true);
+        return;
+      }
       // uClock.pause() is a STARTED<->PAUSED toggle.
       // After clock_stop() the state should be PAUSED, so calling pause() again
       // will un-pause correctly (to STARTED for internal, STARTING for external).
@@ -409,6 +447,7 @@ void clock_reset() {
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) 
   #endif
   {
+    waiting_for_external_clock = false;
     #ifdef USE_UCLOCK
       uClock.resetCounters();
     #endif
@@ -430,6 +469,7 @@ void change_clock_mode(ClockMode new_mode) {
   if(clock_mode!=new_mode) {
     if(__clock_mode_changed_callback!=nullptr)
       __clock_mode_changed_callback(clock_mode, new_mode);
+    waiting_for_external_clock = false; // cancel any armed-but-waiting state from the old mode
     
     #ifdef USE_UCLOCK
       #ifdef USE_ATOMIC

@@ -82,3 +82,8 @@ void clock_start();
 void clock_stop();
 void clock_continue();
 void clock_set_playing(bool p);
+
+// True when the user has pressed Start/Play in an external clock mode but no
+// external clock pulse has been received yet.  The sequencer stays paused until
+// the first incoming clock pulse arrives and transitions us to actually playing.
+extern volatile bool waiting_for_external_clock;
