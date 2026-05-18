@@ -183,7 +183,14 @@ class ExternalPPQNSelectorControl : public SelectorControl<int> {
             uClock.setInputPPQN(external_cv_ppqn);
         } else 
         #endif
-        if (clock_mode==CLOCK_EXTERNAL_USB_HOST || clock_mode==CLOCK_EXTERNAL_MIDI_DIN) {
+        #ifdef ENABLE_CLOCK_INPUT_MIDI_DIN
+        if (clock_mode==CLOCK_EXTERNAL_MIDI_DIN) {
+            internal_ppqn = (umodular::clock::uClockClass::PPQNResolution) new_value;
+            messages_log_add("Set external MIDI PPQN");
+            uClock.setInputPPQN(internal_ppqn);
+        } else
+        #endif
+        if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
             internal_ppqn = (umodular::clock::uClockClass::PPQNResolution) new_value;
             messages_log_add("Set external MIDI PPQN");
             uClock.setInputPPQN(internal_ppqn);
@@ -202,7 +209,13 @@ class ExternalPPQNSelectorControl : public SelectorControl<int> {
             return external_cv_ppqn;
         } else 
         #endif
-        if (clock_mode==CLOCK_INTERNAL || clock_mode==CLOCK_EXTERNAL_USB_HOST || clock_mode==CLOCK_EXTERNAL_MIDI_DIN) {
+        if (
+            clock_mode==CLOCK_INTERNAL 
+            || clock_mode==CLOCK_EXTERNAL_USB_HOST 
+            #ifdef ENABLE_CLOCK_INPUT_MIDI_DIN
+            || clock_mode==CLOCK_EXTERNAL_MIDI_DIN
+            #endif
+        ) {
             // Serial.printf("ExternalPPQNSelectorControl::getter() - clock_mode=%i, returning internal_ppqn=%i\n", clock_mode, internal_ppqn);
             return internal_ppqn;
         }
