@@ -885,8 +885,8 @@ class LambdaScaleNoteMenuItem : public LambdaNumberControl<DataType> {
         setter_func_def setter_func,
         getter_func_def getter_func,
         void (*on_change_handler)(DataType last_value, DataType new_value),
-        DataType minimumDataValue,
-        DataType maximumDataValue,
+        DataType minimumDataValue = 0,
+        DataType maximumDataValue = MIDI_MAX_NOTE,
         bool go_back_on_select = false,
         bool direct = false
     ) : LambdaNumberControl<DataType>(label, setter_func, getter_func, on_change_handler, minimumDataValue, maximumDataValue, go_back_on_select, direct) 
