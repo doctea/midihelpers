@@ -329,9 +329,9 @@ class ChordPlayer
     #ifdef ENABLE_SCREEN
         // for caching available_values to save a bit of RAM
         #if __cplusplus >= 201703L
-            inline static LinkedList<LambdaSelectorControl<CHORD::Type>::option> *chord_type_control_options;
+            inline static OptionList<LambdaSelectorControl<CHORD::Type>::option> *chord_type_control_options;
         #else
-            static LinkedList<LambdaSelectorControl<CHORD::Type>::option> *chord_type_control_options;
+            static OptionList<LambdaSelectorControl<CHORD::Type>::option> *chord_type_control_options;
         #endif
 
         FLASHMEM

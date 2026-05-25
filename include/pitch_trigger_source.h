@@ -178,13 +178,13 @@ public:
 
 #ifdef ENABLE_SCREEN
     #if __cplusplus >= 201703L
-        inline static LinkedList<LambdaSelectorControl<int32_t>::option> *length_ticks_control_options;
-        inline static LinkedList<LambdaSelectorControl<int32_t>::option> *trigger_ticks_control_options;
-        inline static LinkedList<LambdaSelectorControl<int32_t>::option> *trigger_delay_ticks_control_options;
+        inline static OptionList<LambdaSelectorControl<int32_t>::option> *length_ticks_control_options;
+        inline static OptionList<LambdaSelectorControl<int32_t>::option> *trigger_ticks_control_options;
+        inline static OptionList<LambdaSelectorControl<int32_t>::option> *trigger_delay_ticks_control_options;
     #else
-        static LinkedList<LambdaSelectorControl<int32_t>::option> *length_ticks_control_options;
-        static LinkedList<LambdaSelectorControl<int32_t>::option> *trigger_ticks_control_options;
-        static LinkedList<LambdaSelectorControl<int32_t>::option> *trigger_delay_ticks_control_options;
+        static OptionList<LambdaSelectorControl<int32_t>::option> *length_ticks_control_options;
+        static OptionList<LambdaSelectorControl<int32_t>::option> *trigger_ticks_control_options;
+        static OptionList<LambdaSelectorControl<int32_t>::option> *trigger_delay_ticks_control_options;
     #endif
 
     FLASHMEM

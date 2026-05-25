@@ -60,7 +60,7 @@ volatile uint32_t last_ticked_at_micros = micros();
   }
 #endif
 
-void messages_log_add(String msg);
+void messages_log_add(const char* msg);
 
 volatile bool usb_midi_clock_ticked = false;
 volatile unsigned long last_usb_midi_clock_ticked_at;

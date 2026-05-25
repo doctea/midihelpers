@@ -22,7 +22,7 @@
 //   ));
 class SongSectionSelectorItem : public LambdaSelectorControl<int8_t> {
 public:
-    static LinkedList<LambdaSelectorControl<int8_t>::option> *song_section_options;
+    static OptionList<LambdaSelectorControl<int8_t>::option> *song_section_options;
 
     SongSectionSelectorItem(
         const char *label,

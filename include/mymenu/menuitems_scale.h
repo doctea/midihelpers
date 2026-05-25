@@ -166,8 +166,8 @@ class ObjectScaleMenuItem : public ScaleMenuItem {
 
 template<class TargetClass>
 class ObjectScaleMenuItemBar : public SubMenuItemBar {
-    static LinkedList<ObjectSelectorControl<TargetClass,int>> *scale_root_options = nullptr;
-    static LinkedList<ObjectSelectorControl<TargetClass,int>> *scale_selector_options = nullptr;
+    static OptionList<typename ObjectSelectorControl<TargetClass,int>::option> *scale_root_options;
+    static OptionList<typename ObjectSelectorControl<TargetClass,int>::option> *scale_selector_options;
 
     public:
     TargetClass *target_object = nullptr;
@@ -248,6 +248,11 @@ class ObjectScaleMenuItemBar : public SubMenuItemBar {
         this->add(scale_selector);
     }
 };
+
+template<class TargetClass>
+OptionList<typename ObjectSelectorControl<TargetClass,int>::option>* ObjectScaleMenuItemBar<TargetClass>::scale_root_options = nullptr;
+template<class TargetClass>
+OptionList<typename ObjectSelectorControl<TargetClass,int>::option>* ObjectScaleMenuItemBar<TargetClass>::scale_selector_options = nullptr;
 
 
 #include "functional-vlpp.h"
@@ -513,36 +518,36 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
 
         // choose which set of options to use (creating if necessary)
 
-        static LinkedList<LambdaSelectorControl<scale_index_t>::option> *scale_selector_options_with_global;
-        static LinkedList<LambdaSelectorControl<scale_index_t>::option> *scale_selector_options_no_global;
-        static LinkedList<LambdaSelectorControl<int8_t>::option> *scale_root_options_with_global;
-        static LinkedList<LambdaSelectorControl<int8_t>::option> *scale_root_options_no_global;
+        static OptionList<LambdaSelectorControl<scale_index_t>::option> *scale_selector_options_with_global;
+        static OptionList<LambdaSelectorControl<scale_index_t>::option> *scale_selector_options_no_global;
+        static OptionList<LambdaSelectorControl<int8_t>::option> *scale_root_options_with_global;
+        static OptionList<LambdaSelectorControl<int8_t>::option> *scale_root_options_no_global;
     
-        LinkedList<LambdaSelectorControl<int8_t>::option> *scale_root_options = nullptr;
-        LinkedList<LambdaSelectorControl<scale_index_t>::option> *scale_selector_options = nullptr;
+        OptionList<LambdaSelectorControl<int8_t>::option> *scale_root_options = nullptr;
+        OptionList<LambdaSelectorControl<scale_index_t>::option> *scale_selector_options = nullptr;
 
         if (allow_global) {
             // first, versions with 'global' as an option
             if (scale_root_options_with_global==nullptr) {
-                scale_root_options_with_global = new LinkedList<LambdaSelectorControl<int8_t>::option>();
+                scale_root_options_with_global = new OptionList<LambdaSelectorControl<int8_t>::option>();
                 scale_root_options_with_global->add(LambdaSelectorControl<int8_t>::option {SCALE_GLOBAL_ROOT, "[global]"});
             }
             scale_root_options = scale_root_options_with_global;
 
             if (scale_selector_options_with_global==nullptr) {
-                scale_selector_options_with_global = new LinkedList<LambdaSelectorControl<scale_index_t>::option>();
+                scale_selector_options_with_global = new OptionList<LambdaSelectorControl<scale_index_t>::option>();
                 scale_selector_options_with_global->add(LambdaSelectorControl<scale_index_t>::option {SCALE_GLOBAL, "[global]"});
             }
             scale_selector_options = scale_selector_options_with_global;
         } else {
             // then versions without 'global' as an option
             if (scale_root_options_no_global==nullptr) {
-                scale_root_options_no_global = new LinkedList<LambdaSelectorControl<int8_t>::option>();
+                scale_root_options_no_global = new OptionList<LambdaSelectorControl<int8_t>::option>();
             }
             scale_root_options = scale_root_options_no_global;
 
             if (scale_selector_options_no_global==nullptr) {
-                scale_selector_options_no_global = new LinkedList<LambdaSelectorControl<scale_index_t>::option>();
+                scale_selector_options_no_global = new OptionList<LambdaSelectorControl<scale_index_t>::option>();
             }
             scale_selector_options = scale_selector_options_no_global;            
         }
@@ -909,9 +914,9 @@ class LambdaQuantiseModeControl : public LambdaSelectorControl<int8_t> {
         bool go_back_on_select = true,
         bool direct = true
     ) : LambdaSelectorControl<int8_t>(label, setter_func, getter_func, nullptr, go_back_on_select, direct) {
-        static LinkedList<LambdaSelectorControl<int8_t>::option> *quantise_mode_options = nullptr;
+        static OptionList<LambdaSelectorControl<int8_t>::option> *quantise_mode_options = nullptr;
         if (quantise_mode_options == nullptr) {
-            quantise_mode_options = new LinkedList<LambdaSelectorControl<int8_t>::option>();
+            quantise_mode_options = new OptionList<LambdaSelectorControl<int8_t>::option>();
             quantise_mode_options->add(LambdaSelectorControl<int8_t>::option { (int8_t)QUANTISE_MODE_NONE,  "Off"   });
             quantise_mode_options->add(LambdaSelectorControl<int8_t>::option { (int8_t)QUANTISE_MODE_SCALE, "Scale" });
             quantise_mode_options->add(LambdaSelectorControl<int8_t>::option { (int8_t)QUANTISE_MODE_CHORD, "Chord" });

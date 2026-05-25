@@ -13,7 +13,7 @@
 #include "mymenu/menuitem_song_section.h"
 
 // Out-of-class definition for SongSectionSelectorItem's shared options list
-LinkedList<LambdaSelectorControl<int8_t>::option> *SongSectionSelectorItem::song_section_options = nullptr;
+OptionList<LambdaSelectorControl<int8_t>::option> *SongSectionSelectorItem::song_section_options = nullptr;
 
 // Direct-read playlist row widget. my_slot is fixed at construction; each playlist
 // slot gets its own instance so scroll can start at any row without stale-slot bugs.

@@ -10,7 +10,7 @@ template<class DataType = NOTE_LIMIT_MODE>
 class NoteLimitModeControl : public LambdaSelectorControl<DataType> {
     public:
 
-    static LinkedList<typename LambdaSelectorControl<DataType>::option> *note_limit_mode_options;
+    static OptionList<typename LambdaSelectorControl<DataType>::option> *note_limit_mode_options;
 
     NoteLimitModeControl(
         const char* label, 
@@ -41,4 +41,4 @@ class NoteLimitModeControl : public LambdaSelectorControl<DataType> {
 };
 
 template<class DataType>
-LinkedList<typename LambdaSelectorControl<DataType>::option>* NoteLimitModeControl<DataType>::note_limit_mode_options = nullptr;
+OptionList<typename LambdaSelectorControl<DataType>::option>* NoteLimitModeControl<DataType>::note_limit_mode_options = nullptr;
