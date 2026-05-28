@@ -3,6 +3,6 @@
 #if defined(ENABLE_SCREEN) && defined(ENABLE_SCALES)
     // linker may need these static definitions; however C++17 allows `inline` in the class def instead
     #if __cplusplus < 201703L
-        LinkedList<LambdaSelectorControl<CHORD::Type>::option> *ChordPlayer::chord_type_control_options;
+        OptionList<LambdaSelectorControl<CHORD::Type>::option> *ChordPlayer::chord_type_control_options;
     #endif
 #endif
