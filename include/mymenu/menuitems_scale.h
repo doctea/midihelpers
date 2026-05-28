@@ -751,7 +751,7 @@ class LambdaChordSubMenuItemBarWithIndicator : public LambdaChordSubMenuItemBar 
 
     virtual int get_max_pixel_width(int item_number) override {
         // leave 1 character at the end for the indicator
-        return (unsigned int)item_number < this->items->size() -1 ? 
+        return (unsigned int)item_number < (unsigned int)(this->items->size() - 1) ? 
             (tft->width() - tft->characterWidth()) / 3 :
             tft->characterWidth()
             ;
@@ -833,7 +833,7 @@ class LambdaPlaylistSubMenuItemBarWithIndicator : public SubMenuItemBar {
 
     virtual int get_max_pixel_width(int item_number) override {
         // leave 1 character at the end for the indicator
-        return ((unsigned int)item_number) < this->items->size() -1 ? 
+        return ((unsigned int)item_number) < (unsigned int)(this->items->size() - 1) ? 
             (tft->width() - tft->characterWidth()) / 3 :
             tft->characterWidth()
             ;
