@@ -2,6 +2,7 @@
 
 #include "chord_player.h"
 #include "parameters/Parameter.h"
+#include "parameter_list.h"
 
 #ifdef ENABLE_SCALES
 
@@ -34,7 +35,7 @@ public:
 };
 
 inline void add_chord_modulation_parameters(
-    LinkedList<FloatParameter *> *parameters,
+    ParameterList *parameters,
     ChordPlayer *chord_player,
     const char *chord_type_label = "Chord Type",
     const char *inversion_label = "Inversion"
