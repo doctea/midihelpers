@@ -13,6 +13,7 @@ class LoopMarkerPanel : public PinnedPanelMenuItem {
     //int beats_per_bar = BEATS_PER_BAR;
     //int bars_per_phrase = BEATS_PER_BAR * BARS_PER_PHRASE;
     int ppqn;
+    bool last_playing_state = false;
 
     public:
         LoopMarkerPanel(int loop_length, int ppqn/*, int beats_per_bar = BEATS_PER_BAR, int bars_per_phrase = BARS_PER_PHRASE*/) : PinnedPanelMenuItem("Loop Position Header") {
@@ -20,7 +21,29 @@ class LoopMarkerPanel : public PinnedPanelMenuItem {
             // this->beats_per_bar = beats_per_bar;
             // this->bars_per_phrase = bars_per_phrase;
             this->ppqn = ppqn;
+            last_playing_state = playing;
+            #if MENU_SELECTIVE_STATIC_REDRAW
+                request_redraw();
+            #endif
         };
+
+        virtual void update_ticks(unsigned long ticks) override {
+            #if MENU_SELECTIVE_STATIC_REDRAW
+                if (this->ticks != ticks) {
+                    request_redraw();
+                }
+            #endif
+            this->ticks = ticks;
+        }
+
+        #if MENU_SELECTIVE_STATIC_REDRAW
+        virtual void refresh_redraw_state() override {
+            if (last_playing_state != playing) {
+                last_playing_state = playing;
+                request_redraw();
+            }
+        }
+        #endif
 
         void set_loop_length(unsigned long loop_length) {
             this->loop_length = loop_length;
