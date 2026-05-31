@@ -28,7 +28,7 @@ class TapTempoControl : public MenuItem {
             tft->printf("Sample size: [%i/%i]\n", taptempotracker->get_num_samples(), taptempotracker->get_max_sample_size());
             tft->println(taptempotracker->is_tracking()?"Sensing.." : "Tap to start!");
             for (int i = 0 ; i < taptempotracker->get_num_samples() ; i++) {
-                tft->printf("%i: %i\n", i, taptempotracker->get_history_gap(i));
+                tft->printf("%i: %u\n", i, taptempotracker->get_history_gap(i));
             }
 
             return tft->getCursorY();

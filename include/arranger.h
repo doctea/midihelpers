@@ -51,6 +51,18 @@ constexpr const char* get_section_name(int idx) {
     return names[idx];
 }
 
+constexpr const char* get_section_name_short(int idx) {
+    constexpr const char* const names[] = {
+        "Itr",
+        "Vs1", "Vs2", "Vs3",
+        "Bg1", "Bg2",
+        "Cr1", "Cr2", "Cr3",
+        "Otr"
+    };
+    if (idx < 0 || idx >= (int)(sizeof(names)/sizeof(names[0]))) return "???";
+    return names[idx];
+}
+
 constexpr int8_t get_section_idx_for_name(const char* name) {
     for (int i = 0; i < NUM_SONG_SECTIONS; i++) {
         if (strcmp(name, get_section_name(i)) == 0) return i;
