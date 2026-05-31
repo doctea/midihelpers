@@ -28,6 +28,15 @@
 #ifdef ENABLE_TIME_SIGNATURE
     #include <functional-vlpp.h>
     #include "menuitems_lambda_selector.h"
+
+    static const char *kTimesigNumeratorLabels[] = {
+        "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+        "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"
+    };
+    static const char *kTimesigDenominatorLabels[] = {
+        "2", "4", "6", "8", "10", "12", "14"
+    };
+
     // TimeSignatureIndicator — routes through conductor so changes trigger a single
     // notification and keep both this->time_signature and the global cache in sync.
     class TimeSignatureIndicator : public SubMenuItemBar {
@@ -40,7 +49,7 @@
                 nullptr, true, false
             );
             for (int i = 1; i < 21; i++)
-                timesig_numerator_control->add_available_value(i, (new String(i))->c_str());
+                timesig_numerator_control->add_available_value(i, kTimesigNumeratorLabels[i - 1]);
             this->add(timesig_numerator_control);
 
             LambdaSelectorControl<uint8_t> *timesig_denominator_control = new LambdaSelectorControl<uint8_t>(
@@ -50,7 +59,7 @@
                 nullptr, true, false
             );
             for (int i = 2; i < 16; i += 2)
-                timesig_denominator_control->add_available_value(i, (new String(i))->c_str());
+                timesig_denominator_control->add_available_value(i, kTimesigDenominatorLabels[(i / 2) - 1]);
             this->add(timesig_denominator_control);
         }
     };

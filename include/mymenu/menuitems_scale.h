@@ -501,6 +501,13 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
     vl::Func<void(int8_t)> scale_root_setter_func;
     vl::Func<int8_t(void)> scale_root_getter_func;
 
+    // Class-level statics shared across ALL instances to prevent duplication.
+    // Defined once in a .cpp so this works on older compilers too.
+    static OptionList<LambdaSelectorControl<scale_index_t>::option> *scale_selector_options_with_global;
+    static OptionList<LambdaSelectorControl<scale_index_t>::option> *scale_selector_options_no_global;
+    static OptionList<LambdaSelectorControl<int8_t>::option> *scale_root_options_with_global;
+    static OptionList<LambdaSelectorControl<int8_t>::option> *scale_root_options_no_global;
+
     LambdaScaleMenuItemBar(
         const char *label,
         vl::Func<void(scale_index_t)> scale_setter_func,
@@ -517,11 +524,6 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
         this->scale_root_getter_func = scale_root_getter_func;
 
         // choose which set of options to use (creating if necessary)
-
-        static OptionList<LambdaSelectorControl<scale_index_t>::option> *scale_selector_options_with_global;
-        static OptionList<LambdaSelectorControl<scale_index_t>::option> *scale_selector_options_no_global;
-        static OptionList<LambdaSelectorControl<int8_t>::option> *scale_root_options_with_global;
-        static OptionList<LambdaSelectorControl<int8_t>::option> *scale_root_options_no_global;
     
         OptionList<LambdaSelectorControl<int8_t>::option> *scale_root_options = nullptr;
         OptionList<LambdaSelectorControl<scale_index_t>::option> *scale_selector_options = nullptr;
