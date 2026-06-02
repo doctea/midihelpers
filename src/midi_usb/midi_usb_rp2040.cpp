@@ -40,20 +40,19 @@
     uint32_t get_din_midi_clock_output_divider() {
         return output_wrapper->get_din_midi_clock_output_divider();
     } 
+#endif
 
-    uint32_t external_cv_ticks_per_pulse_values[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24 };
-    #define NUM_EXTERNAL_CV_TICKS_VALUES (sizeof(external_cv_ticks_per_pulse_values)/sizeof(uint32_t))
-    #ifdef ENABLE_CLOCK_INPUT_CV
-        void set_external_cv_ticks_per_pulse_values(uint32_t new_value) {
-            external_cv_ticks_per_pulse = new_value;
-            //reset_clock();
-            ticks = 0;
-        }
-        uint32_t get_external_cv_ticks_per_pulse_values() {
-            return external_cv_ticks_per_pulse;
-        }
-    #endif
-
+uint32_t external_cv_ticks_per_pulse_values[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24 };
+#define NUM_EXTERNAL_CV_TICKS_VALUES (sizeof(external_cv_ticks_per_pulse_values)/sizeof(uint32_t))
+#ifdef ENABLE_CLOCK_INPUT_CV
+    void set_external_cv_ticks_per_pulse_values(uint32_t new_value) {
+        external_cv_ticks_per_pulse = new_value;
+        //reset_clock();
+        ticks = 0;
+    }
+    uint32_t get_external_cv_ticks_per_pulse_values() {
+        return external_cv_ticks_per_pulse;
+    }
 #endif
 
 #ifdef USE_TINYUSB
@@ -206,12 +205,14 @@ void setup_midi() {
                 (new String(external_cv_ticks_per_pulse_values[i]))->c_str()
             );
         }*/
-        SelectorControl<uint32_t> *din_midi_clock_output_divider = new SelectorControl<uint32_t>("DIN MIDI: clock divider");
-        din_midi_clock_output_divider->available_values = external_cv_ticks_per_pulse_values;
-        din_midi_clock_output_divider->num_values = NUM_EXTERNAL_CV_TICKS_VALUES;
-        din_midi_clock_output_divider->f_setter = ::set_din_midi_clock_output_divider;
-        din_midi_clock_output_divider->f_getter = ::get_din_midi_clock_output_divider;
-        menu->add(din_midi_clock_output_divider);
+        #ifdef USE_DINMIDI
+            SelectorControl<uint32_t> *din_midi_clock_output_divider = new SelectorControl<uint32_t>("DIN MIDI: clock divider");
+            din_midi_clock_output_divider->available_values = external_cv_ticks_per_pulse_values;
+            din_midi_clock_output_divider->num_values = NUM_EXTERNAL_CV_TICKS_VALUES;
+            din_midi_clock_output_divider->f_setter = ::set_din_midi_clock_output_divider;
+            din_midi_clock_output_divider->f_getter = ::get_din_midi_clock_output_divider;
+            menu->add(din_midi_clock_output_divider);
+        #endif
     }
 #endif
 
