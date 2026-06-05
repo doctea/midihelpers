@@ -335,6 +335,7 @@ class ChordPlayer
         #endif
 
         FLASHMEM
+        // TODO: convert to MenuItemList*
         LinkedList<MenuItem *> *make_menu_items(LinkedList<MenuItem *> *menuitems = nullptr) {
             if (menuitems==nullptr)
                 menuitems = new LinkedList<MenuItem *>();

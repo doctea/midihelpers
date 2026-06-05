@@ -129,6 +129,7 @@ class HarmonyDisplay : public MenuItem {
         this->scale_root = scale_root;
         this->current_note = current_note;
         this->quantise_mode = quantise_mode;
+        this->add_redraw_policy(REDRAW_ON_CUSTOM); 
     }
 
     HarmonyDisplay(const char *label, scale_index_t *scale_number, int_fast8_t *scale_root, int8_t *current_note, quantise_mode_t *quantise_mode, chord_identity_t *current_chord_identity = nullptr, bool show_header = true) 
@@ -145,6 +146,37 @@ class HarmonyDisplay : public MenuItem {
         bool show_header = true
     ) : HarmonyDisplay(label, &scale_identity->scale_number, &scale_identity->root_note, current_note, quantise_mode, show_header) {
         this->current_chord_identity = current_chord_identity;
+    }
+
+    int8_t last_note_value = NOTE_OFF;
+    scale_index_t last_scale_number;
+    int_fast8_t last_scale_root;
+    quantise_mode_t last_quantise_mode;
+    chord_identity_t last_chord_identity;
+    
+    virtual bool check_needs_redraw_custom(bool currently_selected, bool currently_opened) override {
+        bool diff = false;
+        if (*this->current_note != this->last_note_value) {
+            this->last_note_value = *this->current_note;
+            diff = true;
+        }
+        if (this->scale_number != nullptr && *this->scale_number != this->last_scale_number) {
+            this->last_scale_number = *this->scale_number;
+            diff = true;
+        }
+        if (this->scale_root != nullptr && *this->scale_root != this->last_scale_root) {
+            this->last_scale_root = *this->scale_root;
+            diff = true;
+        }
+        if (this->quantise_mode != nullptr && *this->quantise_mode != this->last_quantise_mode) {
+            this->last_quantise_mode = *this->quantise_mode;
+            diff = true;
+        }
+        if (this->current_chord_identity != nullptr && this->current_chord_identity->diff(this->last_chord_identity)) {
+            this->last_chord_identity = *this->current_chord_identity;
+            diff = true;
+        }
+        return diff;
     }
 
     virtual int display(Coord pos, bool selected, bool opened) override {

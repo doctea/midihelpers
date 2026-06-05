@@ -849,10 +849,23 @@ class LambdaPlaylistSubMenuItemBarWithIndicator : public SubMenuItemBar {
 class ChordMenuItem : public MenuItem {
     public:
     chord_instance_t *chord_data = nullptr;
+    chord_instance_t last_chord_data;
     ChordMenuItem(const char *label, chord_instance_t *chord_data) : MenuItem(label) {
         this->chord_data = chord_data;
         this->selectable = false;
+        this->add_redraw_policy(REDRAW_ON_CUSTOM);
     }
+
+    virtual bool check_needs_redraw_custom(bool currently_selected, bool currently_opened) override {
+        if (this->chord_data == nullptr)
+            return false;
+
+        if (this->chord_data->diff(&last_chord_data)) {
+            this->last_chord_data = *this->chord_data;
+            return true;
+        }
+        return false;
+    }      
 
     int display(Coord pos, bool selected, bool opened) override {
         pos.y = this->header(this->chord_data->get_pitch_string(), pos, selected, opened);

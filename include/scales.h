@@ -243,6 +243,17 @@ class chord_instance_t {
         memset(pitches, -1, sizeof(pitches));
         this->changed = true;
     }
+    bool diff(chord_instance_t *other) {
+        if (
+            this->chord.type!=other->chord.type ||
+            this->chord_root!=other->chord_root ||
+            this->chord.inversion!=other->chord.inversion ||
+            this->velocity!=other->velocity ||
+            memcmp(this->pitches, other->pitches, sizeof(this->pitches))!=0
+        ) return true;
+
+        return false;
+    }
     /*void copy_from(chord_instance_t source) {
         memcpy(this, source, sizeof(chord_instance_t));
     }*/
