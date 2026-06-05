@@ -25,6 +25,7 @@ public:
 
     PlaylistRowMenuItem(int8_t slot) : MenuItem("Slot  0", true, false), my_slot(slot) {
         snprintf(label, MAX_LABEL_LENGTH, "Slot %2d", (int)slot);
+        this->add_redraw_policy(REDRAW_ON_BAR);   // to update highlight when current slot's section changes TODO: should also track changes to the current song section, etc
     }
 
     virtual bool action_opened() override {

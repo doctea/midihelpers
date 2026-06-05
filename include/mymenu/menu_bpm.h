@@ -22,13 +22,13 @@ class LoopMarkerPanel : public PinnedPanelMenuItem {
             // this->bars_per_phrase = bars_per_phrase;
             this->ppqn = ppqn;
             last_playing_state = playing;
-            #if MENU_SELECTIVE_STATIC_REDRAW
+            #if MENU_PERF_PARTIAL_UPDATES
                 request_redraw();
             #endif
         };
 
         virtual void update_ticks(unsigned long ticks) override {
-            #if MENU_SELECTIVE_STATIC_REDRAW
+            #if MENU_PERF_PARTIAL_UPDATES
                 if (this->ticks != ticks) {
                     request_redraw();
                 }
@@ -36,13 +36,13 @@ class LoopMarkerPanel : public PinnedPanelMenuItem {
             this->ticks = ticks;
         }
 
-        #if MENU_SELECTIVE_STATIC_REDRAW
-        virtual void refresh_redraw_state() override {
-            if (last_playing_state != playing) {
-                last_playing_state = playing;
-                request_redraw();
+        #if MENU_PERF_PARTIAL_UPDATES
+            virtual void refresh_redraw_state() override {
+                if (last_playing_state != playing) {
+                    last_playing_state = playing;
+                    request_redraw();
+                }
             }
-        }
         #endif
 
         void set_loop_length(unsigned long loop_length) {
@@ -124,7 +124,9 @@ class LoopMarkerPanel : public PinnedPanelMenuItem {
 // BPM indicator
 class BPMPositionIndicator : public MenuItem {
     public:
-        BPMPositionIndicator() : MenuItem("position") {};
+        BPMPositionIndicator() : MenuItem("position") {
+            this->add_redraw_policy(REDRAW_LIVE);
+        };
 
         virtual int display(Coord pos, bool selected, bool opened) override {
             //Serial.printf("positionindicator display for %s\n", label);
