@@ -28,6 +28,7 @@ class HarmonyStatus : public MenuItem {
         HarmonyStatus(const char *label, bool show_header = true) : MenuItem(label) {
             this->selectable = false;
             this->show_header = show_header;
+            this->add_redraw_policy(REDRAW_ON_CUSTOM);   // to update when notes change without needing to redraw whole menu
         };
         HarmonyStatus(const char *label, int8_t *last_note, int8_t *current_note, bool show_header = true) : HarmonyStatus(label, show_header) {
             //MenuItem(label);
@@ -58,6 +59,24 @@ class HarmonyStatus : public MenuItem {
             this->renderValue(selected, opened, MENU_C_MAX);
 
             return tft->getCursorY();
+        }
+
+        int8_t last_note_value, current_note_value, other_note_value;
+        virtual bool check_needs_redraw_custom(bool currently_selected, bool currently_opened) override {
+            bool needs_redraw = false;
+            if (last_note && *last_note != last_note_value) {
+                last_note_value = *last_note;
+                needs_redraw = true;
+            }
+            if (current_note && *current_note != current_note_value) {
+                current_note_value = *current_note;
+                needs_redraw = true;
+            }
+            if (other_value && *other_value != other_note_value) {
+                other_note_value = *other_value;
+                needs_redraw = true;
+            }
+            return needs_redraw;
         }
 
         virtual int renderValue(bool selected, bool opened, uint16_t max_character_width) override {
