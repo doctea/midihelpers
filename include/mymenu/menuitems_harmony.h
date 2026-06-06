@@ -62,7 +62,7 @@ class HarmonyStatus : public MenuItem {
         }
 
         int8_t last_note_value, current_note_value, other_note_value;
-        virtual bool check_needs_redraw_custom(bool currently_selected, bool currently_opened) override {
+        virtual bool check_needs_redraw_custom(bool selected, bool opened) override {
             bool needs_redraw = false;
             if (last_note && *last_note != last_note_value) {
                 last_note_value = *last_note;
@@ -154,7 +154,7 @@ class HarmonyDisplay : public MenuItem {
     quantise_mode_t last_quantise_mode;
     chord_identity_t last_chord_identity;
     
-    virtual bool check_needs_redraw_custom(bool currently_selected, bool currently_opened) override {
+    virtual bool check_needs_redraw_custom(bool selected, bool opened) override {
         bool diff = false;
         if (*this->current_note != this->last_note_value) {
             this->last_note_value = *this->current_note;

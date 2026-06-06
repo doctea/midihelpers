@@ -856,7 +856,7 @@ class ChordMenuItem : public MenuItem {
         this->add_redraw_policy(REDRAW_ON_CUSTOM);
     }
 
-    virtual bool check_needs_redraw_custom(bool currently_selected, bool currently_opened) override {
+    virtual bool check_needs_redraw_custom(bool selected, bool opened) override {
         if (this->chord_data == nullptr)
             return false;
 
