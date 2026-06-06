@@ -77,7 +77,7 @@ public:
         my_section(my_section), my_bar(my_bar),
         current_section(current_section), current_bar(current_bar)
     {
-        this->add_redraw_policy(REDRAW_ON_BAR);   // to update highlight when current bar changes
+        IF_MENU_PERF_PARTIAL_UPDATES(this->add_redraw_policy(REDRAW_ON_BAR);)   // to update highlight when current bar changes
     }
 
     // Two-column constructor
@@ -110,7 +110,7 @@ public:
         my_section(my_section), my_bar(my_bar), my_r_bar(my_r_bar),
         current_section(current_section), current_bar(current_bar)
     {
-        this->add_redraw_policy(REDRAW_ON_BAR);   // to update highlight when current bar changes; TODO probably should also add a custom redraw policy that tracks changes to the right bar's degree/type/inversion for more efficient updates when the current bar is the left one
+        IF_MENU_PERF_PARTIAL_UPDATES(this->add_redraw_policy(REDRAW_ON_BAR);)   // to update highlight when current bar changes; TODO probably should also add a custom redraw policy that tracks changes to the right bar's degree/type/inversion for more efficient updates when the current bar is the left one
     }
 
     virtual bool action_opened() override {

@@ -853,19 +853,21 @@ class ChordMenuItem : public MenuItem {
     ChordMenuItem(const char *label, chord_instance_t *chord_data) : MenuItem(label) {
         this->chord_data = chord_data;
         this->selectable = false;
-        this->add_redraw_policy(REDRAW_ON_CUSTOM);
+        IF_MENU_PERF_PARTIAL_UPDATES(this->add_redraw_policy(REDRAW_ON_CUSTOM);)
     }
 
-    virtual bool check_needs_redraw_custom(bool selected, bool opened) override {
-        if (this->chord_data == nullptr)
-            return false;
+    #if MENU_PERF_PARTIAL_UPDATES
+        virtual bool check_needs_redraw_custom(bool selected, bool opened) override {
+            if (this->chord_data == nullptr)
+                return false;
 
-        if (this->chord_data->diff(&last_chord_data)) {
-            this->last_chord_data = *this->chord_data;
-            return true;
-        }
-        return false;
-    }      
+            if (this->chord_data->diff(&last_chord_data)) {
+                this->last_chord_data = *this->chord_data;
+                return true;
+            }
+            return false;
+        }      
+    #endif
 
     int display(Coord pos, bool selected, bool opened) override {
         pos.y = this->header(this->chord_data->get_pitch_string(), pos, selected, opened);

@@ -28,7 +28,7 @@ class HarmonyStatus : public MenuItem {
         HarmonyStatus(const char *label, bool show_header = true) : MenuItem(label) {
             this->selectable = false;
             this->show_header = show_header;
-            this->add_redraw_policy(REDRAW_ON_CUSTOM);   // to update when notes change without needing to redraw whole menu
+            IF_MENU_PERF_PARTIAL_UPDATES(this->add_redraw_policy(REDRAW_ON_CUSTOM);)   // to update when notes change without needing to redraw whole menu
         };
         HarmonyStatus(const char *label, int8_t *last_note, int8_t *current_note, bool show_header = true) : HarmonyStatus(label, show_header) {
             //MenuItem(label);
@@ -61,23 +61,25 @@ class HarmonyStatus : public MenuItem {
             return tft->getCursorY();
         }
 
-        int8_t last_note_value, current_note_value, other_note_value;
-        virtual bool check_needs_redraw_custom(bool selected, bool opened) override {
-            bool needs_redraw = false;
-            if (last_note && *last_note != last_note_value) {
-                last_note_value = *last_note;
-                needs_redraw = true;
+        #if MENU_PERF_PARTIAL_UPDATES
+            int8_t last_note_value, current_note_value, other_note_value;
+            virtual bool check_needs_redraw_custom(bool selected, bool opened) override {
+                bool needs_redraw = false;
+                if (last_note && *last_note != last_note_value) {
+                    last_note_value = *last_note;
+                    needs_redraw = true;
+                }
+                if (current_note && *current_note != current_note_value) {
+                    current_note_value = *current_note;
+                    needs_redraw = true;
+                }
+                if (other_value && *other_value != other_note_value) {
+                    other_note_value = *other_value;
+                    needs_redraw = true;
+                }
+                return needs_redraw;
             }
-            if (current_note && *current_note != current_note_value) {
-                current_note_value = *current_note;
-                needs_redraw = true;
-            }
-            if (other_value && *other_value != other_note_value) {
-                other_note_value = *other_value;
-                needs_redraw = true;
-            }
-            return needs_redraw;
-        }
+        #endif
 
         virtual int renderValue(bool selected, bool opened, uint16_t max_character_width) override {
             tft->setTextSize(1);
@@ -129,7 +131,7 @@ class HarmonyDisplay : public MenuItem {
         this->scale_root = scale_root;
         this->current_note = current_note;
         this->quantise_mode = quantise_mode;
-        this->add_redraw_policy(REDRAW_ON_CUSTOM); 
+        IF_MENU_PERF_PARTIAL_UPDATES(this->add_redraw_policy(REDRAW_ON_CUSTOM);)
     }
 
     HarmonyDisplay(const char *label, scale_index_t *scale_number, int_fast8_t *scale_root, int8_t *current_note, quantise_mode_t *quantise_mode, chord_identity_t *current_chord_identity = nullptr, bool show_header = true) 
@@ -154,30 +156,32 @@ class HarmonyDisplay : public MenuItem {
     quantise_mode_t last_quantise_mode;
     chord_identity_t last_chord_identity;
     
-    virtual bool check_needs_redraw_custom(bool selected, bool opened) override {
-        bool diff = false;
-        if (*this->current_note != this->last_note_value) {
-            this->last_note_value = *this->current_note;
-            diff = true;
+    #if MENU_PERF_PARTIAL_UPDATES
+        virtual bool check_needs_redraw_custom(bool selected, bool opened) override {
+            bool diff = false;
+            if (*this->current_note != this->last_note_value) {
+                this->last_note_value = *this->current_note;
+                diff = true;
+            }
+            if (this->scale_number != nullptr && *this->scale_number != this->last_scale_number) {
+                this->last_scale_number = *this->scale_number;
+                diff = true;
+            }
+            if (this->scale_root != nullptr && *this->scale_root != this->last_scale_root) {
+                this->last_scale_root = *this->scale_root;
+                diff = true;
+            }
+            if (this->quantise_mode != nullptr && *this->quantise_mode != this->last_quantise_mode) {
+                this->last_quantise_mode = *this->quantise_mode;
+                diff = true;
+            }
+            if (this->current_chord_identity != nullptr && this->current_chord_identity->diff(this->last_chord_identity)) {
+                this->last_chord_identity = *this->current_chord_identity;
+                diff = true;
+            }
+            return diff;
         }
-        if (this->scale_number != nullptr && *this->scale_number != this->last_scale_number) {
-            this->last_scale_number = *this->scale_number;
-            diff = true;
-        }
-        if (this->scale_root != nullptr && *this->scale_root != this->last_scale_root) {
-            this->last_scale_root = *this->scale_root;
-            diff = true;
-        }
-        if (this->quantise_mode != nullptr && *this->quantise_mode != this->last_quantise_mode) {
-            this->last_quantise_mode = *this->quantise_mode;
-            diff = true;
-        }
-        if (this->current_chord_identity != nullptr && this->current_chord_identity->diff(this->last_chord_identity)) {
-            this->last_chord_identity = *this->current_chord_identity;
-            diff = true;
-        }
-        return diff;
-    }
+    #endif
 
     virtual int display(Coord pos, bool selected, bool opened) override {
         tft->setCursor(pos.x, pos.y);

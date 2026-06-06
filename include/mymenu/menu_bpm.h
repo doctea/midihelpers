@@ -27,9 +27,15 @@ class LoopMarkerPanel : public PinnedPanelMenuItem {
             #endif
         };
 
+        uint32_t last_rendered_ticks = 0;
+        float get_pixels_per_tick() {
+            return (float)tft->width() / TICKS_PER_PHRASE;
+        }
         virtual void update_ticks(unsigned long ticks) override {
             #if MENU_PERF_PARTIAL_UPDATES
-                if (this->ticks != ticks) {
+                float pixels_per_tick = get_pixels_per_tick();
+                if (abs((int32_t)(ticks - last_rendered_ticks) * pixels_per_tick) >= 1) {
+                    // last_rendered_ticks is updated in display()
                     request_redraw();
                 }
             #endif
@@ -57,6 +63,7 @@ class LoopMarkerPanel : public PinnedPanelMenuItem {
 
         virtual int display(Coord pos, bool selected = false, bool opened = false) override {
             //Serial.printf("PinnedPanel display colour RED is %4x, WHITE is %4x\n", RED, C_WHITE);
+            last_rendered_ticks = ticks;
 
             static const int bar_height = tft->getRowHeight();
 
@@ -125,7 +132,7 @@ class LoopMarkerPanel : public PinnedPanelMenuItem {
 class BPMPositionIndicator : public MenuItem {
     public:
         BPMPositionIndicator() : MenuItem("position") {
-            this->add_redraw_policy(REDRAW_LIVE);
+            IF_MENU_PERF_PARTIAL_UPDATES(this->add_redraw_policy(REDRAW_LIVE);)
         };
 
         virtual int display(Coord pos, bool selected, bool opened) override {
