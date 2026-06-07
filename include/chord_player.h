@@ -336,9 +336,9 @@ class ChordPlayer
 
         FLASHMEM
         // TODO: convert to MenuItemList*
-        LinkedList<MenuItem *> *make_menu_items(LinkedList<MenuItem *> *menuitems = nullptr) {
+        MenuItemList* make_menu_items(MenuItemList *menuitems = nullptr) {
             if (menuitems==nullptr)
-                menuitems = new LinkedList<MenuItem *>();
+                menuitems = new MenuItemList();
 
             #ifdef DEBUG_VELOCITY
                 DirectNumberControl<int8_t> *velocity_control = new DirectNumberControl<int8_t>("Velocity", &this->velocity, 127, 0, 127);

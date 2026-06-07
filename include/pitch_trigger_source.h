@@ -188,9 +188,9 @@ public:
     #endif
 
     FLASHMEM
-    LinkedList<MenuItem *> *make_menu_items(LinkedList<MenuItem *> *menuitems = nullptr) {
+     MenuItemList* make_menu_items(MenuItemList *menuitems = nullptr) {
         if (menuitems == nullptr) {
-            menuitems = new LinkedList<MenuItem *>();
+            menuitems = new MenuItemList();
         }
 
         HarmonyStatus *harmony = new HarmonyStatus(
