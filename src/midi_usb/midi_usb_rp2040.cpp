@@ -129,7 +129,7 @@ void setup_midi() {
     void RP2040DualMIDIOutputWrapper::create_menu_items() {
         // controls for cv-to-midi outputs..
 
-        menu->add_page("System Settings");
+        menu->add_page("System settings", C_WHITE, true, "Settings");
 
         // TODO: make a mechanism to be able to do something like this here
         // #ifdef ENABLE_STORAGE

@@ -36,10 +36,10 @@ void Conductor::make_menu_items(Menu *menu, conductor_menu_options_t options) {
     #if defined(ENABLE_TIME_SIGNATURE) || defined(ENABLE_SCALES)
         if (!(options & COMBINE_TIME_SIG_WITH_TRANSPORT) && (options & COMBINE_HARMONY_WITH_TIME_SIG))
             // combine time signature and harmony settings into a single "Muse" page
-            menu->add_page("Muse", C_WHITE, false);
+            menu->add_page("Muse", C_WHITE, false, "Conductor");
         else if (!(options & COMBINE_TIME_SIG_WITH_TRANSPORT))
             // separate time signature page
-            menu->add_page("Time signature", C_WHITE, false);
+            menu->add_page("Time signature", C_WHITE, false, "Conductor");
 
         #ifdef ENABLE_TIME_SIGNATURE
             menu->add(new TimeSignatureIndicator());
@@ -48,7 +48,7 @@ void Conductor::make_menu_items(Menu *menu, conductor_menu_options_t options) {
         menu->remember_opened_page(-1, true);
 
         if (!(options & COMBINE_HARMONY_WITH_TIME_SIG)) {
-            menu->add_page("Harmony", C_WHITE, false);
+            menu->add_page("Harmony", C_WHITE, false, "Conductor");
             menu->remember_opened_page(-1, true);
         }
 

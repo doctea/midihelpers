@@ -180,7 +180,7 @@ static const char *label_playback_mode(Arranger::playback_mode_t mode) {
 void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column, uint16_t colour, vl::Func<void()> save_cb, vl::Func<void()> load_cb) {
     if (menu == nullptr || arranger == nullptr) return;
 
-    menu->add_page("Arrange", C_WHITE, false);
+    menu->add_page("Arrange", C_WHITE, false, "Arranger");
 
     // Single shared buffer for all five overview lines — safe since only one renders per frame
     static char arranger_overview_buf[64];
@@ -255,7 +255,7 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
         }, false
     ));
 
-    menu->add_page("Arrange Play", C_WHITE, false);
+    menu->add_page("Arrange Play", C_WHITE, false, "Arranger");
 
     menu->add(new LambdaToggleControl(
         "Enabled",
@@ -296,7 +296,7 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
     // ));
 
     // ── Arrange Jump page ────────────────────────────────────────────────
-    menu->add_page("Arrange Jump", C_WHITE, false);
+    menu->add_page("Arrange Jump", C_WHITE, false, "Arranger");
 
     {
         static int8_t jump_section = 0;
@@ -379,7 +379,7 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
         static int8_t ui_edit_section = 0;
         static int8_t ui_edit_bar = 0;
 
-        menu->add_page("Arrange Chord", colour, false);
+        menu->add_page("Arrange Chord", colour, false, "Arranger");
 
         menu->add(new LambdaNumberControl<int8_t>(
             "Edit section",
@@ -423,7 +423,7 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
     }
 
     // Playlist page: shared-bar pattern — 16 lightweight switcher items + ONE shared editor bar.
-    menu->add_page("Playlist", colour, true);
+    menu->add_page("Playlist", colour, true, "Arranger");
     menu->remember_opened_page(-1, true);
     menu->set_page_header("## Section Rep Max  ");
     {
@@ -541,7 +541,7 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
 
         // Section pages: the loop is now cheap — only switcher objects are allocated per page
         for (int i = 0; i < NUM_SONG_SECTIONS; i++) {
-            menu->add_page(get_section_name(i), colour, true);
+            menu->add_page(get_section_name(i), colour, true, "Arranger");
             menu->add(new SectionPageSwitcherMenuItem(
                 (int8_t)i, &shared_edit_section, shared_chord_rows, num_shared_rows
             ));
