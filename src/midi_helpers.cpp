@@ -64,8 +64,19 @@ int8_t apply_note_limits(
     int8_t lowest_note, 
     int8_t highest_note
 ) {
+  
     // todo: probably move this transpose and quantise logic somewhere else
-    // into Conductor maybe?
+    // todo: verify the logic here works as expected
+
+    if (!is_valid_note(note)) 
+      // passed an invalid note, so discard it immediately
+      // this might happen if the calling function has added a base octave to a note 
+      // and the result is over 127; todo: we might want to handle that situation differently
+      // and still wrap the note back into range..?  would need to use int16_t for note arg,
+      // or maybe check the maths on negatives
+      return NOTE_OFF;
+
+    // check, and either ignore or wrap the note to within lower bounds
     if (lowest_note_mode == NOTE_LIMIT_MODE::TRANSPOSE) {
         // transpose the note to within the allowed range
         while (is_valid_note(note) && note < lowest_note) {
@@ -73,11 +84,12 @@ int8_t apply_note_limits(
         }
     } else if (lowest_note_mode == NOTE_LIMIT_MODE::IGNORE) {
         // if the note is below the allowed range, just ignore it
-        if (is_valid_note(note) && note < lowest_note) {
+        if (!is_valid_note(note) || note < lowest_note) {
             return NOTE_OFF;
         }
     }
 
+    // check, and either ignore or wrap the note to within lower bounds
     if (highest_note_mode == NOTE_LIMIT_MODE::TRANSPOSE) {
         // transpose the note to within the allowed range
         while (is_valid_note(note) && note > highest_note) {
@@ -85,9 +97,15 @@ int8_t apply_note_limits(
         }
     } else if (highest_note_mode == NOTE_LIMIT_MODE::IGNORE) {
         // if the note is above the allowed range, just ignore it
-        if (is_valid_note(note) && note > highest_note) {
+        if (!is_valid_note(note) || note > highest_note) {
             return NOTE_OFF;
         }
     }
+
+    if (!is_valid_note(note)) 
+      // if the note has been wrapped but we've still ended up with an invalid note then we
+      // need to make sure to return a NOTE_OFF
+      note = NOTE_OFF;
+
     return note;
 }

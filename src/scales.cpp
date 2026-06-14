@@ -89,6 +89,24 @@ SCALE operator--(SCALE& orig, int) {
     return rVal;
 }*/
 
+#ifdef ENABLE_SCREEN
+  #include "menu.h"
+  labelled_value_t<int8_t> degree_value_labels[] = {
+    { 0, "None" },
+    { 1, "Root" },
+    { 2, "Second" },
+    { 3, "Third" },
+    { 4, "Fourth" },
+    { 5, "Fifth" },
+    { 6, "Sixth" },
+    { 7, "Seventh" }
+  };
+  labelled_value_list_t<int8_t> degree_value_label_list(
+    degree_value_labels,
+    sizeof(degree_value_labels)/sizeof(labelled_value_t<int8_t>)
+  );
+#endif
+
 scale_identity_t *global_scale_identity = nullptr;
 chord_identity_t *global_chord_identity = nullptr;
 
@@ -328,7 +346,7 @@ int8_t quantise_pitch_to_chord(int8_t pitch, int8_t quantised_to_nearest_toleran
 int8_t get_quantise_pitch_chord_note(
   int8_t chord_root, 
   CHORD::Type chord_number, 
-  int8_t note_of_chord, 
+  int8_t note_of_chord,   // zero-based
   int8_t scale_root, 
   scale_index_t scale_number, 
   int inversion, 
