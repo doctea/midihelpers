@@ -101,6 +101,15 @@ const chord_t chords[] = {
 };
 
 
+#ifdef ENABLE_SCREEN
+
+    #include "menu.h"
+    extern labelled_value_t<int8_t> degree_value_labels[];
+    extern labelled_value_list_t<int8_t> degree_value_label_list;
+
+#endif
+
+
 // Quantisation mode for note outputs and displays
 // NONE: no quantisation, SCALE: quantise to scale, CHORD: quantise to chord
 typedef enum quantise_mode_t : int8_t {
@@ -177,6 +186,10 @@ class chord_instance_t {
     int8_t velocity = MIDI_MAX_VELOCITY;
     bool changed = true;
     int8_t pitches[PITCHES_PER_CHORD] = { NOTE_OFF, NOTE_OFF, NOTE_OFF, NOTE_OFF };
+
+    int8_t get_num_notes() {
+        return sizeof(pitches)/sizeof(int8_t);
+    }
 
     const char *get_label() {
         return chords[chord.type].label;

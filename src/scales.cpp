@@ -89,6 +89,24 @@ SCALE operator--(SCALE& orig, int) {
     return rVal;
 }*/
 
+#ifdef ENABLE_SCREEN
+  #include "menu.h"
+  labelled_value_t<int8_t> degree_value_labels[] = {
+    { 0, "None" },
+    { 1, "Root" },
+    { 2, "Second" },
+    { 3, "Third" },
+    { 4, "Fourth" },
+    { 5, "Fifth" },
+    { 6, "Sixth" },
+    { 7, "Seventh" }
+  };
+  labelled_value_list_t<int8_t> degree_value_label_list(
+    degree_value_labels,
+    sizeof(degree_value_labels)/sizeof(labelled_value_t<int8_t>)
+  );
+#endif
+
 scale_identity_t *global_scale_identity = nullptr;
 chord_identity_t *global_chord_identity = nullptr;
 
