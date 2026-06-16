@@ -204,6 +204,10 @@ class HarmonyDisplay : public MenuItem {
         scale_index_t scale_number_to_use = get_effective_scale_type(*scale_number);
         quantise_mode_t mode = quantise_mode ? *quantise_mode : QUANTISE_MODE_NONE;
 
+        if (mode == QUANTISE_MODE_CHORD && (current_chord_identity == nullptr || !current_chord_identity->is_valid_chord())) {
+            mode = QUANTISE_MODE_SCALE;   // can't quantise to chord if no chord is set - quantise to scale instead
+        }
+
         // draw all white notes first
         for (int_fast8_t r = 0 ; r < NUM_CHROMATIC_NOTES ; r++) {
             x_pos = c * key_width;
@@ -213,9 +217,9 @@ class HarmonyDisplay : public MenuItem {
                 uint16_t colour = playing ? YELLOW : (white_key?C_WHITE:tft->halfbright_565(C_WHITE));
 
                 const bool valid = 
-                            !mode 
+                            mode == quantise_mode_t::QUANTISE_MODE_NONE
                             ||
-                            (mode == quantise_mode_t::QUANTISE_MODE_CHORD && current_chord_identity != nullptr && conductor->quantise_to_chord(r) == r) 
+                            (mode == quantise_mode_t::QUANTISE_MODE_CHORD && current_chord_identity != nullptr && current_chord_identity->is_valid_chord() && conductor->quantise_to_chord(r, 2) == r) 
                             ||
                             (mode == quantise_mode_t::QUANTISE_MODE_SCALE && quantise_pitch_to_scale(r, scale_root_to_use, scale_number_to_use)==r);
 
@@ -242,9 +246,9 @@ class HarmonyDisplay : public MenuItem {
             } else {    // black key
                 uint16_t colour = playing ? YELLOW : (white_key?C_WHITE:tft->halfbright_565(C_WHITE));
                 const bool valid = 
-                            !mode 
+                            mode == quantise_mode_t::QUANTISE_MODE_NONE
                             ||
-                            (mode == quantise_mode_t::QUANTISE_MODE_CHORD && conductor->quantise_to_chord(r, 2) == r) 
+                            (mode == quantise_mode_t::QUANTISE_MODE_CHORD && current_chord_identity != nullptr && current_chord_identity->is_valid_chord() && conductor->quantise_to_chord(r, 2) == r) 
                             ||
                             (mode == quantise_mode_t::QUANTISE_MODE_SCALE && quantise_pitch_to_scale(r, scale_root_to_use, scale_number_to_use)==r);
                 if (!valid) colour = tft->halfbright_565(colour);
