@@ -6,6 +6,9 @@
 #include "midi_helpers.h"
 #include "scales.h"
 
+extern labelled_value_list_t<int8_t> quantise_mode_list_no_none;
+extern labelled_value_list_t<int8_t> quantise_mode_list_with_none;
+
 class ScaleMenuItem : public MenuItem {
     public:
 
@@ -932,12 +935,6 @@ class LambdaQuantiseModeControl : public LambdaSelectorControl<int8_t> {
         bool direct = true
     ) : LambdaSelectorControl<int8_t>(label, setter_func, getter_func, nullptr, go_back_on_select, direct) {
         static OptionList<LambdaSelectorControl<int8_t>::option> *quantise_mode_options = nullptr;
-        if (quantise_mode_options == nullptr) {
-            quantise_mode_options = new OptionList<LambdaSelectorControl<int8_t>::option>();
-            quantise_mode_options->add(LambdaSelectorControl<int8_t>::option { (int8_t)QUANTISE_MODE_NONE,  "Off"   });
-            quantise_mode_options->add(LambdaSelectorControl<int8_t>::option { (int8_t)QUANTISE_MODE_SCALE, "Scale" });
-            quantise_mode_options->add(LambdaSelectorControl<int8_t>::option { (int8_t)QUANTISE_MODE_CHORD, "Chord" });
-        }
-        this->set_available_values(quantise_mode_options);
+        this->set_available_values(&quantise_mode_list_with_none);
     }
 };

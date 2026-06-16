@@ -91,19 +91,25 @@ SCALE operator--(SCALE& orig, int) {
 
 #ifdef ENABLE_SCREEN
   #include "menu.h"
-  labelled_value_t<int8_t> degree_value_labels[] = {
-    { 0, "None" },
-    { 1, "Root" },
-    { 2, "Second" },
-    { 3, "Third" },
-    { 4, "Fourth" },
-    { 5, "Fifth" },
-    { 6, "Sixth" },
-    { 7, "Seventh" }
-  };
   labelled_value_list_t<int8_t> degree_value_label_list(
-    degree_value_labels,
-    sizeof(degree_value_labels)/sizeof(labelled_value_t<int8_t>)
+    (labelled_value_t<int8_t>[]) {
+      // { 0, "None" },
+      // { 1, "Root" },
+      // { 2, "Second" },
+      // { 3, "Third" },
+      // { 4, "Fourth" },
+      // { 5, "Fifth" },
+      // { 6, "Sixth" },
+      // { 7, "Seventh" }
+      { 0, "None" },
+      { 1, "1st"  },
+      { 2, "2nd"  },
+      { 3, "3rd"  },
+      { 4, "4th"  },
+      { 5, "5th"  },
+      { 6, "6th"  },
+      { 7, "7th"  }
+    }
   );
 #endif
 
