@@ -148,7 +148,7 @@ public:
         section_idx(section_idx), target(target),
         chord_rows(chord_rows), num_rows(num_rows)
     {
-        this->selectable = false;
+        this->flags.selectable = false;
     }
 
     virtual int display(Coord pos, bool selected, bool opened) override {

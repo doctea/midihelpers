@@ -189,31 +189,33 @@ class RP2040DualMIDIOutputWrapper : virtual public IMIDINoteAndCCTarget
         while (midi_queue.dequeue(msg)) {
             count++;
 
-            #ifdef USE_TINYUSB
-            if (msg.destinations & MIDI_DEST_USB) {
-                switch (msg.type) {
-                    case MIDI_MSG_NOTE_ON:
-                        usbmidi->sendNoteOn(msg.data1, msg.data2, msg.channel);
-                        break;
-                    case MIDI_MSG_NOTE_OFF:
-                        usbmidi->sendNoteOff(msg.data1, msg.data2, msg.channel);
-                        break;
-                    case MIDI_MSG_CONTROL_CHANGE:
-                        usbmidi->sendControlChange(msg.data1, msg.data2, msg.channel);
-                        break;
-                    case MIDI_MSG_CLOCK:
-                        usbmidi->sendClock();
-                        break;
-                    case MIDI_MSG_START:
-                        usbmidi->sendStart();
-                        break;
-                    case MIDI_MSG_STOP:
-                        usbmidi->sendStop();
-                        break;
-                    default:
-                        break;
+            #if defined(USE_TINYUSB) && !defined(DISABLE_USB_MIDI_SEND)
+                if (msg.destinations & MIDI_DEST_USB) {
+                    irq_set_enabled(USBCTRL_IRQ, false);
+                    switch (msg.type) {
+                        case MIDI_MSG_NOTE_ON:                    
+                            usbmidi->sendNoteOn(msg.data1, msg.data2, msg.channel);
+                            break;
+                        case MIDI_MSG_NOTE_OFF:
+                            usbmidi->sendNoteOff(msg.data1, msg.data2, msg.channel);
+                            break;
+                        case MIDI_MSG_CONTROL_CHANGE:
+                            usbmidi->sendControlChange(msg.data1, msg.data2, msg.channel);
+                            break;
+                        case MIDI_MSG_CLOCK:
+                            usbmidi->sendClock();
+                            break;
+                        case MIDI_MSG_START:
+                            usbmidi->sendStart();
+                            break;
+                        case MIDI_MSG_STOP:
+                            usbmidi->sendStop();
+                            break;
+                        default:
+                            break;
+                    }
+                    irq_set_enabled(USBCTRL_IRQ, true);
                 }
-            }
             #endif  // USE_TINYUSB
 
             #ifdef USE_DINMIDI

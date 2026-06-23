@@ -76,7 +76,7 @@ class ScaleMenuItem : public MenuItem {
             } else {
                 menu_set_last_message("Toggled to ROOT", YELLOW);
             }
-            return go_back_on_select;
+            return flags.go_back_on_select;
         }
 
         virtual bool knob_left() override {
@@ -226,7 +226,7 @@ class ObjectScaleMenuItemBar : public SubMenuItemBar {
         } else {
             scale_root->set_available_values(scale_root_options);
         }
-        scale_root->go_back_on_select = true;
+        scale_root->flags.go_back_on_select = true;
         this->add(scale_root);
 
 
@@ -247,7 +247,7 @@ class ObjectScaleMenuItemBar : public SubMenuItemBar {
         } else {
             scale_selector->set_available_values(scale_selector_options);
         }
-        scale_selector->go_back_on_select = true;
+        scale_selector->flags.go_back_on_select = true;
         this->add(scale_selector);
     }
 };
@@ -593,7 +593,7 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
         scale_root->set_preview_scale_getter(scale_getter_func);
         scale_root->set_preview_root_getter(scale_root_getter_func);
         scale_root->set_available_values(scale_root_options);
-        scale_root->go_back_on_select = true;
+        scale_root->flags.go_back_on_select = true;
         this->add(scale_root);
 
         // create the scale_selector control + add to this menu
@@ -608,7 +608,7 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
         scale_selector->set_preview_scale_getter(scale_getter_func);
         scale_selector->set_preview_root_getter(scale_root_getter_func);
         scale_selector->set_available_values(scale_selector_options);
-        scale_selector->go_back_on_select = true;
+        scale_selector->flags.go_back_on_select = true;
         this->add(scale_selector);
     }
 
@@ -679,7 +679,7 @@ class LambdaChordSubMenuItemBar : public SubMenuItemBar {
         for (size_t i = 0 ; i < NUMBER_CHORDS ; i++) {
             chord_selector->add_available_value((CHORD::Type)i, chords[i].label);
         }
-        chord_selector->go_back_on_select = true;
+        chord_selector->flags.go_back_on_select = true;
         this->add(chord_selector);
 
         LambdaNumberControl<int8_t> *inversion_selector = new LambdaNumberControl<int8_t>(
@@ -855,7 +855,7 @@ class ChordMenuItem : public MenuItem {
     chord_instance_t last_chord_data;
     ChordMenuItem(const char *label, chord_instance_t *chord_data) : MenuItem(label) {
         this->chord_data = chord_data;
-        this->selectable = false;
+        this->flags.selectable = false;
         IF_MENU_PERF_PARTIAL_UPDATES(this->add_redraw_policy(REDRAW_ON_CUSTOM);)
     }
 
@@ -934,7 +934,6 @@ class LambdaQuantiseModeControl : public LambdaSelectorControl<int8_t> {
         bool go_back_on_select = true,
         bool direct = true
     ) : LambdaSelectorControl<int8_t>(label, setter_func, getter_func, nullptr, go_back_on_select, direct) {
-        static OptionList<LambdaSelectorControl<int8_t>::option> *quantise_mode_options = nullptr;
         this->set_available_values(&quantise_mode_list_with_none);
     }
 };

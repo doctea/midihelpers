@@ -6,7 +6,7 @@
 class UclockDebugPanel : public MenuItem {
     public:
         UclockDebugPanel() : MenuItem("uClock debug") {
-            this->selectable = false;
+            this->flags.selectable = false;
         }
 
         virtual int display(Coord pos, bool selected, bool opened) override {

@@ -26,8 +26,8 @@ class HarmonyStatus : public MenuItem {
         };
 
         HarmonyStatus(const char *label, bool show_header = true) : MenuItem(label) {
-            this->selectable = false;
-            this->show_header = show_header;
+            this->flags.selectable = false;
+            this->flags.show_header = show_header;
             IF_MENU_PERF_PARTIAL_UPDATES(this->add_redraw_policy(REDRAW_ON_CUSTOM);)   // to update when notes change without needing to redraw whole menu
         };
         HarmonyStatus(const char *label, int8_t *last_note, int8_t *current_note, bool show_header = true) : HarmonyStatus(label, show_header) {

@@ -101,7 +101,7 @@ class ClockSourceSelectorControl : public SelectorControl<int_least8_t> {
         //msg[tft->get_c_max()] = '\0'; // limit the string so we don't overflow set_last_message
         menu_set_last_message(msg, GREEN);
 
-        return go_back_on_select;
+        return flags.go_back_on_select;
     }
 
 };

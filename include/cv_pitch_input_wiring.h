@@ -45,7 +45,7 @@ namespace CVPitchInputWiring {
             (target->*get_pitch)(),
             true
         );
-        selectors.pitch->go_back_on_select = true;
+        selectors.pitch->flags.go_back_on_select = true;
         bar->add(selectors.pitch);
 
         selectors.velocity = new ParameterInputSelectorControl<TargetClass>(
@@ -56,7 +56,7 @@ namespace CVPitchInputWiring {
             parameter_manager->available_inputs,
             (target->*get_velocity)()
         );
-        selectors.velocity->go_back_on_select = true;
+        selectors.velocity->flags.go_back_on_select = true;
         bar->add(selectors.velocity);
 
         return selectors;
