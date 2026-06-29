@@ -48,6 +48,9 @@ class NoteHarmonyDisplay : public MenuItem {
     quantise_mode_t *quantise_mode;
     NoteTracker *note_tracker = nullptr;
 
+    // todo: re-assess this; maybe put into NoteTracker instead
+    // uint32_t last_went_off_per_note[NUM_CHROMATIC_NOTES] = {0};
+
     NoteHarmonyDisplay(
         const char *label, 
         scale_index_t *scale_number, 
