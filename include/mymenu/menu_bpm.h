@@ -120,7 +120,7 @@ class LoopMarkerPanel : public PinnedPanelMenuItem {
             if (this->debug) {
                 tft->setCursor(0,y);
     	            tft->setTextSize(0);
-                tft->printf("Rendered for tick %i @ %u (global %u)\n", ticks, millis(), ::ticks);
+                tft->printf("Rendered for tick %lu @ %lu (global %lu)\n", ticks, millis(), ::ticks);
                 return tft->getCursorY();
             }
             return y;
@@ -146,7 +146,7 @@ class BPMPositionIndicator : public MenuItem {
                 colours(opened, RED,     BLACK);
             }
             if (clock_mode==CLOCK_INTERNAL) {
-                tft->printf((char*)"%04u:%02u:%02u @ %03.2f\n", 
+                tft->printf((char*)"%04lu:%02lu:%02lu @ %03.2f\n", 
                     BPM_CURRENT_PHRASE + 1, 
                     BPM_CURRENT_BAR_OF_PHRASE + 1,
                     BPM_CURRENT_BEAT_OF_BAR + 1,
@@ -154,14 +154,14 @@ class BPMPositionIndicator : public MenuItem {
                 );
             } else {
                 #ifdef USE_UCLOCK
-                    tft->printf((char*)"%04u:%02u:%02u @ %03.2f\n",
+                    tft->printf((char*)"%04lu:%02lu:%02lu @ %03.2f\n",
                         BPM_CURRENT_PHRASE + 1, 
                         BPM_CURRENT_BAR_OF_PHRASE + 1,
                         BPM_CURRENT_BEAT_OF_BAR + 1,
                         uClock.getTempo()
                     );
                 #else
-                    tft->printf((char*)"%04u:%02u:%02u\n",
+                    tft->printf((char*)"%04lu:%02lu:%02lu\n",
                         BPM_CURRENT_PHRASE + 1, 
                         BPM_CURRENT_BAR_OF_PHRASE + 1,
                         BPM_CURRENT_BEAT_OF_BAR + 1
