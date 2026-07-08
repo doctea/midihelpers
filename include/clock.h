@@ -53,6 +53,7 @@ bool check_and_unset_pc_usb_midi_clock_ticked();
 void pc_usb_midi_handle_start();
 void pc_usb_midi_handle_stop();
 void pc_usb_midi_handle_continue();
+void pc_usb_handle_pitch_bend(byte channel, int bend);
 
 #ifdef ENABLE_CLOCK_INPUT_MIDI_DIN
   void din_midi_handle_clock();
