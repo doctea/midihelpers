@@ -131,7 +131,7 @@ class LoopMarkerPanel : public PinnedPanelMenuItem {
 // BPM indicator
 class BPMPositionIndicator : public MenuItem {
     public:
-        BPMPositionIndicator() : MenuItem("position") {
+        BPMPositionIndicator() : MenuItem("Position") {
             IF_MENU_PERF_PARTIAL_UPDATES(this->add_redraw_policy(REDRAW_LIVE);)
         };
 

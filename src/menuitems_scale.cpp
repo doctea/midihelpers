@@ -1,3 +1,5 @@
+#ifdef ENABLE_SCREEN
+
 #include "mymenu/menuitems_scale.h"
 
 OptionList<LambdaSelectorControl<scale_index_t>::option> *LambdaScaleMenuItemBar::scale_selector_options_with_global = nullptr;
@@ -17,3 +19,5 @@ labelled_value_list_t<int8_t> quantise_mode_list_no_none =
         { QUANTISE_MODE_SCALE, "Scale" },
         { QUANTISE_MODE_CHORD, "Chord" }
     }};
+
+#endif
