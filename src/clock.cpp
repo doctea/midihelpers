@@ -45,9 +45,11 @@ volatile uint32_t last_ticked_at_micros = micros();
       uClock.setStrictExternalMode(true); // set strict external mode to true by default
     #endif
 
-    uClock.setInputPPQN(uclock_internal_ppqn);
+    // uClock.setInputPPQN(uclock_internal_ppqn);
+    uClock.setOutputPPQN(uclock_internal_ppqn * 4);
     uClock.setExtIntervalBuffer(16); // 16 is the default size
     uClock.setOnSync(umodular::clock::uClockClass::PPQNResolution::PPQN_24, do_tick); 
+    // uClock.setOnOutputPPQN(do_tick);
     uClock.init();
     uClock.setTempo(bpm_current);
     
@@ -91,6 +93,7 @@ void pc_usb_midi_handle_clock() {
       // In EXTERNAL_CLOCK mode clockMe() drives the state machine
       // (STARTING -> SYNCING -> STARTED) and feeds the interval buffer
       // that handleInternalClock() uses to sync the timer speed.
+      Serial.printf("pc_usb_midi_handle_clock(): received a clock, calling uClock.clockMe() at %u, ticks is currently %u\n", millis(), ticks);
       uClock.clockMe();
     #endif
   }
@@ -102,6 +105,8 @@ void pc_usb_midi_handle_start() {
   #endif
   // see function "auto_handle_start" when you wanna make this automatically change clock mode when receiving a start message
 
+  Serial.println("==== pc_usb_midi_handle_start() called");
+
   if (clock_mode!=CLOCK_EXTERNAL_USB_HOST) {
     // automatically switch to using external USB clock if we receive a START message from the usb host
     change_clock_mode(CLOCK_EXTERNAL_USB_HOST);
@@ -110,7 +115,7 @@ void pc_usb_midi_handle_start() {
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
     // MIDI spec: START always means "go to position 0 and play", even if already playing.
     // Stop cleanly first, then reset position, then start.
-    clock_stop();
+    // clock_stop();
     clock_reset();
     clock_start();
     if (__global_restart_callback!=nullptr)
