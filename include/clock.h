@@ -77,6 +77,7 @@ bool update_clock_ticks();
 
 void set_global_restart_callback(void(*global_restart_callback)());
 void set_global_stop_callback(void(*global_stop_callback)());
+void set_external_clock_stall_callback(void(*callback)(bool stalled));
 
 void clock_reset();
 void clock_start();

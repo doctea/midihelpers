@@ -28,12 +28,16 @@ volatile ClockMode clock_mode = DEFAULT_CLOCK_MODE;
 
 void (*__global_restart_callback)();
 void (*__global_stop_callback)();
+void (*__external_clock_stall_callback)(bool stalled) = nullptr;
 
 void set_global_restart_callback(void(*global_restart_callback)()) {
     __global_restart_callback = global_restart_callback;
 }
 void set_global_stop_callback(void(*global_stop_callback)()) {
     __global_stop_callback = global_stop_callback;
+}
+void set_external_clock_stall_callback(void(*callback)(bool stalled)) {
+  __external_clock_stall_callback = callback;
 }
 
 /// use cheapclock clock
@@ -46,7 +50,8 @@ volatile uint32_t last_ticked_at_micros = micros();
     #endif
 
     // uClock.setInputPPQN(uclock_internal_ppqn);
-    uClock.setOutputPPQN(uclock_internal_ppqn * 4);
+    uClock.setOutputPPQN(uclock_internal_ppqn*4);
+    uClock.setInputPPQN(umodular::clock::uClockClass::PPQN_24);
     uClock.setExtIntervalBuffer(16); // 16 is the default size
     uClock.setOnSync(umodular::clock::uClockClass::PPQNResolution::PPQN_24, do_tick); 
     // uClock.setOnOutputPPQN(do_tick);
@@ -93,7 +98,6 @@ void pc_usb_midi_handle_clock() {
       // In EXTERNAL_CLOCK mode clockMe() drives the state machine
       // (STARTING -> SYNCING -> STARTED) and feeds the interval buffer
       // that handleInternalClock() uses to sync the timer speed.
-      Serial.printf("pc_usb_midi_handle_clock(): received a clock, calling uClock.clockMe() at %u, ticks is currently %u\n", millis(), ticks);
       uClock.clockMe();
     #endif
   }
@@ -290,6 +294,14 @@ void set_clock_mode_changed_callback(void(*callback)(ClockMode old_mode, ClockMo
 bool update_clock_ticks() {
   #ifdef USE_UCLOCK
     static unsigned long last_reported_tick = -1;
+    static bool last_external_clock_stalled = false;
+    bool external_clock_stalled = clock_mode == CLOCK_EXTERNAL_USB_HOST && playing &&
+      uClock.isExternalClockStalled();
+    if (external_clock_stalled != last_external_clock_stalled) {
+      last_external_clock_stalled = external_clock_stalled;
+      if (__external_clock_stall_callback != nullptr)
+        __external_clock_stall_callback(external_clock_stalled);
+    }
   #endif
   static volatile unsigned long last_ticked = 0;
   __UINT_FAST32_TYPE__ mics = micros();
@@ -473,8 +485,13 @@ void change_clock_mode(ClockMode new_mode) {
             if (new_mode==ClockMode::CLOCK_EXTERNAL_CV) {
               external_cv_ppqn = DEFAULT_CV_PPQN;
               uClock.setInputPPQN(external_cv_ppqn);
-            }
+            } else
           #endif
+          {
+            // MIDI Clock is always 24 PPQN. Do not inherit a previous CV or menu value.
+            internal_ppqn = umodular::clock::uClockClass::PPQN_24;
+            uClock.setInputPPQN(umodular::clock::uClockClass::PPQN_24);
+          }
           uClock.setClockMode(umodular::clock::uClockClass::ClockMode::EXTERNAL_CLOCK);
           //if (was_started) uClock.pause();
         } 
