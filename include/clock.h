@@ -50,6 +50,14 @@ void change_clock_mode(ClockMode new_mode);
 void pc_usb_midi_handle_clock();
 bool check_and_unset_pc_usb_midi_clock_ticked();
 
+// Active USB clock pulses and matching PPQN-24 callbacks since clock_reset().
+struct ExternalClockDiagnostics {
+  uint32_t received_pulses;
+  uint32_t delivered_sync_ticks;
+};
+
+ExternalClockDiagnostics get_external_clock_diagnostics();
+
 void pc_usb_midi_handle_start();
 void pc_usb_midi_handle_stop();
 void pc_usb_midi_handle_continue();

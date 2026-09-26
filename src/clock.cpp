@@ -43,6 +43,17 @@ void set_external_clock_stall_callback(void(*callback)(bool stalled)) {
 /// use cheapclock clock
 volatile uint32_t last_ticked_at_micros = micros();
 #ifdef USE_UCLOCK
+  static void (*uclock_sync_callback)(uint32_t) = nullptr;
+  static volatile uint32_t external_clock_received_pulses = 0;
+  static volatile uint32_t external_clock_delivered_sync_ticks = 0;
+
+  static void counted_uclock_sync(uint32_t tick) {
+    if (clock_mode == CLOCK_EXTERNAL_USB_HOST)
+      external_clock_delivered_sync_ticks++;
+    if (uclock_sync_callback != nullptr)
+      uclock_sync_callback(tick);
+  }
+
   FLASHMEM void setup_uclock(void(*do_tick)(uint32_t), umodular::clock::uClockClass::PPQNResolution uclock_internal_ppqn) {
 
     #ifdef UCLOCK_HAS_STRICT_EXTERNAL_MODE
@@ -53,7 +64,8 @@ volatile uint32_t last_ticked_at_micros = micros();
     uClock.setOutputPPQN(uclock_internal_ppqn*4);
     uClock.setInputPPQN(umodular::clock::uClockClass::PPQN_24);
     uClock.setExtIntervalBuffer(16); // 16 is the default size
-    uClock.setOnSync(umodular::clock::uClockClass::PPQNResolution::PPQN_24, do_tick); 
+    uclock_sync_callback = do_tick;
+    uClock.setOnSync(umodular::clock::uClockClass::PPQNResolution::PPQN_24, counted_uclock_sync);
     // uClock.setOnOutputPPQN(do_tick);
     uClock.init();
     uClock.setTempo(bpm_current);
@@ -70,7 +82,6 @@ volatile uint32_t last_ticked_at_micros = micros();
 void messages_log_add(const char* msg);
 
 volatile bool usb_midi_clock_ticked = false;
-volatile unsigned long last_usb_midi_clock_ticked_at;
 
 // Armed-but-waiting flag: set when the user presses Start/Play in an external
 // clock mode but no pulse has arrived yet.  Cleared when the first incoming
@@ -81,26 +92,37 @@ void pc_usb_midi_handle_clock() {
   if (!playing)
     return;
 
-  if (clock_mode==CLOCK_EXTERNAL_USB_HOST && usb_midi_clock_ticked) {
-      if (Serial) Serial.printf("WARNING: received a usb midi clock tick at %u, but last one from %u was not yet processed (didn't process within gap of %u)!\n", millis(), last_usb_midi_clock_ticked_at, millis()-last_usb_midi_clock_ticked_at);
-      #if defined(ENABLE_SCREEN) && __has_include("menu_messages.h")
-        messages_log_add("WARNING: received a usb midi clock tick, but last one was not yet processed!");
-      #endif
-  }
   /*if (CLOCK_EXTERNAL_USB_HOST) {  // TODO: figure out why tempo estimation isn't working and fix
       tap_tempo_tracker.push_beat();
   }*/
   if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
     waiting_for_external_clock = false; // first pulse received
-    last_usb_midi_clock_ticked_at = millis();
     usb_midi_clock_ticked = true;
     #ifdef USE_UCLOCK
+      external_clock_received_pulses++;
       // In EXTERNAL_CLOCK mode clockMe() drives the state machine
       // (STARTING -> SYNCING -> STARTED) and feeds the interval buffer
       // that handleInternalClock() uses to sync the timer speed.
       uClock.clockMe();
     #endif
   }
+}
+
+ExternalClockDiagnostics get_external_clock_diagnostics() {
+  ExternalClockDiagnostics diagnostics;
+  #if defined(USE_UCLOCK) && defined(USE_ATOMIC)
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+      diagnostics.received_pulses = external_clock_received_pulses;
+      diagnostics.delivered_sync_ticks = external_clock_delivered_sync_ticks;
+    }
+  #elif defined(USE_UCLOCK)
+    diagnostics.received_pulses = external_clock_received_pulses;
+    diagnostics.delivered_sync_ticks = external_clock_delivered_sync_ticks;
+  #else
+    diagnostics.received_pulses = 0;
+    diagnostics.delivered_sync_ticks = 0;
+  #endif
+  return diagnostics;
 }
 
 void pc_usb_midi_handle_start() {
@@ -187,17 +209,12 @@ bool check_and_unset_pc_usb_midi_clock_ticked() {
 
 #ifdef ENABLE_CLOCK_INPUT_MIDI_DIN
   volatile bool din_midi_clock_ticked = false;
-  volatile unsigned long last_din_midi_clock_ticked_at;
 
   void din_midi_handle_clock() {
-    if (clock_mode==CLOCK_EXTERNAL_MIDI_DIN && usb_midi_clock_ticked) {
-        Serial.printf("WARNING: received a usb midi clock tick at %u, but last one from %u was not yet processed (didn't process within gap of %u)!\n", millis(), last_usb_midi_clock_ticked_at, millis()-last_usb_midi_clock_ticked_at);
-    }
     /*if (CLOCK_EXTERNAL_USB_HOST) {  // TODO: figure out why tempo estimation isn't working and fix
         tap_tempo_tracker.push_beat();
     }*/
     if (clock_mode==CLOCK_EXTERNAL_MIDI_DIN) {
-      last_din_midi_clock_ticked_at = millis();
       din_midi_clock_ticked = true;
     }
   }
@@ -446,6 +463,8 @@ void clock_reset() {
     waiting_for_external_clock = false;
     #ifdef USE_UCLOCK
       uClock.resetCounters();
+      external_clock_received_pulses = 0;
+      external_clock_delivered_sync_ticks = 0;
     #endif
     
     ticks = 0;
