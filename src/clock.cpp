@@ -489,7 +489,7 @@ void clock_stop() {
         uClock.pause(); // STARTED -> PAUSED (preserves position)
       } else if (cs == umodular::clock::uClockClass::ClockState::STARTING ||
                  cs == umodular::clock::uClockClass::ClockState::SYNCING) {
-        uClock.stop(); // abort sync-in-progress -> STOPED
+        uClock.stop(); // abort sync-in-progress -> STOPPED
       }
     #endif
   }
@@ -504,10 +504,10 @@ void clock_continue() {
       if (is_external_clock_mode(clock_mode))
         waiting_for_external_clock = true;
       // uClock.pause() toggles PAUSED -> STARTING (EXTERNAL_CLOCK) or STARTED (INTERNAL_CLOCK).
-      // If somehow in STOPED state (e.g. CONTINUE before first START), use start() instead.
+      // If somehow in STOPPED state (e.g. CONTINUE before first START), use start() instead.
       if (uClock.clock_state == umodular::clock::uClockClass::ClockState::PAUSED) {
         uClock.pause(); // PAUSED -> STARTING/STARTED
-      } else if (uClock.clock_state == umodular::clock::uClockClass::ClockState::STOPED) {
+      } else if (uClock.clock_state == umodular::clock::uClockClass::ClockState::STOPPED) {
         uClock.start();
       }
       // If already STARTED/STARTING/SYNCING: nothing to do.
@@ -585,7 +585,7 @@ void change_clock_mode(ClockMode new_mode) {
       if (was_playing) {
         if (uClock.clock_state == umodular::clock::uClockClass::ClockState::PAUSED)
           uClock.pause();
-        else if (uClock.clock_state == umodular::clock::uClockClass::ClockState::STOPED)
+        else if (uClock.clock_state == umodular::clock::uClockClass::ClockState::STOPPED)
           uClock.start();
 
         if (is_external_clock_mode(clock_mode))
