@@ -66,6 +66,7 @@ volatile uint32_t last_ticked_at_micros = micros();
       uClock.setStrictExternalMode(true); // set strict external mode to true by default
     #endif
 
+    // TODO: remove this hardcoded *4 and make it consistent with the rest of the code; including making shuffleeditor respect the actual PPQN setting
     uClock.setOutputPPQN((umodular::clock::uClockClass::PPQNResolution)(uclock_internal_ppqn * 4));
     #ifdef ENABLE_CLOCK_INPUT_CV
       if (clock_mode == CLOCK_EXTERNAL_CV)

@@ -15,12 +15,12 @@
 #include "bpm.h"
 #include "clock.h"
 
+#include <LinkedList.h>
+#include <functional-vlpp.h>
+
 #ifdef ENABLE_SCALES
     #include "scales.h"
 #endif
-
-#include <LinkedList.h>
-#include <functional-vlpp.h>
 
 #ifdef ENABLE_STORAGE
     #include "saveload_settings.h"
