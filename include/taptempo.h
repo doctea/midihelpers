@@ -23,6 +23,7 @@ class TapTempoTracker {
   int clock_tempo_history_pos = 0;
   bool clock_tempo_tracking = false;
   bool tempo_setter = true;
+  void (*tap_observation_callback)(uint32_t observed_at_us, float estimated_bpm) = nullptr;
 
   public:
   TapTempoTracker(int max_sample_size = DEFAULT_CLOCK_TEMPO_HISTORY_MAX, bool should_set_tempo = true) {
@@ -36,6 +37,11 @@ class TapTempoTracker {
   }
   bool is_tempo_setter() {
     return tempo_setter;
+  }
+
+  void set_tap_observation_callback(
+      void (*callback)(uint32_t observed_at_us, float estimated_bpm)) {
+    tap_observation_callback = callback;
   }
 
   bool is_tracking() {
@@ -73,6 +79,9 @@ class TapTempoTracker {
         messages_log_add("added tempo value");
       #endif
     }
+
+    if (tap_observation_callback != nullptr)
+      tap_observation_callback(now, clock_tempo_estimate());
   }
 
   float clock_tempo_estimate() {

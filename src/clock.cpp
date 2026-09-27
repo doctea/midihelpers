@@ -26,6 +26,10 @@ volatile int missed_micros; // for tracking how many microseconds late we are pr
 
 volatile ClockMode clock_mode = DEFAULT_CLOCK_MODE;
 
+static bool is_external_clock_mode(ClockMode mode) {
+  return mode != CLOCK_INTERNAL && mode != CLOCK_NONE;
+}
+
 void (*__global_restart_callback)();
 void (*__global_stop_callback)();
 void (*__external_clock_stall_callback)(bool stalled) = nullptr;
@@ -46,9 +50,11 @@ volatile uint32_t last_ticked_at_micros = micros();
   static void (*uclock_sync_callback)(uint32_t) = nullptr;
   static volatile uint32_t external_clock_received_pulses = 0;
   static volatile uint32_t external_clock_delivered_sync_ticks = 0;
+  static volatile uint32_t external_clock_rejected_pulses = 0;
+  static volatile uint32_t external_clock_adapter_overflow = 0;
 
   static void counted_uclock_sync(uint32_t tick) {
-    if (clock_mode == CLOCK_EXTERNAL_USB_HOST)
+    if (uClock.getClockMode() == umodular::clock::uClockClass::EXTERNAL_CLOCK)
       external_clock_delivered_sync_ticks++;
     if (uclock_sync_callback != nullptr)
       uclock_sync_callback(tick);
@@ -60,9 +66,16 @@ volatile uint32_t last_ticked_at_micros = micros();
       uClock.setStrictExternalMode(true); // set strict external mode to true by default
     #endif
 
-    // uClock.setInputPPQN(uclock_internal_ppqn);
-    uClock.setOutputPPQN(uclock_internal_ppqn*4);
-    uClock.setInputPPQN(umodular::clock::uClockClass::PPQN_24);
+    uClock.setOutputPPQN((umodular::clock::uClockClass::PPQNResolution)(uclock_internal_ppqn * 4));
+    #ifdef ENABLE_CLOCK_INPUT_CV
+      if (clock_mode == CLOCK_EXTERNAL_CV)
+        uClock.setInputPPQN(DEFAULT_CV_PPQN);
+      else
+    #endif
+        uClock.setInputPPQN(umodular::clock::uClockClass::PPQN_24);
+    uClock.setClockMode(is_external_clock_mode(clock_mode)
+      ? umodular::clock::uClockClass::EXTERNAL_CLOCK
+      : umodular::clock::uClockClass::INTERNAL_CLOCK);
     uClock.setExtIntervalBuffer(16); // 16 is the default size
     uclock_sync_callback = do_tick;
     uClock.setOnSync(umodular::clock::uClockClass::PPQNResolution::PPQN_24, counted_uclock_sync);
@@ -82,46 +95,108 @@ volatile uint32_t last_ticked_at_micros = micros();
 void messages_log_add(const char* msg);
 
 volatile bool usb_midi_clock_ticked = false;
+#ifdef ENABLE_CLOCK_INPUT_CV
+  volatile bool cv_clock_ticked = false;
+  volatile bool cv_clock_reset = false;
+#endif
 
 // Armed-but-waiting flag: set when the user presses Start/Play in an external
 // clock mode but no pulse has arrived yet.  Cleared when the first incoming
 // clock pulse triggers actual playback (or when stopped / mode changed).
 volatile bool waiting_for_external_clock = false;
 
-void pc_usb_midi_handle_clock() {
-  if (!playing)
-    return;
+static bool is_active_external_source(ClockMode source) {
+  if (!playing || clock_mode != source)
+    return false;
 
-  /*if (CLOCK_EXTERNAL_USB_HOST) {  // TODO: figure out why tempo estimation isn't working and fix
-      tap_tempo_tracker.push_beat();
-  }*/
-  if (clock_mode==CLOCK_EXTERNAL_USB_HOST) {
-    waiting_for_external_clock = false; // first pulse received
-    usb_midi_clock_ticked = true;
+  return source != CLOCK_INTERNAL && source != CLOCK_NONE;
+}
+
+static bool receive_external_pulse(ClockMode source, uint32_t observed_at_us,
+                                   bool has_observed_timestamp) {
+  if (!is_active_external_source(source)) {
     #ifdef USE_UCLOCK
-      external_clock_received_pulses++;
-      // In EXTERNAL_CLOCK mode clockMe() drives the state machine
-      // (STARTING -> SYNCING -> STARTED) and feeds the interval buffer
-      // that handleInternalClock() uses to sync the timer speed.
-      uClock.clockMe();
+      external_clock_rejected_pulses++;
     #endif
+    return false;
   }
+
+  waiting_for_external_clock = false;
+  if (source == CLOCK_EXTERNAL_USB_HOST)
+    usb_midi_clock_ticked = true;
+  #ifdef ENABLE_CLOCK_INPUT_CV
+    if (source == CLOCK_EXTERNAL_CV)
+      cv_clock_ticked = true;
+  #endif
+
+  #ifdef USE_UCLOCK
+    external_clock_received_pulses++;
+    if (has_observed_timestamp)
+      uClock.clockMeAt(observed_at_us);
+    else
+      uClock.clockMe();
+  #endif
+  return true;
+}
+
+bool clock_receive_external_pulse(ClockMode source) {
+  return receive_external_pulse(source, 0, false);
+}
+
+bool clock_receive_external_pulse_at(ClockMode source, uint32_t observed_at_us) {
+  // Serial.printf("clock_receive_external_pulse_at() called with source %d and observed_at_us %lu\n", source, observed_at_us);
+  return receive_external_pulse(source, observed_at_us, true);
+}
+
+bool clock_receive_external_reset(ClockMode source) {
+  // Serial.printf("clock_receive_external_reset() called with source %d\n", source);
+  if (clock_mode != source)
+    return false;
+
+  clock_reset();
+  return true;
+}
+
+void clock_report_external_event_overflow() {
+  #ifdef USE_UCLOCK
+    external_clock_adapter_overflow++;
+  #endif
+}
+
+void pc_usb_midi_handle_clock() {
+  clock_receive_external_pulse(CLOCK_EXTERNAL_USB_HOST);
 }
 
 ExternalClockDiagnostics get_external_clock_diagnostics() {
   ExternalClockDiagnostics diagnostics;
+  diagnostics.source = clock_mode;
+  #ifdef USE_UCLOCK
+    diagnostics.input_ppqn = uClock.input_ppqn;
+  #else
+    diagnostics.input_ppqn = 0;
+  #endif
   #if defined(USE_UCLOCK) && defined(USE_ATOMIC)
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
       diagnostics.received_pulses = external_clock_received_pulses;
       diagnostics.delivered_sync_ticks = external_clock_delivered_sync_ticks;
+      diagnostics.rejected_pulses = external_clock_rejected_pulses;
+      diagnostics.adapter_overflow = external_clock_adapter_overflow;
     }
   #elif defined(USE_UCLOCK)
     diagnostics.received_pulses = external_clock_received_pulses;
     diagnostics.delivered_sync_ticks = external_clock_delivered_sync_ticks;
+    diagnostics.rejected_pulses = external_clock_rejected_pulses;
+    diagnostics.adapter_overflow = external_clock_adapter_overflow;
   #else
     diagnostics.received_pulses = 0;
     diagnostics.delivered_sync_ticks = 0;
+    diagnostics.rejected_pulses = 0;
+    diagnostics.adapter_overflow = 0;
   #endif
+  diagnostics.expected_sync_ticks = diagnostics.input_ppqn > 0
+    ? (uint32_t)(((uint64_t)diagnostics.received_pulses * 24) /
+                 diagnostics.input_ppqn)
+    : 0;
   return diagnostics;
 }
 
@@ -273,30 +348,19 @@ void set_clock_mode_changed_callback(void(*callback)(ClockMode old_mode, ClockMo
 
 #ifdef ENABLE_CLOCK_INPUT_CV
   bool(*check_cv_clock_ticked_callback)(void) = nullptr;
-  volatile bool cv_clock_ticked = false;
-  volatile bool cv_clock_reset = false;
   uint32_t external_cv_ticks_per_pulse = PPQN;
   bool check_and_unset_cv_clock_ticked() {
     if (check_cv_clock_ticked_callback==nullptr)
       return false;
 
     if (cv_clock_reset) {
-      // Serial.printf("check_and_unset_cv_clock_ticked: Received CV reset pulse during tick %u\n", ticks);
       cv_clock_reset = false;
-      // if we got a reset signal on the CV input, reset the clock and notify the UI
-      clock_reset();
-      // if (__global_restart_callback!=nullptr)
-      //     __global_restart_callback();
-      return false; // return early so that the tick that came in on the reset pulse doesn't also trigger a clock tick
+      clock_receive_external_reset(CLOCK_EXTERNAL_CV);
+      return false;
     }
 
-    // use a callback to do the actual check on whether input is high
-    bool v = check_cv_clock_ticked_callback();
-    if (v) {
-      // Serial.printf("check_and_unset_cv_clock_ticked: Received CV clock pulse during tick %u\n", ticks);
-      cv_clock_ticked = true;
-      uClock.clockMe(); 
-    }
+    if (check_cv_clock_ticked_callback())
+      clock_receive_external_pulse(CLOCK_EXTERNAL_CV);
 
     bool retval = cv_clock_ticked;
     cv_clock_ticked = false;
@@ -312,7 +376,7 @@ bool update_clock_ticks() {
   #ifdef USE_UCLOCK
     static unsigned long last_reported_tick = -1;
     static bool last_external_clock_stalled = false;
-    bool external_clock_stalled = clock_mode == CLOCK_EXTERNAL_USB_HOST && playing &&
+    bool external_clock_stalled = is_external_clock_mode(clock_mode) && playing &&
       uClock.isExternalClockStalled();
     if (external_clock_stalled != last_external_clock_stalled) {
       last_external_clock_stalled = external_clock_stalled;
@@ -393,7 +457,7 @@ void clock_start() {
       // or STARTED (INTERNAL_CLOCK).  For CLOCK_EXTERNAL_USB_HOST we are now in
       // EXTERNAL_CLOCK mode, so the ISR returns early until clockMe() drives the
       // state through SYNCING -> STARTED after enough pulses arrive.
-      if (clock_mode == CLOCK_EXTERNAL_USB_HOST)
+      if (is_external_clock_mode(clock_mode))
         waiting_for_external_clock = true;
       uClock.start();
     #endif
@@ -437,7 +501,7 @@ void clock_continue() {
   #endif
   {
     #ifdef USE_UCLOCK
-      if (clock_mode == CLOCK_EXTERNAL_USB_HOST)
+      if (is_external_clock_mode(clock_mode))
         waiting_for_external_clock = true;
       // uClock.pause() toggles PAUSED -> STARTING (EXTERNAL_CLOCK) or STARTED (INTERNAL_CLOCK).
       // If somehow in STOPED state (e.g. CONTINUE before first START), use start() instead.
@@ -465,6 +529,8 @@ void clock_reset() {
       uClock.resetCounters();
       external_clock_received_pulses = 0;
       external_clock_delivered_sync_ticks = 0;
+      external_clock_rejected_pulses = 0;
+      external_clock_adapter_overflow = 0;
     #endif
     
     ticks = 0;
@@ -487,19 +553,16 @@ void change_clock_mode(ClockMode new_mode) {
     waiting_for_external_clock = false; // cancel any armed-but-waiting state from the old mode
     
     #ifdef USE_UCLOCK
+      bool was_playing = playing;
       #ifdef USE_ATOMIC
       ATOMIC_BLOCK(ATOMIC_RESTORESTATE) 
       #endif
       {
-        bool was_playing = playing;
-
         if (new_mode==ClockMode::CLOCK_INTERNAL) {
           internal_ppqn = DEFAULT_INTERNAL_PPQN;
           uClock.setInputPPQN(internal_ppqn); //umodular::clock::uClockClass::PPQNResolution::PPQN_24);
           uClock.setClockMode(uClock.ClockMode::INTERNAL_CLOCK);
         } else {
-          bool was_started = playing;
-          //if (was_started) uClock.stop();
           #ifdef ENABLE_CLOCK_INPUT_CV
             if (new_mode==ClockMode::CLOCK_EXTERNAL_CV) {
               external_cv_ppqn = DEFAULT_CV_PPQN;
@@ -512,15 +575,22 @@ void change_clock_mode(ClockMode new_mode) {
             uClock.setInputPPQN(umodular::clock::uClockClass::PPQN_24);
           }
           uClock.setClockMode(umodular::clock::uClockClass::ClockMode::EXTERNAL_CLOCK);
-          //if (was_started) uClock.pause();
         } 
-        //if (was_playing) uClock.start();
       }
     #endif 
 
     clock_mode = new_mode;
     
     #ifdef USE_UCLOCK
+      if (was_playing) {
+        if (uClock.clock_state == umodular::clock::uClockClass::ClockState::PAUSED)
+          uClock.pause();
+        else if (uClock.clock_state == umodular::clock::uClockClass::ClockState::STOPED)
+          uClock.start();
+
+        if (is_external_clock_mode(clock_mode))
+          waiting_for_external_clock = true;
+      }
       if (clock_mode==CLOCK_INTERNAL) 
         uClock.setTempo(bpm_current);
     #endif

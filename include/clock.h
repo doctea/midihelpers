@@ -47,13 +47,22 @@ volatile extern uint32_t last_ticked_at_micros;
 #endif
 
 void change_clock_mode(ClockMode new_mode);
+bool clock_receive_external_pulse(ClockMode source);
+bool clock_receive_external_pulse_at(ClockMode source, uint32_t observed_at_us);
+bool clock_receive_external_reset(ClockMode source);
+void clock_report_external_event_overflow();
 void pc_usb_midi_handle_clock();
 bool check_and_unset_pc_usb_midi_clock_ticked();
 
-// Active USB clock pulses and matching PPQN-24 callbacks since clock_reset().
+// Active external pulses and matching PPQN-24 callbacks since clock_reset().
 struct ExternalClockDiagnostics {
+  ClockMode source;
+  uint16_t input_ppqn;
   uint32_t received_pulses;
+  uint32_t expected_sync_ticks;
   uint32_t delivered_sync_ticks;
+  uint32_t rejected_pulses;
+  uint32_t adapter_overflow;
 };
 
 ExternalClockDiagnostics get_external_clock_diagnostics();
