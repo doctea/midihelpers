@@ -97,6 +97,11 @@ class LoopMarkerPanel : public PinnedPanelMenuItem {
             }
             tft->fillRect(0, y, last_position_width, bar_height, playing ? DARK_BLUE : RED);
 
+            if (restart_on_next_bar) {
+                // draw the restart indicator
+                tft->fillRect(last_position_width, y, tft_width - last_position_width, bar_height, GREEN);
+            }
+
             // draw 'step' markers
             //static const uint_fast16_t step_size_beats = tft_width / (beats_per_bar*bars_per_phrase);  // safe to make static so long as beats_per_bar/bars_per_phrase is not configurable!
             // @@TODO: we should probably make these static (again) but recalculate if the time signature changes
