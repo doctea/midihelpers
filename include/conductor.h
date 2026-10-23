@@ -39,9 +39,9 @@
 #endif
 
 class Conductor
-#ifdef ENABLE_STORAGE
-    : public SHDynamic<0, 10>
-#endif
+    #ifdef ENABLE_STORAGE
+        : public SHDynamic<0, 10>
+    #endif
 {
 public:
     // ── Construction ────────────────────────────────────────────────────────

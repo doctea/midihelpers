@@ -485,6 +485,9 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
             ));
         #endif
 
+        SubMenuItemBar *shared_randomise_bar = new SubMenuItemBar("Randomise", false, true);
+        shared_randomise_bar->add(new LambdaActionItem("Randomise Section", []() { arranger->partially_randomise_section(shared_edit_section); }));
+
         // Shared copy/paste bar
         SubMenuItemBar *shared_cp_bar = new SubMenuItemBar("Copy/Paste", false, true);
         shared_cp_bar->add(new LambdaActionItem("Copy",  []() { arranger->copy_section(shared_edit_section); }));
@@ -549,6 +552,7 @@ void arranger_make_menu_items(Menu *menu, bool compact_sections, bool two_column
             #ifdef ENABLE_TIME_SIGNATURE
                 menu->add(shared_ts_bar);
             #endif
+            menu->add(shared_randomise_bar);
             menu->add(shared_cp_bar);
             menu->add(shared_header_row);
             for (int k = 0; k < num_shared_rows; k++) {

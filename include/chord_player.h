@@ -229,7 +229,7 @@ class ChordPlayer
             current_chord = chord_number;
             is_playing_chord = true;
 
-            uint8_t bass_note = MIDI_MAX_NOTE+1;    // for tracking lowest note so that we can send bass note separately if desired; needs to be unsigned
+            uint8_t bass_note = MIDI_NUM_NOTES;       // for tracking lowest note so that we can send bass note separately if desired; needs to be unsigned
             int8_t top_note = MIDI_MIN_NOTE-1;        // for tracking highest note so that we can send topline note separately if desired; needs to be signed
 
             int8_t previously_played_note = -1; // avoid duplicating notes, like what happens sometimes when playing inverted +octaved chords..!

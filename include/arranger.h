@@ -218,9 +218,9 @@ public:
 */
 
 class Arranger
-#ifdef ENABLE_STORAGE
-    : public SHDynamic<16, 2>
-#endif
+    #ifdef ENABLE_STORAGE
+        : public SHDynamic<16, 2>
+    #endif
 {
 public:
     Arranger() {
@@ -679,6 +679,35 @@ public:
             }
         }
     #endif
+
+    // --- generative features
+
+    void partially_randomise_section(int8_t section) {
+        // partially randomise the current chord progression for the given section
+        if (section < 0 || section >= NUM_SONG_SECTIONS) return;
+
+        song_section_t& sec = song_sections[section];
+        // #ifdef ENABLE_TIME_SIGNATURE
+        //     sec.time_signature.numerator = random(1, TIME_SIG_MAX_STEPS_PER_BAR + 1);
+        //     sec.time_signature.denominator = random(1, 33);
+        // #endif
+        for (int i = 0; i < sec.bars_per_phrase; i++) {
+            // randomise each bar's chord here
+            if (random(0, 10) < 2) {
+                sec.grid[i].degree = random(1, 8); // assuming 7 possible chord degrees (1-7)
+            }
+            if (random(0, 10) < 2) {
+                sec.grid[i].inversion = random(0, 3); // assuming 3 possible inversions (0-2)
+            }
+            // if (random(0, 10) < 2) {
+            //     sec.grid[i].octave = random(0, 8); // assuming 8 possible octaves (0-7)
+            // }
+            if (random(0, 10) < 2) {
+                sec.grid[i].type = random(NUMBER_CHORDS); // assuming 5 possible chord types (0-4)
+            }
+        }
+        notify_section_changed(section);
+    }
 
 private:
     LinkedList<chord_changed_cb_t>   _chord_cbs;
