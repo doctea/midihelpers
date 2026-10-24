@@ -1,8 +1,12 @@
 #pragma once
 
 #include "midi_helpers.h"
+#include "notetracker.h"
+
+#include "conductor.h"
 
 #include "menu.h"
+
 
 class NoteDisplay : public MenuItem {
 public:

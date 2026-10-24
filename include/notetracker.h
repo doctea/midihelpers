@@ -174,7 +174,7 @@ class NoteTracker {
     using foreach_func_def = vl::Func<void(int8_t note, int8_t transposed_note)>;
 
     // run a callback function for every note that is currently held
-    // passes the transposted note as well as the original note, for use in display or 
+    // passes the transposed note as well as the original note, for use in display or 
     //when needing to know what the note was transposed to for when releasing notes or re-quantising them
     //PROGMEM // never seem to get any notes out if this is enabled!?
     int foreach_note(foreach_func_def func) {
