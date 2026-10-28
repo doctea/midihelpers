@@ -74,6 +74,8 @@ constexpr int8_t get_section_idx_for_name(const char* name) {
 
 struct song_section_t {
     chord_identity_t grid[CHORDS_PER_SECTION];
+    chord_identity_t grid_second[CHORDS_PER_SECTION];
+    // chord_identity_t grid_third[CHORDS_PER_SECTION];
     uint8_t length          = CHORDS_PER_SECTION;  // active bars (1–CHORDS_PER_SECTION)
     uint8_t bars_per_phrase = 4;                   // bars before playlist-advance check
     #ifdef ENABLE_TIME_SIGNATURE
@@ -117,6 +119,9 @@ playlist_t* get_default_playlist();
 // Format: 3 hex-byte pairs per chord (degree, type, inversion) × CHORDS_PER_SECTION
 // e.g. "010002050001..." = chord0{degree=1,type=0,inversion=0}, chord1{degree=2,type=5,inversion=0}, ...
 // degree is offset by +1 so that -1 (use global) maps to 0x00.
+
+// @@TODO: add support for grid_second (second chord per bar) serialization and parsing
+
 class SaveableSectionGridSetting : public SaveableSettingBase {
 public:
     song_section_t* section;
@@ -131,7 +136,7 @@ public:
         int pos = snprintf(linebuf, SL_MAX_LINE, "%s=", label);
         for (int i = 0; i < CHORDS_PER_SECTION && pos < SL_MAX_LINE - 6; i++) {
             uint8_t d = (uint8_t)(section->grid[i].degree + 1);  // offset: -1→0, 0→1, 7→8
-            uint8_t t = (uint8_t)section->grid[i].type;
+            uint8_t t = (uint8_t) section->grid[i].type;
             uint8_t v = (uint8_t)(section->grid[i].inversion + 1); // offset for potential negatives
             pos += snprintf(linebuf + pos, SL_MAX_LINE - pos, "%02x%02x%02x", d, t, v);
         }
@@ -143,7 +148,7 @@ public:
         if (strcmp(key, label) != 0) return false;
         for (int i = 0; i < CHORDS_PER_SECTION; i++) {
             int base = i * 6; // 3 bytes × 2 hex chars each
-            if (!value[base] || !value[base+1] || !value[base+2] ||
+            if (!value[base]   || !value[base+1] || !value[base+2] ||
                 !value[base+3] || !value[base+4] || !value[base+5]) break;
             char hex[3] = {0};
             hex[0] = value[base];   hex[1] = value[base+1];
@@ -370,7 +375,19 @@ public:
             if (new_bar < 0)        new_bar = sec_len - 1;
         }
         current_bar = (int8_t)new_bar;
-        current_chord = song_sections[current_section].grid[current_bar];
+        // Serial.printf(
+        //     "move_bar: new_bar=%i, current_bar=%i, chord=%i/%i/%i\n", 
+        //     new_bar, 
+        //     current_bar, 
+        //     song_sections[current_section].grid[current_bar].degree, 
+        //     song_sections[current_section].grid[current_bar].type, 
+        //     song_sections[current_section].grid[current_bar].inversion
+        // );
+        change_chord(song_sections[current_section].grid[current_bar]);
+    }
+
+    void change_chord(chord_identity_t chord) {
+        current_chord = chord;
         mark_as_modified();
         notify_chord_changed(current_chord, true);
     }

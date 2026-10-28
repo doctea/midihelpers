@@ -567,6 +567,25 @@ scale_t *make_scale_t_from_pattern(const scale_pattern_t *scale_signature, const
   return return_scale;
 }
 
+const char *get_chord_name(scale_identity_t scale, chord_identity_t chord) {
+    // if (chord.type < CHORD::NONE) {
+    //     return chords[chord.type].label;
+    // }
+    
+    static char chord_name[16]; // buffer to hold the chord name
+
+    // get the note name for the chord root
+    int8_t chord_root = scale.root_note + scales[scale.scale_number]->valid_chromatic_pitches[chord.degree-1];
+    snprintf(
+      chord_name, 
+      sizeof(chord_name), 
+      "% 2s %s",
+      get_note_name_c(chord_root, 1, false), 
+      chords[chord.type].label
+    );
+    return chord_name;
+}
+
 
 void dump_all_scales_and_chords(bool all_inversions, bool debug) {
   Serial.printf("Outputting all scales and chords...\n");

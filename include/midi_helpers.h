@@ -30,7 +30,7 @@
 #ifdef ARDUINO
 String get_note_name(int pitch);
 #endif
-const char *get_note_name_c(int pitch, int channel = 1);
+const char *get_note_name_c(int pitch, int channel = 1, bool include_octave = true);
 extern const char *note_names[];
 bool is_valid_note(int8_t byte);
 

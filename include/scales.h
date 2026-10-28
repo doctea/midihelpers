@@ -148,6 +148,44 @@ namespace CHORD {
 
 class scale_identity_t {
     public:
+
+    bool is_chord_major(int degree) {
+        // A chord is considered major if the third note of the chord is a major third above the root
+        // check the scale to figure this out
+        int root = root_note + scales[scale_number]->valid_chromatic_pitches[degree-1];
+        int third = root + scales[scale_number]->valid_chromatic_pitches[(degree+3-1) % PITCHES_PER_SCALE];
+        return (third - root) == 4; // major third interval is 4 semitones
+    }
+
+    const char *get_degree_roman(int degree) const {
+        static char roman[4];
+        if (this->is_chord_major(degree)) {
+            switch (degree) {
+                case 1: strcpy(roman, "I"); break;
+                case 2: strcpy(roman, "II"); break;
+                case 3: strcpy(roman, "III"); break;
+                case 4: strcpy(roman, "IV"); break;
+                case 5: strcpy(roman, "V"); break;
+                case 6: strcpy(roman, "VI"); break;
+                case 7: strcpy(roman, "VII"); break;
+                default: strcpy(roman, "?"); break;
+            }
+        } else {
+            switch (degree) {
+                case 1: strcpy(roman, "i"); break;
+                case 2: strcpy(roman, "ii"); break;
+                case 3: strcpy(roman, "iii"); break;
+                case 4: strcpy(roman, "iv"); break;
+                case 5: strcpy(roman, "v"); break;
+                case 6: strcpy(roman, "vi"); break;
+                case 7: strcpy(roman, "vii"); break;
+                default: strcpy(roman, "?"); break;
+            }
+        }
+        return roman;
+    }
+
+    public:
     scale_index_t scale_number = 0;
     int_fast8_t root_note = SCALE_ROOT_C;
 };
@@ -171,6 +209,11 @@ class chord_identity_t {
     bool is_valid_chord() const {
         return this->degree>0;
     }
+
+    const char *get_name() {
+        return chords[type].label;
+    }
+
 };
 
 class chord_instance_t {
@@ -269,6 +312,8 @@ class chord_instance_t {
         memcpy(this, source, sizeof(chord_instance_t));
     }*/
 };
+
+const char *get_chord_name(scale_identity_t scale, chord_identity_t chord);
 
 /*SCALE& operator++(SCALE& orig);
 SCALE operator++(SCALE& orig, int);

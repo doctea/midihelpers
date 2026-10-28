@@ -163,10 +163,16 @@ int step_number_from_ticks(signed long ticks);
 
 // inline so the compiler sees through the macro constants and eliminates
 // per-call function overhead — 10 of these fire per ISR tick in MultiSequencer
+// @@TODO: i'm not sure if the offset handling is correct for all cases - is "ticks==offset?" correct, or even necessary?
 inline bool is_bpm_on_phrase(uint32_t ticks,        unsigned long offset = 0) { return ticks==offset || BPM_PHASE_TICKS(ticks)%(TICKS_PER_PHRASE) == offset; }
-inline bool is_bpm_on_half_phrase(uint32_t ticks,   unsigned long offset = 0) { return ticks==offset || BPM_PHASE_TICKS(ticks)%(TICKS_PER_PHRASE/2) == offset; }
+inline bool is_bpm_on_half_phrase(uint32_t ticks, unsigned long offset = 0) { 
+  const uint32_t phrase_phase = BPM_PHASE_TICKS(ticks) % TICKS_PER_PHRASE; return phrase_phase == (TICKS_PER_PHRASE/2 + offset); 
+}
 inline bool is_bpm_on_bar(uint32_t ticks,           unsigned long offset = 0) { return ticks==offset || BPM_PHASE_TICKS(ticks)%(TICKS_PER_BAR) == offset; }
-inline bool is_bpm_on_half_bar(uint32_t ticks,      unsigned long offset = 0) { return ticks==offset || BPM_PHASE_TICKS(ticks)%(TICKS_PER_BAR/2) == offset; }
+inline bool is_bpm_on_half_bar(uint32_t ticks, unsigned long offset = 0) { 
+  const uint32_t bar_phase = BPM_PHASE_TICKS(ticks) % TICKS_PER_BAR; 
+  return bar_phase == (TICKS_PER_BAR/2 + offset);
+}
 inline bool is_bpm_on_beat(uint32_t ticks,          unsigned long offset = 0) { return ticks==offset || BPM_PHASE_TICKS(ticks)%(TICKS_PER_BEAT) == offset; }
 inline bool is_bpm_on_eighth(uint32_t ticks,        unsigned long offset = 0) { return ticks==offset || BPM_PHASE_TICKS(ticks)%(TICKS_PER_BEAT/2) == offset; }
 inline bool is_bpm_on_sixteenth(uint32_t ticks,     unsigned long offset = 0) { return ticks==offset || BPM_PHASE_TICKS(ticks)%(TICKS_PER_STEP) == offset; }
