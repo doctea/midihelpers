@@ -29,7 +29,7 @@ const char *note_names[] = {
 #define NOTE_NAME_LENGTH 4  // 3 characters + \0 terminator. eg "C#5\0", "D3\0"
 
 // optional second argument 'channel' defaults to 1 if not provided
-const char *get_note_name_c(int pitch, int channel, bool include_octave = true) {
+const char *get_note_name_c(int pitch, int channel, bool include_octave) {
   if (!is_valid_note(pitch)) {
     return "_";
   }

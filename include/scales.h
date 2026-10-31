@@ -153,11 +153,12 @@ class scale_identity_t {
         // A chord is considered major if the third note of the chord is a major third above the root
         // check the scale to figure this out
         int root = root_note + scales[scale_number]->valid_chromatic_pitches[degree-1];
+        // @@TODO: this doesn't actually work correctly, 
         int third = root + scales[scale_number]->valid_chromatic_pitches[(degree+3-1) % PITCHES_PER_SCALE];
         return (third - root) == 4; // major third interval is 4 semitones
     }
 
-    const char *get_degree_roman(int degree) const {
+    const char *get_degree_roman(int degree) {
         static char roman[4];
         if (this->is_chord_major(degree)) {
             switch (degree) {
