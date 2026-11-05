@@ -13,6 +13,7 @@
   #include <Arduino.h>
 #else
   #include <cinttypes>
+    #include <cstdio>
 #endif
 
 #include "midi_helpers.h"
@@ -146,50 +147,6 @@ namespace CHORD {
 
 #define NUMBER_CHORDS (sizeof(chords)/sizeof(chord_t))
 
-class scale_identity_t {
-    public:
-
-    bool is_chord_major(int degree) {
-        // A chord is considered major if the third note of the chord is a major third above the root
-        // check the scale to figure this out
-        int root = root_note + scales[scale_number]->valid_chromatic_pitches[degree-1];
-        // @@TODO: this doesn't actually work correctly, 
-        int third = root + scales[scale_number]->valid_chromatic_pitches[(degree+3-1) % PITCHES_PER_SCALE];
-        return (third - root) == 4; // major third interval is 4 semitones
-    }
-
-    const char *get_degree_roman(int degree) {
-        static char roman[4];
-        if (this->is_chord_major(degree)) {
-            switch (degree) {
-                case 1: strcpy(roman, "I"); break;
-                case 2: strcpy(roman, "II"); break;
-                case 3: strcpy(roman, "III"); break;
-                case 4: strcpy(roman, "IV"); break;
-                case 5: strcpy(roman, "V"); break;
-                case 6: strcpy(roman, "VI"); break;
-                case 7: strcpy(roman, "VII"); break;
-                default: strcpy(roman, "?"); break;
-            }
-        } else {
-            switch (degree) {
-                case 1: strcpy(roman, "i"); break;
-                case 2: strcpy(roman, "ii"); break;
-                case 3: strcpy(roman, "iii"); break;
-                case 4: strcpy(roman, "iv"); break;
-                case 5: strcpy(roman, "v"); break;
-                case 6: strcpy(roman, "vi"); break;
-                case 7: strcpy(roman, "vii"); break;
-                default: strcpy(roman, "?"); break;
-            }
-        }
-        return roman;
-    }
-
-    public:
-    scale_index_t scale_number = 0;
-    int_fast8_t root_note = SCALE_ROOT_C;
-};
 
 class chord_identity_t {
     public:
@@ -215,7 +172,81 @@ class chord_identity_t {
         return chords[type].label;
     }
 
+    const char *get_inversion_label() {
+        if (type == CHORD::NONE) return "---";
+        if (type == CHORD::SEVENTH) {
+            switch (inversion) {
+                case 0: return "7  ";
+                case 1: return "6/5";
+                case 2: return "4/3";
+                case 3: return "4/2";
+                default: return "?";
+            }
+        } else {
+            switch (inversion) {
+                case 0: return "R  ";
+                case 1: return "6  ";
+                case 2: return "6/4";
+                case 3: return "R+";
+                default: return "?";
+            }
+        }
+        return "?";
+    }
+
 };
+
+class scale_identity_t {
+    public:
+
+    scale_index_t scale_number = 0;
+    int_fast8_t root_note = SCALE_ROOT_C;
+
+    private:
+    int get_interval_above_degree(int degree, int scale_steps) const {
+        if (degree < 1 || degree > PITCHES_PER_SCALE ||
+            scale_number < 0 || static_cast<size_t>(scale_number) >= NUMBER_SCALES ||
+            scales[scale_number] == nullptr) {
+            return -1;
+        }
+
+        const int root_degree = degree - 1;
+        const int target_degree = root_degree + scale_steps;
+        const scale_t &scale = *scales[scale_number];
+        return scale.valid_chromatic_pitches[target_degree % PITCHES_PER_SCALE]
+            + 12 * (target_degree / PITCHES_PER_SCALE)
+            - scale.valid_chromatic_pitches[root_degree];
+    }
+
+    public:
+    bool is_chord_major(int degree) {
+        return get_interval_above_degree(degree, 2) == 4;
+    }
+
+    bool is_chord_diminished(int degree) {
+        return get_interval_above_degree(degree, 2) == 3
+            && get_interval_above_degree(degree, 4) == 6;
+    }
+
+    const char *get_degree_roman(chord_identity_t chord) {
+        if (get_interval_above_degree(chord.degree, 2) < 0) {
+            return "? ";
+        }
+
+        static const char *const major_romans[PITCHES_PER_SCALE] = { "I", "II", "III", "IV", "V", "VI", "VII" };
+        static const char *const minor_romans[PITCHES_PER_SCALE] = { "i", "ii", "iii", "iv", "v", "vi", "vii" };
+        const bool is_diminished = this->is_chord_diminished(chord.degree);
+        const char *roman = this->is_chord_major(chord.degree)
+            ? major_romans[chord.degree - 1]
+            : minor_romans[chord.degree - 1];
+
+        static char result[5];
+        snprintf(result, sizeof(result), "%s%c", roman, is_diminished ? '\xF7' : ' ');
+        return result;
+    }
+
+};
+
 
 class chord_instance_t {
     public:
@@ -347,7 +378,7 @@ int8_t get_effective_chord_inversion(int8_t inversion);
 
 int8_t quantise_pitch_to_scale(int8_t pitch, int8_t root_note = SCALE_GLOBAL_ROOT, scale_index_t scale_number = SCALE_GLOBAL, bool debug = false); //, chord_identity_t chord_identity = {CHORD::TRIAD, -1, 0});
 int8_t quantise_pitch_to_chord(int8_t pitch, int8_t quantise_to_nearest_range = 0, int8_t scale_root = SCALE_GLOBAL_ROOT, scale_index_t scale_number = SCALE_GLOBAL, chord_identity_t chord_identity = {CHORD::GLOBAL, -1, 0}, bool debug = false);
-int8_t get_quantise_pitch_chord_note(int8_t pitch, CHORD::Type chord_number, int8_t note_of_chord, int8_t root_note = SCALE_GLOBAL_ROOT, scale_index_t scale_number = SCALE_GLOBAL, int inversion = 0, bool debug = false);
+int8_t get_quantise_pitch_chord_note(int8_t pitch, CHORD::Type chord_number, int8_t note_of_chord, int8_t root_note = SCALE_GLOBAL_ROOT, scale_index_t scale_number = SCALE_GLOBAL, int inversion = 0, bool reorder_notes = true,bool debug = false);
 
 // gets the pitch note number for a scale degree 
 int8_t quantise_get_root_pitch_for_degree(int8_t degree, int8_t root_note = SCALE_GLOBAL_ROOT, scale_index_t scale_number = SCALE_GLOBAL);

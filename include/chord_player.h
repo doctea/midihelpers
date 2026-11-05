@@ -234,7 +234,18 @@ class ChordPlayer
 
             int8_t previously_played_note = -1; // avoid duplicating notes, like what happens sometimes when playing inverted +octaved chords..!
             uint32_t time = millis();
-            for (size_t i = 0 ; i < PITCHES_PER_CHORD && ((n = get_quantise_pitch_chord_note(pitch, chord_number, i, this->get_scale_root(), this->get_scale(), inversion, this->debug)) >= 0) ; i++) {
+            for (
+                size_t i = 0 ; 
+                i < PITCHES_PER_CHORD && (
+                    // @@TODO: surely there must be a cleaner way to handle this loop condition,
+                    // without the potentially expensive function call and assigning inside it?
+                    (n = get_quantise_pitch_chord_note(
+                        pitch, chord_number, i, 
+                        this->get_scale_root(), this->get_scale(), 
+                        inversion, true, this->debug
+                    )) >= 0) ; 
+                i++
+            ) {
                 this->current_chord_data.set_pitch(i, n);
                 if (debug) Serial.printf("\t\tPlaying note\t[%i/%i]: %i\t(%s)\n", i+1, PITCHES_PER_CHORD, n, get_note_name_c(n));
                 if (n!=previously_played_note) {

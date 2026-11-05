@@ -274,6 +274,7 @@ public:
     int8_t playlist_position      = 0;
     int8_t current_section_plays  = 0;
     chord_identity_t current_chord;
+    chord_instance_t current_chord_instance;
 
     bool enabled = true;
 
@@ -388,6 +389,14 @@ public:
 
     void change_chord(chord_identity_t chord) {
         current_chord = chord;
+        // scale_identity_t current_scale = conductor->global_scale_identity;
+
+        // this->current_chord_instance.set_from_chord_identity(
+        //     chord,
+        //     current_scale.root_note,
+        //     current_scale.scale_number
+        // );
+
         mark_as_modified();
         notify_chord_changed(current_chord, true);
     }
