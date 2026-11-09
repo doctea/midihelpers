@@ -70,7 +70,7 @@ volatile uint32_t last_ticked_at_micros = micros();
     uClock.setOutputPPQN((umodular::clock::uClockClass::PPQNResolution)(uclock_internal_ppqn * 4));
     #ifdef ENABLE_CLOCK_INPUT_CV
       if (clock_mode == CLOCK_EXTERNAL_CV)
-        uClock.setInputPPQN(DEFAULT_CV_PPQN);
+        uClock.setInputPPQN(external_cv_ppqn);
       else
     #endif
         uClock.setInputPPQN(umodular::clock::uClockClass::PPQN_24);
@@ -94,6 +94,21 @@ volatile uint32_t last_ticked_at_micros = micros();
 #endif
 
 void messages_log_add(const char* msg);
+
+const char *get_clock_mode_string(ClockMode mode) {
+  switch (mode) {
+    case CLOCK_INTERNAL: return "internal";
+    case CLOCK_EXTERNAL_USB_HOST: return "external USB host";
+    #ifdef ENABLE_CLOCK_INPUT_MIDI_DIN
+    case CLOCK_EXTERNAL_MIDI_DIN: return "external MIDI DIN";
+    #endif
+    #ifdef ENABLE_CLOCK_INPUT_CV
+    case CLOCK_EXTERNAL_CV: return "external CV";
+    #endif
+    case CLOCK_NONE: return "none";
+    default: return "unknown";
+  }
+}
 
 volatile bool usb_midi_clock_ticked = false;
 #ifdef ENABLE_CLOCK_INPUT_CV
@@ -519,7 +534,7 @@ void clock_continue() {
   }
 };
 
-void clock_reset() {
+bool clock_reset_to_position(uint32_t tick_position) {
   //if (Serial) { Serial.println("clock_reset()"); Serial.flush(); }
   #ifdef USE_ATOMIC
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) 
@@ -527,24 +542,45 @@ void clock_reset() {
   {
     waiting_for_external_clock = false;
     #ifdef USE_UCLOCK
-      uClock.resetCounters();
+      if (tick_position == 0) {
+        uClock.resetCounters();
+      } else if (!uClock.resetCountersToPosition((uint64_t)tick_position * uClock.getOutputPPQN() / 24)) {
+        return false;
+      }
       external_clock_received_pulses = 0;
       external_clock_delivered_sync_ticks = 0;
       external_clock_rejected_pulses = 0;
       external_clock_adapter_overflow = 0;
     #endif
     
-    ticks = 0;
+    ticks = tick_position;
     #ifdef ENABLE_TIME_SIGNATURE
       ts_phase_offset = 0;
     #endif
   }
+  return true;
+}
+
+void clock_reset() {
+  clock_reset_to_position(0);
 }
 
 
 #if defined(USE_UCLOCK) 
   umodular::clock::uClockClass::PPQNResolution external_cv_ppqn = DEFAULT_CV_PPQN;
   umodular::clock::uClockClass::PPQNResolution internal_ppqn    = DEFAULT_INTERNAL_PPQN;
+
+  bool set_external_cv_clock_ppqn(uint16_t ppqn) {
+    if (ppqn != 1 && ppqn != 2 && ppqn != 4
+        && ppqn != 8 && ppqn != 12 && ppqn != 16 && ppqn != 24)
+      return false;
+    external_cv_ppqn = (umodular::clock::uClockClass::PPQNResolution)ppqn;
+    #ifdef ENABLE_CLOCK_INPUT_CV
+      if (clock_mode == CLOCK_EXTERNAL_CV && uClock.input_ppqn != external_cv_ppqn)
+        uClock.setInputPPQN(external_cv_ppqn);
+    #endif
+    return true;
+  }
 #endif
 
 void change_clock_mode(ClockMode new_mode) {
@@ -566,7 +602,6 @@ void change_clock_mode(ClockMode new_mode) {
         } else {
           #ifdef ENABLE_CLOCK_INPUT_CV
             if (new_mode==ClockMode::CLOCK_EXTERNAL_CV) {
-              external_cv_ppqn = DEFAULT_CV_PPQN;
               uClock.setInputPPQN(external_cv_ppqn);
             } else
           #endif

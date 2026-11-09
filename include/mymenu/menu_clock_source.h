@@ -117,6 +117,7 @@ const int available_ppqn_values[] = {
     umodular::clock::uClockClass::PPQN_4,
     umodular::clock::uClockClass::PPQN_8,
     umodular::clock::uClockClass::PPQN_12,
+    umodular::clock::uClockClass::PPQN_16,
     umodular::clock::uClockClass::PPQN_24,
     umodular::clock::uClockClass::PPQN_48,
     umodular::clock::uClockClass::PPQN_96,
@@ -129,7 +130,7 @@ class ExternalPPQNSelectorControl : public SelectorControl<int> {
     ExternalPPQNSelectorControl(const char *label, int initial_value) 
         : SelectorControl(label, initial_value) {
             this->available_values = (int*)available_ppqn_values;
-            this->num_values = 11;
+            this->num_values = 12;
         };
 
     const char *get_clock_mode_label() {
@@ -165,6 +166,7 @@ class ExternalPPQNSelectorControl : public SelectorControl<int> {
             case umodular::clock::uClockClass::PPQN_4:   return "4 PPQN";
             case umodular::clock::uClockClass::PPQN_8:   return "8 PPQN";
             case umodular::clock::uClockClass::PPQN_12:  return "12 PPQN";
+            case umodular::clock::uClockClass::PPQN_16:  return "16 PPQN";
             case umodular::clock::uClockClass::PPQN_24:  return "24 PPQN";
             case umodular::clock::uClockClass::PPQN_48:  return "48 PPQN";
             case umodular::clock::uClockClass::PPQN_96:  return "96 PPQN";

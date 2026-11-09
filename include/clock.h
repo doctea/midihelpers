@@ -22,6 +22,8 @@ enum ClockMode {
   NUM_CLOCK_SOURCES
 };
 
+const char *get_clock_mode_string(ClockMode mode);
+
 #ifndef DEFAULT_CLOCK_MODE
   #define DEFAULT_CLOCK_MODE CLOCK_INTERNAL
 #endif
@@ -41,6 +43,7 @@ volatile extern uint32_t last_ticked_at_micros;
   #endif
   extern umodular::clock::uClockClass::PPQNResolution external_cv_ppqn;
   extern umodular::clock::uClockClass::PPQNResolution internal_ppqn;
+  bool set_external_cv_clock_ppqn(uint16_t ppqn);
 #else 
   /// use cheapclock clock
   void setup_cheapclock();
@@ -97,6 +100,7 @@ void set_global_stop_callback(void(*global_stop_callback)());
 void set_external_clock_stall_callback(void(*callback)(bool stalled));
 
 void clock_reset();
+bool clock_reset_to_position(uint32_t tick_position);
 void clock_start();
 void clock_stop();
 void clock_continue();
