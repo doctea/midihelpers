@@ -366,16 +366,13 @@ void set_clock_mode_changed_callback(void(*callback)(ClockMode old_mode, ClockMo
   bool(*check_cv_clock_ticked_callback)(void) = nullptr;
   uint32_t external_cv_ticks_per_pulse = PPQN;
   bool check_and_unset_cv_clock_ticked() {
-    if (check_cv_clock_ticked_callback==nullptr)
-      return false;
-
     if (cv_clock_reset) {
       cv_clock_reset = false;
       clock_receive_external_reset(CLOCK_EXTERNAL_CV);
       return false;
     }
 
-    if (check_cv_clock_ticked_callback())
+    if (check_cv_clock_ticked_callback != nullptr && check_cv_clock_ticked_callback())
       clock_receive_external_pulse(CLOCK_EXTERNAL_CV);
 
     bool retval = cv_clock_ticked;
@@ -405,34 +402,18 @@ bool update_clock_ticks() {
   if (!playing) 
     return false;
 
-  if (clock_mode==CLOCK_EXTERNAL_USB_HOST && /*playing && */check_and_unset_pc_usb_midi_clock_ticked()) {
-    #ifdef USE_UCLOCK
-      // don't do anything -- ticks is set by uClock's callback
-      //if (ticks==last_processed_tick) // don't process the same tick twice?
-      //  return false;
-    #else
-      ticks++;
-    #endif
-    return true;
-  }
-  #ifdef ENABLE_CLOCK_INPUT_MIDI_DIN
-    else if (clock_mode==CLOCK_EXTERNAL_MIDI_DIN && check_and_unset_din_midi_clock_ticked()) {
-      ticks++;
-      return true;
-    }
-  #endif
-  #ifdef ENABLE_CLOCK_INPUT_CV
-    else if (clock_mode==CLOCK_EXTERNAL_CV && check_and_unset_cv_clock_ticked()) {
-      //ticks += external_cv_ticks_per_pulse;
-      // Serial.println("CV clock ticked!");
-      // uClock.clockMe();
-      // ticks++;
-
-      return true;
-    }
-  #endif
   #ifdef USE_UCLOCK
-    else if (clock_mode==CLOCK_INTERNAL && playing && ticks != last_reported_tick) {
+    if (clock_mode == CLOCK_EXTERNAL_USB_HOST)
+      check_and_unset_pc_usb_midi_clock_ticked();
+    #ifdef ENABLE_CLOCK_INPUT_MIDI_DIN
+      if (clock_mode == CLOCK_EXTERNAL_MIDI_DIN)
+        check_and_unset_din_midi_clock_ticked();
+    #endif
+    #ifdef ENABLE_CLOCK_INPUT_CV
+      if (clock_mode == CLOCK_EXTERNAL_CV)
+        check_and_unset_cv_clock_ticked();
+    #endif
+    if (clock_mode != CLOCK_NONE && ticks != last_reported_tick) {
       missed_micros = (mics - last_ticked - micros_per_tick);
       last_reported_tick = ticks;
       last_ticked = mics;
@@ -440,16 +421,26 @@ bool update_clock_ticks() {
       return true;
     }
   #else
-    else if (clock_mode==CLOCK_INTERNAL && playing && mics - last_ticked >= micros_per_tick) {
+    if (clock_mode==CLOCK_EXTERNAL_USB_HOST && check_and_unset_pc_usb_midi_clock_ticked()) {
+      ticks++;
+      return true;
+    }
+    #ifdef ENABLE_CLOCK_INPUT_MIDI_DIN
+      else if (clock_mode==CLOCK_EXTERNAL_MIDI_DIN && check_and_unset_din_midi_clock_ticked()) {
+        ticks++;
+        return true;
+      }
+    #endif
+    #ifdef ENABLE_CLOCK_INPUT_CV
+      else if (clock_mode==CLOCK_EXTERNAL_CV && check_and_unset_cv_clock_ticked()) {
+        return true;
+      }
+    #endif
+    else if (clock_mode==CLOCK_INTERNAL && mics - last_ticked >= micros_per_tick) {
       ticks++;
       missed_micros = (mics - last_ticked - micros_per_tick);
       last_ticked = mics;
       last_ticked_at_micros = mics;
-
-      /*if (is_bpm_on_beat(ticks)) {
-          Serial.printf("beat %i!\n", ticks / PPQN);
-          Serial.flush();
-      }*/
       return true;
     }
   #endif
