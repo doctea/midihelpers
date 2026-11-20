@@ -1,5 +1,6 @@
 #pragma once
 
+#include "shared_debug.h"
 #include <Arduino.h>
 
 #include "bpm.h"
@@ -117,12 +118,12 @@ public:
 
     virtual void on_pre_clock(unsigned long tick, int8_t monitored_note, int8_t velocity, int8_t raw_note) {
         if (this->debug) {
-            Serial.printf("---- PitchTriggerSource::on_pre_clock(%i, %i, %i, %i)\n", tick, monitored_note, velocity, raw_note);
+            Serial_printf("---- PitchTriggerSource::on_pre_clock(%i, %i, %i, %i)\n", tick, monitored_note, velocity, raw_note);
         }
 
         if (this->is_playing && this->get_note_length() > 0 && abs((long)this->note_started_at_tick - (long)tick) >= this->get_note_length()) {
             if (this->debug) {
-                Serial.printf("PitchTriggerSource: Stopping note %i because elapsed is (%u-%u=%u)\n", this->current_note, this->note_started_at_tick, tick, abs((long)this->note_started_at_tick - (long)tick));
+                Serial_printf("PitchTriggerSource: Stopping note %i because elapsed is (%u-%u=%u)\n", this->current_note, this->note_started_at_tick, tick, abs((long)this->note_started_at_tick - (long)tick));
             }
             this->trigger_off_for_pitch_because_length(this->current_note);
         }
@@ -131,7 +132,7 @@ public:
 
         if (this->is_playing && !is_valid_note(monitored_note) && is_valid_note(this->current_note)) {
             if (this->debug) {
-                Serial.printf("PitchTriggerSource: Stopping note %i because monitored note is invalid\n", this->current_note);
+                Serial_printf("PitchTriggerSource: Stopping note %i because monitored note is invalid\n", this->current_note);
             }
             this->trigger_off_for_pitch_because_changed(this->current_note);
             return;
@@ -139,7 +140,7 @@ public:
 
         if (!is_valid_note(monitored_note) || (monitored_note == this->current_note && this->get_trigger_on_ticks() == 0)) {
             if (this->debug) {
-                Serial.println("----");
+                Serial_println("----");
             }
             return;
         }
@@ -150,17 +151,17 @@ public:
 
         if (this->get_trigger_on_ticks() == 0 && (monitored_note == this->current_note || monitored_note == this->last_note)) {
             if (this->debug) {
-                Serial.printf("PitchTriggerSource: Not retriggering %i because it has not changed\n", monitored_note);
+                Serial_printf("PitchTriggerSource: Not retriggering %i because it has not changed\n", monitored_note);
             }
             if (this->debug) {
-                Serial.println("----");
+                Serial_println("----");
             }
             return;
         }
 
         if (!(this->get_trigger_on_ticks() == 0 || (tick - this->trigger_delay_ticks) % this->get_trigger_on_ticks() == 0)) {
             if (this->debug) {
-                Serial.println("----");
+                Serial_println("----");
             }
             return;
         }
@@ -168,7 +169,7 @@ public:
         this->trigger_on_for_pitch(tick, monitored_note, velocity);
 
         if (this->debug) {
-            Serial.println("----");
+            Serial_println("----");
         }
     }
 

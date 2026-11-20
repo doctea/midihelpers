@@ -24,6 +24,7 @@ class USBMIDITxQueue {
     queue_t packets;
     Packet pending_packet = {};
     bool has_pending_packet = false;
+    volatile bool transport_ready = true;
     volatile bool recovery_pending = false;
     uint8_t recovery_channel = 0;
 
@@ -36,6 +37,20 @@ public:
         queue_init(&packets, sizeof(Packet), capacity);
     }
 
+    void set_transport_ready(bool ready) {
+        uint32_t irq_state = save_and_disable_interrupts();
+        if (transport_ready && !ready) {
+            Packet discarded;
+            while (queue_try_remove(&packets, &discarded)) ++dropped_count;
+            if (has_pending_packet) ++dropped_count;
+            has_pending_packet = false;
+            recovery_pending = false;
+            recovery_channel = 0;
+        }
+        transport_ready = ready;
+        restore_interrupts(irq_state);
+    }
+
     void enqueue_note(bool note_on, uint8_t pitch, uint8_t velocity, uint8_t channel) {
         if (channel < 1 || channel > 16 || pitch > 127 || velocity > 127) return;
         Packet packet = {{
@@ -44,7 +59,7 @@ public:
             pitch, velocity
         }};
         uint32_t irq_state = save_and_disable_interrupts();
-        if (recovery_pending) {
+        if (!transport_ready || recovery_pending) {
             ++dropped_count;
         } else if (!queue_try_add(&packets, &packet)) {
             ++overflow_count;
@@ -58,7 +73,7 @@ public:
     void drain(Transport &transport, bool sysex_busy) {
         uint32_t irq_state = save_and_disable_interrupts();
         restore_interrupts(irq_state);
-        if (__get_current_exception() != 0 || irq_state != 0 || get_core_num() != 0 || sysex_busy) return;
+        if (__get_current_exception() != 0 || irq_state != 0 || get_core_num() != 0 || sysex_busy || !transport_ready) return;
 
         for (unsigned sent = 0; sent < 64; ++sent) {
             if (recovery_pending && recovery_channel == 0) {

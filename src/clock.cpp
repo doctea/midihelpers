@@ -1,3 +1,4 @@
+#include "shared_debug.h"
 #include "clock.h"
 //#include "midi/midi_outs.h"
 #include <Arduino.h>
@@ -222,7 +223,7 @@ void pc_usb_midi_handle_start() {
   #endif
   // see function "auto_handle_start" when you wanna make this automatically change clock mode when receiving a start message
 
-  Serial.println("==== pc_usb_midi_handle_start() called");
+  Serial_println("==== pc_usb_midi_handle_start() called");
 
   if (clock_mode!=CLOCK_EXTERNAL_USB_HOST) {
     // automatically switch to using external USB clock if we receive a START message from the usb host

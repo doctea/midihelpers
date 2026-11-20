@@ -1,5 +1,6 @@
 #pragma once
 
+#include "shared_debug.h"
 #include <Arduino.h>
 
 #include "parameter_inputs/ParameterInput.h"
@@ -73,7 +74,7 @@ public:
         int velocity = this->read_velocity();
 
         if (this->debug) {
-            Serial.printf("CVPitchTriggerCore::on_pre_clock(tick=%lu, note=%i, velocity=%i)\n", ticks, new_note, velocity);
+            Serial_printf("CVPitchTriggerCore::on_pre_clock(tick=%lu, note=%i, velocity=%i)\n", ticks, new_note, velocity);
         }
 
         this->pitch_trigger.on_pre_clock(ticks, new_note, velocity);

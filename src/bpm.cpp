@@ -1,3 +1,4 @@
+#include "shared_debug.h"
 #include "bpm.h"
 #include "clock.h"
 
@@ -22,28 +23,28 @@ bool restart_on_next_bar = false;
 bool is_bpm_on_multiplier(unsigned long ticks, float multiplier, unsigned long offset) {
   unsigned long p = ((float)PPQN*multiplier);
   #ifdef DEBUG_BPM
-    Serial.print(F("is_bpm_on_multiplier(ticks="));
-    Serial.print(ticks);
-    Serial.print(F(", multiplier="));
-    Serial.print(multiplier);
-    Serial.print(F(", offset="));
-    Serial.print(offset);
-    Serial.print(F(") checking ticks "));
-    Serial.print(ticks);
-    Serial.print(F(" with PPQN*multiplier "));
-    Serial.print(p);
-    Serial.print(F(" against offset "));
-    Serial.print(offset);
-    Serial.print(F(" == ticks%p = "));
-    Serial.print(ticks%p);
-    Serial.print(F(" ? ="));
+    Serial_print(F("is_bpm_on_multiplier(ticks="));
+    Serial_print(ticks);
+    Serial_print(F(", multiplier="));
+    Serial_print(multiplier);
+    Serial_print(F(", offset="));
+    Serial_print(offset);
+    Serial_print(F(") checking ticks "));
+    Serial_print(ticks);
+    Serial_print(F(" with PPQN*multiplier "));
+    Serial_print(p);
+    Serial_print(F(" against offset "));
+    Serial_print(offset);
+    Serial_print(F(" == ticks%p = "));
+    Serial_print(ticks%p);
+    Serial_print(F(" ? ="));
   #endif
 
   bool v = (ticks==offset || ticks%p == offset);  
 
   #ifdef DEBUG_BPM
-    Serial.print(v ? F("true!") : F("false!"));
-    Serial.println();
+    Serial_print(v ? F("true!") : F("false!"));
+    Serial_println();
   #endif
   return v;
 }

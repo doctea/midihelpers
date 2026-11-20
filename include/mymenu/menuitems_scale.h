@@ -1,5 +1,6 @@
 #pragma once
 
+#include "shared_debug.h"
 #include "menuitems.h"
 #include "menuitems_popout.h"
 
@@ -562,7 +563,7 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
 
         // add all 12 notes to scale_root_options, arranged in circle of fifths
         if (scale_root_options->size()<=1) {
-            Serial.printf("populating scale_root_options with 12 notes\n");
+            Serial_printf("populating scale_root_options with 12 notes\n");
             int8_t note = 0;
             for (size_t i = 0 ; i < 12 ; i++) {
                 scale_root_options->add(LambdaSelectorControl<int8_t>::option { note, note_names[note]});
@@ -573,9 +574,9 @@ class LambdaScaleMenuItemBar : public SubMenuItemBar {
 
         // add all the scales to the scale_selector_options list
         if (scale_selector_options->size()<=1) {
-            Serial.printf("populating scale_selector_options with %i scales\n", NUMBER_SCALES);
+            Serial_printf("populating scale_selector_options with %i scales\n", NUMBER_SCALES);
             for (size_t i = 0 ; i < NUMBER_SCALES ; i++) {
-                if (debug) Serial.printf("LambdaScaleMenuItemBar: adding scale %i: %s @ %p\n", i, scales[i]->label, scales[i]);
+                if (debug) Serial_printf("LambdaScaleMenuItemBar: adding scale %i: %s @ %p\n", i, scales[i]->label, scales[i]);
                 //print_scale(0, *scales[i]);
                 scale_selector_options->add(LambdaScaleSelector<scale_index_t>::option { (scale_index_t)i, scales[i]->label });
             }
